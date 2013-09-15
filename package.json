@@ -1,0 +1,16 @@
+{
+  "name": "WordsOfOz",
+  "version": "0.0.1",
+  "dependencies":{
+    "npm": "1.1.65",
+    "neo4j": "0.2.19",
+    "streamline": "0.4.0",
+    "express.io": "1.1.11",
+    "nodemailer": "0.4.4",
+    "crypto-js": "3.1.2"
+  },
+  "engines":{
+    "node": "0.8.x",
+    "npm": "1.1.65"
+  }
+}
