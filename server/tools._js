@@ -48,8 +48,12 @@ module.exports =
     game.save(_);
   },
   
-  addMagnet: function( game, player, className, _ )
+  addMagnet: function( game, player, className, x, y, _ )
   {
+    var start = new Date().getTime();
+    var now;
+    var time;
+    
     var i = 0;
     var j = 0;
     var isRelated = false;
@@ -63,9 +67,14 @@ module.exports =
       }
     }
     
-    isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
-    var randomX = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
-    var randomY = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
+    now = new Date().getTime();
+    time = now - start;
+    console.log("am1: " + time );
+    start = new Date().getTime();
+    
+//     isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
+    if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
+    if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
     var randomAngle = randomizer.getRandomInRange( consts.MIN_ANGLE, consts.MAX_ANGLE );
     
     var magnet = this.createNode({
@@ -75,18 +84,28 @@ module.exports =
       owner: player.data[consts.USERNAME],
       isRelated: isRelated,
       angle: randomAngle,
-      x: randomX,
-      y: randomY
+      x: x,
+      y: y
     }, _ );
+    
+    now = new Date().getTime();
+    time = now - start;
+    console.log("am2: " + time );
+    start = new Date().getTime();
     
     player.createRelationshipTo( magnet, consts.HAS_MAGNET, { id: game.data[consts.WORD_COUNT] }, _ );
     magnet.createRelationshipTo( word, consts.REPRESENTS_WORD, {}, _ );
     
     game.data[consts.WORD_COUNT]++;
     game.save(_);
+    
+    now = new Date().getTime();
+    time = now - start;
+    console.log("am3: " + time );
+    start = new Date().getTime();
   },
   
-  addTile: function( game, _ )
+  addTile: function( game, x, y, _ )
   {
     var tile;
     var i = 0;
@@ -96,8 +115,8 @@ module.exports =
       var images = retriever.getGameTileImages( game.id, _ );
       var instruction = randomizer.getRandomInstruction(_);
       var instructions = retriever.getGameTileInstructions( game.id, _ );
-      var randomX = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
-      var randomY = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
+      if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
+      if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
       
       for( i = 0; i < images.length; i++ ){
         if( image.data.id == images[i].data.id ){
@@ -120,8 +139,8 @@ module.exports =
         representedInstruction: instruction.data.id,
         connectedTo: [ 0, 0, 0, 0, 0 ],
         angle: 0,
-        x: randomX,
-        y: randomY
+        x: x,
+        y: y
       }, _ );
       
       game.createRelationshipTo( tile, consts.HAS_TILE, { id: game.data[consts.TILE_COUNT] }, _ );
@@ -209,7 +228,6 @@ module.exports =
         id : currentTile[consts.ID],
         x : currentTile[consts.X],
         y : currentTile[consts.Y],
-        imageID : imageID,
         imageName : gameInfo.image[imageID][consts.NAME],
         instruction : gameInfo.instruction[instructionID][consts.SHORT_DESCRIPTION],
         bonus : gameInfo.instruction[instructionID][consts.BONUS],
@@ -246,8 +264,7 @@ module.exports =
     }
     
     return gameObjs;
-  },
-
+  }
 };
 
 function getMagnetObject( magnets, words, owner ){

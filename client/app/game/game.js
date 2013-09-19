@@ -1,27 +1,28 @@
 ﻿define(['api/datacontext', 'durandal/app', 'jquery'], function (ctx, app, $) {
-    return {
-        activate: function () {
-            app.loading(true);
 
-            ctx.onLoad = function () {
-                $(window).resize();
-                app.loading(false);
-            }
+  ctx.loading.subscribe(function (loading) {
+    if (loading === true) {
+      app.loading(false);
+    }
+  });
 
-            ctx.load(1);
-        },
+  return {
+    activate: function () {
+      app.loading(true);
 
-        binding: function () {
-            return { cacheViews: false };
-        },
+      ctx.load(1);
+    },
 
-        compositionComplete: function (view) {
-            $('#menu').appendTo('body');            
-            //app.loading(false);
-        },
+    binding: function () {
+      return { cacheViews: false };
+    },
 
-        detached: function () {
-            
-        }
-    };
+    compositionComplete: function (view) {
+      $('#menu').appendTo('body');
+    },
+
+    detached: function () {
+
+    }
+  };
 });

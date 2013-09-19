@@ -18,10 +18,11 @@ var neo4j = require("neo4j"),
     operations = require("./operations._js"),
     environment = require("./environment._js"),
     initializer = require("./initializer._js");
-    var db = new neo4j.GraphDatabase(environment.DB_URL);
+
+var db = new neo4j.GraphDatabase(environment.DB_URL);  
 var app = express();
 
-if ( environment.IS_HEROKU ) {
+if( environment.IS_HEROKU ){
   app.use( express.static( "./client" ) );
 }else{
   app.use( express.static( "../client/" ) );
@@ -124,7 +125,7 @@ function placePhrase( game, username, pathID, magnetIDs, _ )
       currentMagnet.save(_);
       
       ret[consts.WORDS].push( currentWord.data[consts.LEMMA] );
-      tools.addMagnet( game, player, currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], _ );  //replace it with a new magnet
+      tools.addMagnet( game, player, currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], currentMagnet.data.x, currentMagnet.data.y, _ );  //replace it with a new magnet
     }
     
     score = scoringTime( words, tiles, _ );
@@ -225,9 +226,18 @@ function canIPlayWithMadness( words, wordCount, _ ){
 
 function createGame( usernames, level, _ )
 {
-  var i, j = 0;
+  var now;
+  var time = 0;
+  var start = new Date().getTime();
+  
+  var i, j, k = 0;
   var gameID = tools.getNewGameID(_);
   var playerCount = usernames.length;
+
+  now = new Date().getTime();
+  time = now - start;
+  console.log("cg1: " + time );
+  start = new Date().getTime();
 
   var game = tools.createNode({
     type: consts.GAME,
@@ -243,6 +253,11 @@ function createGame( usernames, level, _ )
     usernames: usernames,
     playerCount: playerCount
   }, _ );
+
+  now = new Date().getTime();
+  time = now - start;
+  console.log("cg2: " + time );
+  start = new Date().getTime();
   
   game.index( consts.GAME_INDEX, consts.ID, gameID, _ );
   for( var a = 0; a < playerCount; a++ )  //creates a player instance for each player
@@ -260,15 +275,26 @@ function createGame( usernames, level, _ )
     user.createRelationshipTo( game, consts.PLAYS, {}, _ );
     game.createRelationshipTo( player, consts.BEING_PLAYED_BY, {}, _ );
   }
+  
+  now = new Date().getTime();
+  time = now - start;
+  console.log("cg3: " + time );
+  
+  
   try
   {
     randomizeBoard( game, level, _ );
-    
+    start = new Date().getTime();
     for( i = 0; i < consts.BALANCE.length; i++ ){
       for( j = 0; j < consts.BALANCE[i]; j++ ){
-        tools.addMagnet( game, player, consts.CLASS_NAMES[i], _ );
+        tools.addMagnet( game, player, consts.CLASS_NAMES[i], k > 9 ? (k-12) * 0.09 : k * 0.09, k > 9 ? 0.2 + randomizer.getSignedRandomInRange(0, 0.01) : 0.1 + randomizer.getSignedRandomInRange(0, 0.01), _ );
+        k++;
       }
     }
+    
+    now = new Date().getTime();
+    time = now - start;
+    console.log("cg4: " + time );
   }
   catch( ex )
   {
@@ -282,34 +308,45 @@ function createGame( usernames, level, _ )
 
 function randomizeBoard( game, level, _ )
 {
+  var start = new Date().getTime();
+  var now;
+  var time;
+  
   var i = 0;
   var j = 0;
   var dist = 0;
   var nWords = 0;
   var nPaths = randomizer.getRandomIntegerInRange( consts.LEVEL_SETTINGS[level][consts.MIN_PATHS], consts.LEVEL_SETTINGS[level][consts.MAX_PATHS] );
+
+  now = new Date().getTime();
+  time = now - start;
+  console.log("rb1: " + time );
+  start = new Date().getTime();
   
   var tiles = [];
   var connections = [];
   
-  var first = tools.addTile( game, _ );
-  first.data[consts.X] = consts.FIRST_TILE_X + randomizer.getSignedRandomInRange( 0, 0.1 );
-  first.data[consts.Y] = consts.FIRST_TILE_Y  + randomizer.getSignedRandomInRange( 0, 0.1 );
-  
-  var second = tools.addTile( game, _ );
-  second.data[consts.X] = consts.SECOND_TILE_X  + randomizer.getSignedRandomInRange( 0, 0.1 );
-  second.data[consts.Y] = consts.SECOND_TILE_Y + randomizer.getSignedRandomInRange( 0, 0.1 );
-  
-  var third = tools.addTile( game, _ );
-  third.data[consts.X] = consts.THIRD_TILE_X + randomizer.getSignedRandomInRange( 0, 0.1 );
-  third.data[consts.Y] = consts.THIRD_TILE_Y + randomizer.getSignedRandomInRange( 0, 0.1 );
-  
-  first.save(_);
-  second.save(_);
-  third.save(_);
-  
+//   var first = tools.addTile( game, consts.FIRST_TILE_X + randomizer.getSignedRandomInRange( 0, 0.1 ), consts.FIRST_TILE_Y  + randomizer.getSignedRandomInRange( 0, 0.1 ), _ );
+//   var second = tools.addTile( game, consts.SECOND_TILE_X  + randomizer.getSignedRandomInRange( 0, 0.1 ), consts.SECOND_TILE_Y + randomizer.getSignedRandomInRange( 0, 0.1 ), _ );
+//   var third = tools.addTile( game, consts.THIRD_TILE_X + randomizer.getSignedRandomInRange( 0, 0.1 ), consts.THIRD_TILE_Y + randomizer.getSignedRandomInRange( 0, 0.1 ), _ );
+
+  var first = tools.addTile( game, consts.FIRST_TILE_X, consts.FIRST_TILE_Y, _ );
+  var second = tools.addTile( game, consts.SECOND_TILE_X, consts.SECOND_TILE_Y, _ );
+  var third = tools.addTile( game, consts.THIRD_TILE_X, consts.THIRD_TILE_Y, _ );
+
+  now = new Date().getTime();
+  time = now - start;
+  console.log("rb2: " + time );
+  start = new Date().getTime();
+
   tiles.push( third );
   tiles.push( second );
   tiles.push( first );
+  
+  now = new Date().getTime();
+  time = now - start;
+  console.log("rb3: " + time );
+  start = new Date().getTime();
   
   for( i = 0; i < tiles.length; i++ ){
     for( j = 0; j < tiles.length; j++ ){
@@ -321,36 +358,39 @@ function randomizeBoard( game, level, _ )
       }
     }
   }
-  
-  for( i = 0; i < connections.length && i < nPaths; i++ )
-  {
-    var nWords = Math.floor( connections[i].dist * 10 );
-    console.log("creating path from " + tiles[connections[i].startTile].data.id + " to " + tiles[connections[i].endTile].data.id );
-    tools.addPath( game, tiles[connections[i].startTile], tiles[connections[i].endTile], nWords, true, _ );
-  }
 
-  shuffleArray( connections );
-  for( j = 0; j < connections.length && j + i < nPaths; j++ )
-  {
-    var nWords = Math.floor( connections[j].dist * 10 );
-    console.log("creating path from " + tiles[connections[j].startTile].data.id + " to " + tiles[connections[j].endTile].data.id );
-    tools.addPath( game, tiles[connections[j].startTile], tiles[connections[j].endTile], nWords, false, _ );
-  }
-  
-}
 
-/**
- * Randomize array element order in-place.
- * Using Fisher-Yates shuffle algorithm.
- */
-function shuffleArray(array) {
-  for (var i = array.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-  return array;
+  tools.addPath( game, first, second, 5, true, _ );
+  tools.addPath( game, third, second, 3, true, _ );
+  tools.addPath( game, third, second, 0, false, _ );
+  tools.addPath( game, first, third, 4, true, _ );
+  
+//   now = new Date().getTime();
+//   time = now - start;
+//   console.log("rb4: " + time );
+//   start = new Date().getTime();
+//   
+//   for( i = 0; i < connections.length && i < nPaths; i++ )
+//   {
+//     var nWords = Math.floor( connections[i].dist * 10 );
+//     tools.addPath( game, tiles[connections[i].startTile], tiles[connections[i].endTile], nWords, true, _ );
+//   }
+//   now = new Date().getTime();
+//   time = now - start;
+//   console.log("rb5: " + time );
+//   start = new Date().getTime();
+//   
+//   shuffleArray( connections );
+//   for( j = 0; j < connections.length && j + i < nPaths; j++ )
+//   {
+//     var nWords = Math.floor( connections[j].dist * 10 );
+//     console.log("creating path from " + tiles[connections[j].startTile].data.id + " to " + tiles[connections[j].endTile].data.id );
+//     tools.addPath( game, tiles[connections[j].startTile], tiles[connections[j].endTile], nWords, false, _ );
+//   }
+// 
+//   now = new Date().getTime();
+//   time = now - start;
+//   console.log("rb6: " + time );
 }
 
 function operate( op, requestData, requestIO, broadcastEvent, isAction, isEndTurn, _ ) {
@@ -401,6 +441,17 @@ function broadcast( game, eventName, jsonObjs )
     sockets[ "game" + game.data.id ][ game.data[consts.USERNAMES][i] ].emit( eventName, jsonObjs[ game.data[consts.USERNAMES][i] ] );
   }
 };
+
+//  Randomize array element order in-place using Fisher-Yates shuffle algorithm.*
+function shuffleArray( array ){
+  for( var i = array.length - 1; i > 0; i-- ){
+    var j = Math.floor( Math.random() * (i + 1) );
+    var temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+  return array;
+}
 
 // app.get("/", function( req, res ){
 //   res.sendfile( "index.html", { root: "../client/" } );
@@ -462,7 +513,10 @@ app.io.route( "game:queue", function( req, _ )
         tempSockets[user[consts.USERNAME]] = user[consts.SOCKET];
       }
       
+      var start2 = new Date().getTime();
       game = createGame( usernames, 0, _ );
+      var now2 = new Date().getTime();
+      console.log("8: " + ( now2 - start2 ) );
       
       if( game )
       {

@@ -2,11 +2,12 @@
 
   var subscriptions = [];
 
-//    var socket = io.connect("http://wordstesting.herokuapp.com:80");
-   var socket = io.connect("http://localhost:8080");
+//   var socket = io.connect("http://wordstesting.herokuapp.com:80");
+  var socket = io.connect("http://localhost:8080");
 
   socket.on('connect', function () {
     console.log("connected");
+
     //var playerID = 'test';
     //socket.emit("account:login", { playerID: playerID, password: '12345' }, function (data) {
     //    console.log("%c login", 'background: #222; color: #bada55', data);
@@ -27,6 +28,9 @@
     //        console.log("%c queue", 'background: #222; color: #bada55', data)
     //    });
     //});
+    //socket.emit("game:place-phrase", { playerID: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' }, function (b) { console.log(b); });
+    //console.log("connected");
+
   });
 
   var applicationEvents = {
@@ -88,11 +92,7 @@
     /// data = {username: ''}
     /// res = {success: true|false, errorMessage: ''}
     "server:game:queue": function (data, callback) {
-
-data.username = "ali";
-data.password = "12345";
-      var z = [1, "", { id: 1 }];
-      
+     
       if (socket.socket.connected === true) {
         runOnce(data, callback);
       }
@@ -115,8 +115,13 @@ data.password = "12345";
           app.trigger("game:start", data);
         });
 
-        console.log("%c queue", 'background: #222; color: #bada55', data);
-        socket.emit("game:queue", data, callback);
+        //TODO: level: 1,2,3
+        socket.emit("game:queue", data, function (data) {
+          console.log("%c queue", 'background: #222; color: #bada55', data);
+          callback(data);
+        });
+
+        console.log('Q request Sent...');
       }
     }
   };

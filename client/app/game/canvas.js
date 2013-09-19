@@ -1,13 +1,12 @@
-﻿define(['api/datacontext', 'paper', 'game/canvas/path', 'game/canvas/selection'], function (ctx, Paper, canvasPath, canvasSelection) {
+﻿define(['api/datacontext', 'paper', 'game/canvas/paths', 'game/canvas/selection'], function (ctx, Paper, canvasPaths, canvasSelection) {
 
     function setup(canvas) {
         var context = canvas.getContext("2d");
         context.canvas.width = $(canvas).width()
         context.canvas.height = $(canvas).height();
 
-        //debugger;
         if (canvasSelection.setup) canvasSelection.setup(canvas);
-        if (canvasPath.setup) canvasPath.setup(canvas);
+        if (canvasPaths.setup) canvasPaths.setup(canvas);
     }
 
     function redraw(canvas) {
@@ -16,7 +15,7 @@
         context.canvas.height = $(canvas).height();
 
         if (canvasSelection.redraw) canvasSelection.redraw(canvas);
-        if (canvasPath.redraw) canvasPath.redraw(canvas);
+        if (canvasPaths.redraw) canvasPaths.redraw(canvas);
     }
 
     return {
