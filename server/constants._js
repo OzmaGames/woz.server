@@ -12,16 +12,8 @@ module.exports =
   WORD_TOTAL: 598,
   IMAGE_TOTAL: 25,
   INSTRUCTION_TOTAL: 7,
-
-  RELATED_ARRAY_INDEX: 7,
-
-  MIN_TILES: "minTiles",
-  MAX_TILES: "maxTiles",
-  MIN_PATHS: "minPaths",
-  MAX_PATHS: "maxPaths",
-  INSTRUCTIONS: "instructions",
   
-
+  RELATED_ARRAY_INDEX: 7,
   
   CLASS_COUNTS: {
     noun: 303,  //noun
@@ -87,12 +79,12 @@ module.exports =
   MIN_DIFF: 0.075,
   MAX_ANGLE: 22,
   MIN_ANGLE: -22,
-  FIRST_TILE_X: 0.0,
-  FIRST_TILE_Y: 0.0,
-  SECOND_TILE_X: 1,
-  SECOND_TILE_Y: 0.0,
-  THIRD_TILE_X: 0.5,
-  THIRD_TILE_Y: 1,
+  FIRST_TILE_X: 0.1,
+  FIRST_TILE_Y: 0.3,
+  SECOND_TILE_X: 0.9,
+  SECOND_TILE_Y: 0.3,
+  THIRD_TILE_X: 0.4,
+  THIRD_TILE_Y: 0.8,
   TILE_ID_OFFSET: 2500,
 
   //Event Names

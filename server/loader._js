@@ -14,6 +14,14 @@ module.exports =
   loadWords: function( _ )
   {
     words = 0;
+    words = db.queryNodeIndex( consts.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
+    console.log( words );
+
+    for( var i = 0; i < words.length; i++ ){
+      console.log( words[i].data );
+
+    }
+    
   },
 
   loadImages: function( _ )

@@ -9,6 +9,7 @@ var neo4j = require("neo4j"),
     
     tools = require("./tools._js"),
     users = require("./users._js"),
+    loader = require("./loader._js"),
     mailer = require("./mailer._js"),
     actions = require("./actions._js"),
     consts = require("./constants._js"),
@@ -69,6 +70,8 @@ catch( exception )
 
   console.log( "done." );
 }
+
+// loader.loadWords( _ );
 
 function placePhrase( game, username, pathID, magnetIDs, _ )
 {
@@ -316,7 +319,6 @@ function randomizeBoard( game, level, _ )
   var j = 0;
   var dist = 0;
   var nWords = 0;
-  var nPaths = randomizer.getRandomIntegerInRange( consts.LEVEL_SETTINGS[level][consts.MIN_PATHS], consts.LEVEL_SETTINGS[level][consts.MAX_PATHS] );
 
   now = new Date().getTime();
   time = now - start;
@@ -325,10 +327,6 @@ function randomizeBoard( game, level, _ )
   
   var tiles = [];
   var connections = [];
-  
-//   var first = tools.addTile( game, consts.FIRST_TILE_X + randomizer.getSignedRandomInRange( 0, 0.1 ), consts.FIRST_TILE_Y  + randomizer.getSignedRandomInRange( 0, 0.1 ), _ );
-//   var second = tools.addTile( game, consts.SECOND_TILE_X  + randomizer.getSignedRandomInRange( 0, 0.1 ), consts.SECOND_TILE_Y + randomizer.getSignedRandomInRange( 0, 0.1 ), _ );
-//   var third = tools.addTile( game, consts.THIRD_TILE_X + randomizer.getSignedRandomInRange( 0, 0.1 ), consts.THIRD_TILE_Y + randomizer.getSignedRandomInRange( 0, 0.1 ), _ );
 
   var first = tools.addTile( game, consts.FIRST_TILE_X, consts.FIRST_TILE_Y, _ );
   var second = tools.addTile( game, consts.SECOND_TILE_X, consts.SECOND_TILE_Y, _ );
@@ -338,59 +336,15 @@ function randomizeBoard( game, level, _ )
   time = now - start;
   console.log("rb2: " + time );
   start = new Date().getTime();
-
-  tiles.push( third );
-  tiles.push( second );
-  tiles.push( first );
   
+  tools.addPath( game, first, second, 5, true, _ );
+  tools.addPath( game, third, second, 3, true, _ );
+  tools.addPath( game, third, second, 5, false, _ );
+  tools.addPath( game, first, third, 4, false, _ );
+
   now = new Date().getTime();
   time = now - start;
   console.log("rb3: " + time );
-  start = new Date().getTime();
-  
-  for( i = 0; i < tiles.length; i++ ){
-    for( j = 0; j < tiles.length; j++ ){
-      if( j != i ){
-        if( tiles[j].data[consts.X] - tiles[i].data[consts.X] >= consts.MIN_DIFF ){
-          dist = Math.sqrt( Math.pow( tiles[j].data[consts.X] - tiles[i].data[consts.X], 2 ) + Math.pow( tiles[j].data[consts.Y] - tiles[i].data[consts.Y], 2 ) );
-          connections.push({ startTile: i, endTile: j, dist: dist });
-        }
-      }
-    }
-  }
-
-
-  tools.addPath( game, first, second, 5, true, _ );
-  tools.addPath( game, third, second, 3, true, _ );
-  tools.addPath( game, third, second, 0, false, _ );
-  tools.addPath( game, first, third, 4, true, _ );
-  
-//   now = new Date().getTime();
-//   time = now - start;
-//   console.log("rb4: " + time );
-//   start = new Date().getTime();
-//   
-//   for( i = 0; i < connections.length && i < nPaths; i++ )
-//   {
-//     var nWords = Math.floor( connections[i].dist * 10 );
-//     tools.addPath( game, tiles[connections[i].startTile], tiles[connections[i].endTile], nWords, true, _ );
-//   }
-//   now = new Date().getTime();
-//   time = now - start;
-//   console.log("rb5: " + time );
-//   start = new Date().getTime();
-//   
-//   shuffleArray( connections );
-//   for( j = 0; j < connections.length && j + i < nPaths; j++ )
-//   {
-//     var nWords = Math.floor( connections[j].dist * 10 );
-//     console.log("creating path from " + tiles[connections[j].startTile].data.id + " to " + tiles[connections[j].endTile].data.id );
-//     tools.addPath( game, tiles[connections[j].startTile], tiles[connections[j].endTile], nWords, false, _ );
-//   }
-// 
-//   now = new Date().getTime();
-//   time = now - start;
-//   console.log("rb6: " + time );
 }
 
 function operate( op, requestData, requestIO, broadcastEvent, isAction, isEndTurn, _ ) {
@@ -551,8 +505,7 @@ app.io.route( "game:place-phrase", function( req, _ )
     responseData.active = game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]];
     responseData.success = ret[consts.MADNESS] == 0;
     
-    req.io.respond( responseData );
-    broadcast( game, req.data[consts.USERNAME], responseData );
+    broadcast( game, "game:update", responseData );
   }
   
   var end = new Date().getTime();
