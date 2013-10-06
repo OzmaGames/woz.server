@@ -43,7 +43,7 @@ module.exports =
       word = db.getIndexedNodes( className + "ClassIndex", consts.ID, id, _ )[0];
       
     }catch( ex ){
-      console.log( "couldn't find word in class index" )
+      console.log( "couldn't find word in class index" );
       console.log( ex );
     }
     
@@ -140,10 +140,10 @@ module.exports =
       "MATCH m -[r]-> tile " +
       "WHERE type(r) = \'hasTile\' and ( ";
     for( var i = 0; i < tileIDs.length; i++ ){
-      if( i == 0 ){
-        query += "r.id = " + tileIDs[i]
+      if( i === 0 ){
+        query += "r.id = " + tileIDs[i];
       }else{
-        query += " or r.id = " + tileIDs[i]
+        query += " or r.id = " + tileIDs[i];
       }
     }
       query += " ) RETURN tile;";
@@ -272,7 +272,7 @@ module.exports =
       "MATCH m -[:" + consts.HAS_MAGNET + "]-> magnet ";
     
     for( var a = 0; a < magnetIDs.length; a++ ){
-      if( a == 0 ){
+      if( a === 0 ){
         query += "WHERE ";
       }else{
         query += " OR ";
@@ -314,7 +314,7 @@ module.exports =
       "MATCH m -[r]-> magnet -[:" + consts.REPRESENTS_WORD + "]-> word " +
       "WHERE type(r) = \'" + consts.HAS_MAGNET + "\' and ( ";
       for( i = 0; i < magnetIDs.length; i++ ){
-        if( i == 0 ){
+        if( i === 0 ){
           query += "r.id = " + magnetIDs[i];
         }else{
           query += " or r.id = " + magnetIDs[i];
@@ -340,7 +340,7 @@ module.exports =
     "MATCH m -[r]-> magnet -[:" + consts.REPRESENTS_WORD + "]-> word " +
     "WHERE type(r) = \'" + consts.HAS_MAGNET + "\' and ( ";
     for( i = 0; i < magnetIDs.length; i++ ){
-      if( i == 0 ){
+      if( i === 0 ){
         query += "r.id = " + magnetIDs[i];
       }else{
         query += " or r.id = " + magnetIDs[i];
@@ -365,10 +365,10 @@ module.exports =
     "MATCH m -[r]-> magnet " +
     "WHERE type(r) = \'representsWord\' and ( ";
     for( var i = 0; i < tileIDs.length; i++ ){
-      if( i == 0 ){
-        query += "r.id = " + tileIDs[i]
+      if( i === 0 ){
+        query += "r.id = " + tileIDs[i];
       }else{
-        query += " or r.id = " + tileIDs[i]
+        query += " or r.id = " + tileIDs[i];
       }
     }
     query += " ) RETURN tile;";
@@ -454,8 +454,20 @@ module.exports =
     }
     
     return magnetInfo;
+  },
+
+  getWordsByClass: function( className, _ )
+  {
+    var words = [];
+    var resultsTemp = db.queryNodeIndex( className + "ClassIndex", "id: (*)" , _ );
+    console.log( resultsTemp.length );
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      words.push( resultsTemp[i].data );
+    }
+    
+    return words;
   }
-}
+};
   
   function getEndNodesByRelType( nodeID, relationshipType, _ ){
     var results = [];

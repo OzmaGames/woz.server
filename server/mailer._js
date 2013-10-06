@@ -26,7 +26,7 @@ module.exports =
       subject: "Your marvelous password",
       text: text,
       html: "<b>" + text + "</b>"
-    }
+    };
     
     smtp.sendMail( options, function( error, response ){
       if( error ){
@@ -38,4 +38,4 @@ module.exports =
       smtp.close();
     });
   }
-}
+};

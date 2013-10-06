@@ -45,7 +45,7 @@ module.exports =
     }
     return ret;
   }
-}
+};
 
 function checkLetters( n, where, words, isBegin, _ ) //if not begin -> end
 {
@@ -135,7 +135,7 @@ function checkClass( n, where, words, _ )
 
 function checkCategory( n, where, words, _ )
 {
-  var categoryCount = new Object();
+  var categoryCount = {};
   
   for( var i = 0; i < words.length; i++ )
   {

@@ -22,10 +22,9 @@ module.exports =
   ],
 
   MIN_TILES: "minTiles",
-  MAX_TILES: "maxTiles",
+  
   MIN_PATHS: "minPaths",
   MAX_PATHS: "maxPaths",
-  INSTRUCTIONS: "instructions",
 
   //Word Balance
   BALANCE: [
@@ -77,8 +76,8 @@ module.exports =
   MIN_Y: 0,
   MAX_Y: 0.2,
   MIN_DIFF: 0.075,
-  MAX_ANGLE: 22,
-  MIN_ANGLE: -22,
+  MAX_ANGLE: 5,
+  MIN_ANGLE: -5,
   FIRST_TILE_X: 0.15,
   FIRST_TILE_Y: 0.3,
   SECOND_TILE_X: 0.85,
@@ -133,7 +132,7 @@ module.exports =
     INSTRUCTION: "instruction",
     MAGNET_PLAYER: "magnetPlayer",
     MAGNET_PHRASE: "magnetPhrase",
-  }
+  },
 
   //Count Node
   GAME_COUNT: "gameCount",
@@ -142,12 +141,12 @@ module.exports =
     NWORDS: "nWords",
     END_TILE: "endTile",
     START_TILE: "startTile",
-  }
+  },
   //Path & Phrases
 
   phrases: {
     PATH_ID: "pathID",
-  }
+  },
 
   //Game
   GAMES: {
@@ -219,7 +218,7 @@ module.exports =
     EMAIL: "email",
     BESOZ: "besoz",
     SURNAME: "surname",
-    USERNAME: "username"
+    USERNAME: "username",
     LANGUAGE: "language",
     PASSWORD: "password",
     

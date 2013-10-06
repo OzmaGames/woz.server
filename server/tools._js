@@ -54,6 +54,7 @@ module.exports =
     var now;
     var time;
     
+    var ret;
     var i = 0;
     var j = 0;
     var isRelated = false;
@@ -69,10 +70,10 @@ module.exports =
     
     now = new Date().getTime();
     time = now - start;
-    console.log("am1: " + time );
+//     console.log("am1: " + time );
     start = new Date().getTime();
     
-//     isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
+    isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
     if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
     if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
     var randomAngle = randomizer.getRandomInRange( consts.MIN_ANGLE, consts.MAX_ANGLE );
@@ -90,19 +91,30 @@ module.exports =
     
     now = new Date().getTime();
     time = now - start;
-    console.log("am2: " + time );
+//     console.log("am2: " + time );
     start = new Date().getTime();
     
     player.createRelationshipTo( magnet, consts.HAS_MAGNET, { id: game.data[consts.WORD_COUNT] }, _ );
     magnet.createRelationshipTo( word, consts.REPRESENTS_WORD, {}, _ );
     
-    game.data[consts.WORD_COUNT]++;
-    game.save(_);
-    
     now = new Date().getTime();
     time = now - start;
-    console.log("am3: " + time );
-    start = new Date().getTime();
+//     console.log("am3: " + time );
+    
+    ret = {
+      id: game.data[consts.WORD_COUNT],
+      angle: randomAngle,
+      x: x,
+      y: y,
+      isRelated: isRelated,
+      lemma: word.data[consts.LEMMA],
+      points: word.data[consts.POINTS]
+    };
+
+    game.data[consts.WORD_COUNT]++;
+    game.save(_);
+
+    return ret;
   },
   
   addTile: function( game, x, y, _ )
@@ -168,7 +180,6 @@ module.exports =
     
     var gameObjs = {};
     var tileObjs = [];
-    var pathObjs = [];
     var pathObjs = [];
     var playerObjs = [];
     var phraseMagnetInfo = [];
@@ -242,10 +253,6 @@ module.exports =
         playerMagnetInfo = [];
         currentPlayer = gameInfo[consts.PLAYER][j];
         
-        if( currentPlayer[consts.USERNAME] == scopeUsername ){
-          playerMagnetInfo = getMagnetObject( gameInfo.magnetPlayer, gameInfo.word, scopeUsername );
-        }
-        
         playerObjs.push({
           username : currentPlayer[consts.USERNAME],
           score : currentPlayer[consts.SCORE],
@@ -259,8 +266,10 @@ module.exports =
         gameOver: game.data[consts.GAME_OVER],
         tiles: tileObjs,
         paths: pathObjs,
-        words: playerMagnetInfo
-      }
+        words: getMagnetObject( gameInfo.magnetPlayer, gameInfo.word, scopeUsername )
+      };
+      
+//       console.log( gameObjs[scopeUsername] )
     }
     
     return gameObjs;
@@ -271,7 +280,7 @@ function getMagnetObject( magnets, words, owner ){
   var magnetInfo = [];
   var wordsLength = words.length;
   var magnetsLength = magnets.length;
-
+  
   for ( var m = 0; m < magnetsLength; m++ ){
     if( magnets[m][consts.OWNER] == owner ){
       var currentMagnet = magnets[m];
@@ -291,6 +300,6 @@ function getMagnetObject( magnets, words, owner ){
       }
     }
   }
-
+  
   return magnetInfo;
 }

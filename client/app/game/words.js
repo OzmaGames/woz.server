@@ -17,7 +17,7 @@
     setTimeout(next, 200);
     setTimeout(next, 280);
   }
-
+  
   return {
     words: unplayedWords,
 
@@ -36,24 +36,33 @@
 
     //reposition each word on the screen and add draggable feature to it
     afterRender: function (el, word) {
+
       var $el = $(el);
+
+      if (word.originalX === undefined) word.originalX = word.x;
+      if (word.originalY === undefined) word.originalY = word.y;
+
+      word.x = word.originalX;
+      word.y = word.originalY;
 
       $el.css({
         left: 100 * word.x + '%',
-        top: 100 * word.y + '%',
-        "-webkit-transform": "rotate(" + word.angle + "deg)",
-        "-moz-transform": "rotate(" + word.angle + "deg)",
-        "-ms-transform": "rotate(" + word.angle + "deg)",
-        "-o-transform": "rotate(" + word.angle + "deg)",
-        "transform": "rotateY(" + word.angle + "deg)"
-      });
+        top: 100 * word.y + '%'
+      }).transition({ rotate: word.angle + 'deg' });
+      
+      $el.data("immovable", ctx.words.immovable);
 
       $el.draggable({
 
         withinEl: $el.parent(),
 
         dragStart: function () {
-          ctx.activeWord(word);
+          if (ctx.mode() == 'swap') {
+            word.isSelected(word.isSelected() ^ 1);
+          } else {
+            ctx.activeWord(word);
+            $el.css({ rotate: '0deg' });
+          }          
         },
 
         dropped: function (e, data) {

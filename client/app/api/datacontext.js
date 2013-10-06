@@ -1,42 +1,71 @@
-﻿define(['durandal/app', 'api/constants', 'api/model/Path'], function (app, consts, Path) {
-  var entity = { "id": 62, "players": [{ "username": "ali", "score": 0, "active": true }], "gameOver": false, "tiles": [{ "id": 2, "x": 0.43993822231423113, "y": 0.8845929021248594, "imageID": 0, "imageName": "moon", "instruction": "Animal", "bonus": 0, "mult": 2 }, { "id": 1, "x": 0.8382714773062616, "y": 0.22801022497005757, "imageID": 1, "imageName": "goat", "instruction": "Color", "bonus": 0, "mult": 2 }, { "id": 0, "x": 0.14760901876725255, "y": 0.23710495643317697, "imageID": 2, "imageName": "frozen_cattai", "instruction": "First letter: R * 2", "bonus": 15, "mult": 0 }], "paths": [{ "id": 0, "nWords": 0, "startTile": 2, "endTile": 1, "cw": true }, { "id": 2, "nWords": 4, "startTile": 0, "endTile": 1, "cw": true }, { "id": 1, "nWords": 5, "startTile": 0, "endTile": 2, "cw": true }], "words": [{ "id": 17, "angle": 7.553277058526874, "x": 0.44706671014428134, "y": 0.496058055665344, "isRelated": false, "lemma": "when", "points": 0 }, { "id": 15, "angle": -4.637773255817592, "x": 0.4545704622752964, "y": 0.3054003214929253, "isRelated": false, "lemma": "than", "points": 1 }, { "id": 5, "angle": -20.333526792936027, "x": 0.24070624565938487, "y": 0.3854101828765124, "isRelated": false, "lemma": "fallen", "points": 3 }, { "id": 10, "angle": 14.294656636193395, "x": 0.7015428271377459, "y": 0.26688883325550705, "isRelated": false, "lemma": "our", "points": 4 }, { "id": 23, "angle": -7.543886444531381, "x": 0.3304653938161209, "y": 0.007981031900271773, "isRelated": false, "lemma": "are", "points": 1 }, { "id": 18, "angle": -0.9059076029807329, "x": 0.16618628076976164, "y": 0.18740970140788704, "isRelated": true, "lemma": "winter", "points": 0 }, { "id": 19, "angle": -21.451390463858843, "x": 0.10424689184874296, "y": 0.41166461224202067, "isRelated": false, "lemma": "wall", "points": 4 }, { "id": 14, "angle": -15.164917626418173, "x": 0.25928230688441545, "y": 0.49592204217333347, "isRelated": false, "lemma": "true", "points": 1 }, { "id": 24, "angle": 21.722650265321136, "x": 0.025516607263125476, "y": 0.15358795085921884, "isRelated": false, "lemma": "a", "points": 3 }, { "id": 9, "angle": 19.058700690977275, "x": 0.8573713526711799, "y": 0.2570310782175511, "isRelated": false, "lemma": "this", "points": 1 }, { "id": 22, "angle": -14.35429691337049, "x": 0.14048537210328504, "y": 0.1084639448672533, "isRelated": false, "lemma": "child", "points": 1 }, { "id": 2, "angle": -13.07545108627528, "x": 0.3917357131023891, "y": 0.3795041625853628, "isRelated": false, "lemma": "beach", "points": 3 }, { "id": 20, "angle": 19.63388666510582, "x": 0.8820536932209506, "y": 0.18018567853141576, "isRelated": false, "lemma": "deer", "points": 4 }, { "id": 6, "angle": -15.248865604400635, "x": 0.6223145339405164, "y": 0.309382603620179, "isRelated": false, "lemma": "can", "points": 4 }, { "id": 11, "angle": 10.481568219140172, "x": 0.20344329419312998, "y": 0.33284762944094837, "isRelated": false, "lemma": "high", "points": 2 }, { "id": 1, "angle": -4.724600832909346, "x": 0.45349328966112806, "y": 0.09873836860060692, "isRelated": false, "lemma": "stillness", "points": 3 }, { "id": 0, "angle": -11.93944638967514, "x": 0.5179809470195323, "y": 0.29453191673383117, "isRelated": false, "lemma": "freedom", "points": 1 }, { "id": 13, "angle": 8.9474832508713, "x": 0.5637847134610637, "y": 0.28310390817932785, "isRelated": false, "lemma": "these", "points": 0 }, { "id": 8, "angle": -17.689384745433927, "x": 0.7328529563033953, "y": 0.22677066759206355, "isRelated": false, "lemma": "no", "points": 3 }, { "id": 21, "angle": 12.949642459861934, "x": 0.49898531526559964, "y": 0.1994509322103113, "isRelated": false, "lemma": "neck", "points": 4 }, { "id": 16, "angle": -11.563277670182288, "x": 0.6667018179199659, "y": 0.13959915842860937, "isRelated": false, "lemma": "after", "points": 3 }, { "id": 4, "angle": 8.524152441881597, "x": 0.2801222835667431, "y": 0.41665184777230024, "isRelated": false, "lemma": "note", "points": 3 }, { "id": 12, "angle": 7.802403052337468, "x": 0.4177498383796774, "y": 0.1112453662790358, "isRelated": false, "lemma": "evening", "points": 3 }, { "id": 7, "angle": -15.60585882421583, "x": 0.8982782865874469, "y": 0.1712717809714377, "isRelated": false, "lemma": "woke", "points": 1 }, { "id": 3, "angle": 3.5747553212568164, "x": 0.09429505092557519, "y": 0.26460135425440967, "isRelated": false, "lemma": "told", "points": 3 }] };
+﻿define(['durandal/app', 'api/constants', 'const/DIALOGS', 'api/model/Path'], function (app, consts, DIALOGS, Path) {
+  var entity = { "id": 236, "players": [{ "username": "ali", "score": 0, "active": true }], "gameOver": false, "tiles": [{ "id": 2, "x": 0.4, "y": 0.85, "imageName": "stream", "instruction": "Color", "bonus": 0, "mult": 2 }, { "id": 1, "x": 0.9, "y": 0.35, "imageName": "couple", "instruction": "Feeling", "bonus": 40, "mult": 0 }, { "id": 0, "x": 0.1, "y": 0.35, "imageName": "girl_in_white_dress", "instruction": "First letter: S", "bonus": 10, "mult": 0 }], "paths": [{ "id": 1, "nWords": 3, "startTile": 2, "endTile": 1, "cw": true }, { "id": 0, "nWords": 0, "startTile": 0, "endTile": 1, "cw": true }, { "id": 3, "nWords": 4, "startTile": 0, "endTile": 2, "cw": false }, { "id": 2, "nWords": 0, "startTile": 2, "endTile": 1, "cw": false }], "words": [{ "id": 4, "angle": -2.4890747712925076, "x": 0.39, "y": 0.003343725830782205, "isRelated": false, "lemma": "know", "points": 4 }, { "id": 12, "angle": 4.855778703931719, "x": 0.21, "y": 0.09589990348787979, "isRelated": false, "lemma": "with", "points": 2 }, { "id": 7, "angle": -2.4682276509702206, "x": 0.66, "y": -0.007052935170941055, "isRelated": false, "lemma": "each", "points": 1 }, { "id": 17, "angle": 4.709716886281967, "x": 0.66, "y": 0.09448966444004328, "isRelated": true, "lemma": "girl", "points": 1 }, { "id": 19, "angle": -0.23343893699347973, "x": 0.84, "y": 0.1046301837451756, "isRelated": false, "lemma": "oh", "points": 1 }, { "id": 14, "angle": 1.87691809842363, "x": 0.39, "y": 0.09287928053643554, "isRelated": true, "lemma": "youth", "points": 3 }, { "id": 0, "angle": 1.6466690693050623, "x": 0.03, "y": 0.000015345604624599217, "isRelated": false, "lemma": "hurt", "points": 1 }, { "id": 18, "angle": -4.867282954510301, "x": 0.75, "y": 0.09992109081009404, "isRelated": false, "lemma": "a", "points": 3 }, { "id": 11, "angle": 4.181145133916289, "x": 0.12, "y": 0.10506282772636041, "isRelated": false, "lemma": "around", "points": 1 }, { "id": 1, "angle": 4.117214216385037, "x": 0.12, "y": -0.009585593082010747, "isRelated": false, "lemma": "felt", "points": 3 }, { "id": 6, "angle": 4.663377797696739, "x": 0.5700000000000001, "y": 0.009682223065756262, "isRelated": false, "lemma": "which", "points": 3 }, { "id": 2, "angle": -1.1340026301331818, "x": 0.21, "y": -0.005864166335668415, "isRelated": false, "lemma": "say", "points": 1 }, { "id": 5, "angle": 3.7477757944725454, "x": 0.48, "y": 0.00022682620445266366, "isRelated": false, "lemma": "rather", "points": 4 }, { "id": 10, "angle": 2.1617804397828877, "x": 0.03, "y": 0.10985446009552106, "isRelated": false, "lemma": "most", "points": 2 }, { "id": 15, "angle": 0.19423096207901835, "x": 0.48, "y": 0.09967015598202125, "isRelated": false, "lemma": "haze", "points": 1 }, { "id": 9, "angle": -0.7203417737036943, "x": 0.84, "y": -0.002250864589586854, "isRelated": false, "lemma": "mere", "points": 2 }, { "id": 8, "angle": 1.9881664728745818, "x": 0.75, "y": 0.005816076390910894, "isRelated": false, "lemma": "blue", "points": 2 }, { "id": 13, "angle": 2.1646230202168226, "x": 0.30000000000000004, "y": 0.10688139397650957, "isRelated": false, "lemma": "than", "points": 1 }, { "id": 3, "angle": -2.371837324462831, "x": 0.30000000000000004, "y": -0.008298882383387536, "isRelated": false, "lemma": "hope", "points": 3 }, { "id": 16, "angle": 3.146291032899171, "x": 0.5700000000000001, "y": 0.10912946958560497, "isRelated": false, "lemma": "bear", "points": 0 }] };
 
-  var playerID = 'ali';
+  var username = 'ali';
+
+  app.on('account:login', function (res) {
+    if (res.success) username = res.username;
+  });
 
   var model =
   {
     gameID: 0,
+
+    player: { active: ko.observable() },
     players: ko.observableArray([]),
-
-    gameOver: ko.observable(false),
-
+    
     words: ko.observableArray([]),
     tiles: ko.observableArray([]),
 
     paths: ko.observableArray([]),
 
     loading: ko.observable(null),
+    loadingStatus: ko.observable(''),
 
     activeWord: ko.observable(null),
-    activeWords: ko.observable(null)
+    activeWords: ko.observable(null),
+
+    playerCount: 1
   };
+
+  model.mode = ko.observable(''); //swap;
+  model.words.immovable = ko.computed(function () { return model.mode() == 'swap'; });
 
   model.load = function (playerCount) {
 
     model.loading(true);
 
     app.on("game:start", function (json) {
+
+      model.loadingStatus("Starting The Game...");
+
       model.gameID = json.id;
 
-      model.player = find(json.players, { username: playerID });
-      model.player.active = ko.observable(model.player.active);
+      ko.utils.arrayForEach(json.players, function (player) {
+        if (player.username == username) {
+          model.player.active(player.active);
+          player.active = model.player.active;
+          player.tickets = {
+            swap: 1
+          };
+        } else {
+          player.active = ko.observable(player.active);
+        }
+        player.resigned = ko.observable(player.resigned || false);
+        player.score = ko.observable(player.score);
+      })
+      model.player = find(json.players, { username: username });
       model.players(json.players);
 
+      ko.utils.arrayForEach(json.words, function (word) {
+        word.isSelected = ko.observable(false);
+      });
       model.words(json.words);
 
-      for (var i = 0; i < json.tiles.length; i++) { 
+      for (var i = 0; i < json.tiles.length; i++) {
         json.tiles[i].imageName = consts.getURL(json.tiles[i].imageName);
-        
+        json.tiles[i].info = (json.tiles[i].bonus !== 0 ? '+' + json.tiles[i].bonus : 'X' + json.tiles[i].mult);
+        json.tiles[i].active = ko.observable(false);
       }
       model.tiles(json.tiles);
 
@@ -45,17 +74,98 @@
       });
       model.paths(json.paths);
 
-      model.gameOver(json.gameOver);
-      
-      model.loading(false);
-    });
+      model._gameOver = ko.observable(json.gameOver);
 
-    app.trigger("server:game:queue", { username: playerID, password: 12345, playerCount: playerCount }, function (res) {
-        if (res.success) {
+      model.gameOver = ko.computed(function () {
+        var completedPaths = ko.utils.arrayFilter(this.paths(), function (path) {
+          return path.phrase.complete() === true;
+        });
+        if (completedPaths.length != 0 && completedPaths.length == this.paths().length) return true;
+        return this._gameOver();
+      }, model);
 
+      model.winner = function () {
+        if (model.gameOver()) {
+          var maxScore = 0, winner = model.player;
+          ko.utils.arrayForEach(this.players(), function (player) {
+            if (maxScore < player.score()) {
+              winner = player;
+              maxScore = player.score();
+            }
+          });
+          return winner;
         }
+        return null;
+      };
+      
+      model.loadingStatus("Ready");
+
+      setTimeout(function () { model.loading(false); }, 100);
     });
 
+    app.on("game:update", function (json) {
+      app.loading(false);
+      if (json.success) {
+        for (var i = 0; i < json.playerInfo.length; i++) {
+          var jplayer = json.playerInfo[i];
+          var cplayer = find(model.players(), { username: jplayer.username });
+          var scored = jplayer.score - cplayer.score();
+
+          cplayer.score(jplayer.score);
+          cplayer.active(jplayer.active);
+          cplayer.resigned(jplayer.resigned || false);
+
+          if (cplayer.username == model.player.username) {
+            if(scored) app.woz.dialog.show("alert", { content: "You scored <b>" + scored + "</b> points!" });
+
+            if (json.words) {
+              for (var j = 0; j < json.words.length; j++) {
+                json.words[j].isSelected = ko.observable(false);
+                model.words.push(json.words[j]);
+              }
+            }
+
+          }
+        }
+        if (model.player.active()) {
+          model.player.tickets.swap = 1;
+        }
+
+        model._gameOver(json.gameOver || false);
+        if (model.gameOver()) {
+          app.woz.dialog.close("slipper");
+          var winner = model.winner(), data;
+          if (winner == model.player) {
+            data = DIALOGS.GAME_OVER_YOU_WON;            
+          } else {
+            data = DIALOGS.GAME_OVER_THEY_WON;            
+          }
+          data.content = $('<b/>', { text: data.content }).prepend('<br/>').html();
+          app.woz.dialog.show("notice", data);
+        }
+
+        model.players.valueHasMutated();
+      }
+    });
+
+    app.on("game:swap-words", function (json) {
+      if (json.success && json.words) {
+        for (var j = 0; j < json.oldWords.length; j++) {
+          var word = ko.utils.arrayFirst(model.words(), function (w) { return w.id == json.oldWords[j]; });
+          model.words.remove(word);
+        }
+        for (var j = 0; j < json.words.length; j++) {
+          json.words[j].isSelected = ko.observable(false);
+          model.words.push(json.words[j]);
+        }
+      }
+    });
+
+    model.loadingStatus("Waiting for server...");
+
+    setTimeout(function () {
+      app.trigger("server:game:queue", { username: username, password: 12345, playerCount: playerCount });
+    }, 2000);
     //app.trigger("game:start", entity);
   }
 
@@ -67,7 +177,11 @@
     return ko.utils.arrayFilter(model.words(), function (word) { return !(word.isPlayed || false); });
   });
 
-  return model;
+  model.selectedWords = ko.computed(function () {
+    return ko.utils.arrayFilter(model.words(), function (word) { return word.isSelected(); });
+  });
+
+  return window.ctx = model;
 
   function find(arr, data) {
     for (var i = 0; i < arr.length; i++)

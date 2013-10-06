@@ -1,37 +1,18 @@
 ﻿define(['socket', 'durandal/app'], function (socket, app) {
 
-  var subscriptions = [];
+  var connected = $.Deferred();
 
-//   var socket = io.connect("http://wordstesting.herokuapp.com:80");
-  var socket = io.connect("http://localhost:8080");
-
+  socket = io.connect("http://localhost:8080");
+//   socket = io.connect("http://wordstesting.herokuapp.com:80");  
   socket.on('connect', function () {
+    connected.resolve();
     console.log("connected");
-
-    //var playerID = 'test';
-    //socket.emit("account:login", { playerID: playerID, password: '12345' }, function (data) {
-    //    console.log("%c login", 'background: #222; color: #bada55', data);
-
-    //    socket.on("game:updates", function (data) {
-    //        console.log('%c game:updates', 'background: #222; color: #bada55', data);
-    //        app.trigger("game:updates", $.parseJSON(data));
-    //    });
-
-    //    /// res = game object, the big bad ass object
-    //    socket.on("game:start", function (data) {
-    //        console.log('%c game:start', 'background: #222; color: #bada55', data);
-    //        console.log(JSON.stringify(data));
-    //        app.trigger("game:start", $.parseJSON(data));
-    //    });
-
-    //    socket.emit("game:queue", { playerID: playerID, playerCount: 1 }, function (data) {
-    //        console.log("%c queue", 'background: #222; color: #bada55', data)
-    //    });
-    //});
-    //socket.emit("game:place-phrase", { playerID: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' }, function (b) { console.log(b); });
-    //console.log("connected");
-
   });
+  socket.on('disconnect', function () {
+    connected.reject();
+    console.log("disconnected");
+  });
+
 
   var applicationEvents = {
 
@@ -67,7 +48,6 @@
     /// data = {gameId: #, username: '', phrase: { words: [#, #, #, ..] }, path: #}
     /// res = {success: true|false, errorMessage: ''}
     "server:game:place-phrase": function (data, callback) {
-      console.log('%c game:place-phrase', 'background: #222; color: #bada55', data);
       socket.emit("game:place-phrase", data, callback);
     },
 
@@ -80,7 +60,11 @@
     /// data = {gameId: #, username: '', words: [#, #, #, ..]}
     /// res = {success: true|false, errorMessage: '', newWords: [#, #, #, ..]}
     "server:game:swap-words": function (data, callback) {
-      socket.emit("game:swap-words", data, callback);
+      socket.emit("game:swap-words", data, function (res) {
+        res.oldWords = data.words;
+        app.trigger("game:swap-words", res);
+        if(callback) callback(res);
+      });
     },
 
     /// data = {gameId: #, username: ''}
@@ -89,45 +73,43 @@
       socket.emit("game:skip-turn", data, callback);
     },
 
+    "server:game:resign": function (data, callback) {
+      socket.emit("game:resign", data, callback);        
+    },
+
     /// data = {username: ''}
     /// res = {success: true|false, errorMessage: ''}
-    "server:game:queue": function (data, callback) {
-     
-      if (socket.socket.connected === true) {
-        runOnce(data, callback);
-      }
-      else {
-        socket.once('connect', function () {
-          runOnce(data, callback);
-        });
-      }
-
-      function runOnce(data, callback) {
+    "server:game:queue": function (data, callback) {     
         /// res = {players: [{id: #, score: #},..], phrases: [{id: #, words:[]},..]}
-        socket.on("game:updates", function (data) {
-          console.log('%c game:updates', 'background: #222; color: #bada55', data);
-          app.trigger("game:updates", data);
+        socket.on("game:update", function (data) {
+          console.log('%cgame:update', 'background: #222; color: #bada55', data);
+          app.trigger("game:update", data);
         });
 
         /// res = game object, the big bad ass object
         socket.on("game:start", function (data) {
-          console.log('%c game:start', 'background: #222; color: #bada55', data);
+          console.log('%cgame:start', 'background: #222; color: #bada55', data);
           app.trigger("game:start", data);
         });
 
         //TODO: level: 1,2,3
-        socket.emit("game:queue", data, function (data) {
-          console.log("%c queue", 'background: #222; color: #bada55', data);
-          callback(data);
-        });
-
-        console.log('Q request Sent...');
-      }
+        socket.emit("game:queue", data, callback);                
     }
   };
 
   for (var event in applicationEvents) {
-    app.on(event).then(applicationEvents[event]);
+    addEvent(event, applicationEvents[event]);
   }
 
+  function addEvent(event, func) {
+    app.on(event).then(function (data, callback) {
+      connected.promise().then(function () {
+        console.log('%c' + event + ' sent:', 'background: #222; color: #bada55', data);
+        func(data, function (sdata) {
+          console.log('%c' + event + ' received:', 'background: #222; color: #bada55', sdata);
+          if (callback) callback(sdata);
+        });
+      });
+    });
+  }
 });

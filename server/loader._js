@@ -6,27 +6,23 @@ var neo4j = require("neo4j"),
 
 var db = new neo4j.GraphDatabase(environment.DB_URL);
 
-var words;
-var images;
+var words = {};
+var images = {};
 
 module.exports =
 {
   loadWords: function( _ )
   {
-    words = 0;
-    words = db.queryNodeIndex( consts.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
-    console.log( words );
-
-    for( var i = 0; i < words.length; i++ ){
-      console.log( words[i].data );
-
-    }
+    var i = 0;
     
+    for( i = 0; i < consts.CLASS_NAMES.length; i++ ){
+      words[consts.CLASS_NAMES[i]] = retriever.getWordsByClass( consts.CLASS_NAMES[i], _ );
+    }
   },
 
   loadImages: function( _ )
   {
-    iamges = 0;
+    
   },
 
 };

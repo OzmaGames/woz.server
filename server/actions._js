@@ -10,6 +10,7 @@ module.exports =
 {
   swapWords: function( game, username, magnetIDs, _ ){
     var mw;
+    var ret = [];
     var words = [];
     var magnets = [];
 
@@ -42,5 +43,7 @@ module.exports =
         console.log( ex );
       }
     }
+
+    return ret;
   }
 };

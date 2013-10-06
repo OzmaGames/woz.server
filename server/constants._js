@@ -77,14 +77,14 @@ module.exports =
   MIN_Y: 0,
   MAX_Y: 0.2,
   MIN_DIFF: 0.075,
-  MAX_ANGLE: 22,
-  MIN_ANGLE: -22,
+  MAX_ANGLE: 5,
+  MIN_ANGLE: -5,
   FIRST_TILE_X: 0.1,
-  FIRST_TILE_Y: 0.3,
+  FIRST_TILE_Y: 0.35,
   SECOND_TILE_X: 0.9,
-  SECOND_TILE_Y: 0.3,
+  SECOND_TILE_Y: 0.35,
   THIRD_TILE_X: 0.4,
-  THIRD_TILE_Y: 0.8,
+  THIRD_TILE_Y: 0.85,
   TILE_ID_OFFSET: 2500,
 
   //Event Names
@@ -130,7 +130,6 @@ module.exports =
   IMAGE: "image",
   PHRASE: "phrase",
   PLAYER: "player",
-  CONDITION: "condition",
   INSTRUCTION: "instruction",
   MAGNET_PLAYER: "magnetPlayer",
   MAGNET_PHRASE: "magnetPhrase",
@@ -154,6 +153,7 @@ module.exports =
   SOCKET: "socket",
   MADNESS: "madness",
   USERNAME: "username",
+  RESIGNED: "resigned",
   GAME_OVER: "gameOver",
   USERNAMES: "usernames",
   TILE_COUNT: "tileCount",
@@ -161,6 +161,7 @@ module.exports =
   ACTION_DONE: "actionDone",
   PLAYER_COUNT: "playerCount",
   PHRASE_COUNT: "phraseCount",
+  RESIGNED_COUNT: "resignedCount",
 
   //Magnets & Tiles
   X: "x",
@@ -184,7 +185,6 @@ module.exports =
 
   //Users
   SALT: "salt",
-  NAME: "name",
   EMAIL: "email",
   BESOZ: "besoz",
   SURNAME: "surname",

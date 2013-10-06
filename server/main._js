@@ -104,7 +104,7 @@ function placePhrase( game, username, pathID, magnetIDs, _ )
   
   ret[consts.MADNESS] = canIPlayWithMadness( words, wordCount, _ );
   
-  if( ret[consts.MADNESS] == 0 )
+  if( ret[consts.MADNESS] === 0 )
   {
     phrase = tools.createNode({
       type: consts.PHRASE,
@@ -115,7 +115,7 @@ function placePhrase( game, username, pathID, magnetIDs, _ )
     player.createRelationshipTo( phrase, consts.WROTE, {}, _ );
     game.createRelationshipTo( phrase, consts.HAS_PHRASE, {}, _ );
     
-    for( var i = 0; i < wordCount; i++ )  //disconnect from the player, connect to the phrase. replace with new magnets
+    for( i = 0; i < wordCount; i++ )  //disconnect from the player, connect to the phrase. replace with new magnets
     {  
       var currentWord = words[i];
       var currentMagnet = magnets[i];
@@ -127,18 +127,19 @@ function placePhrase( game, username, pathID, magnetIDs, _ )
       currentMagnet.data[consts.TYPE] = consts.MAGNET_PHRASE;
       currentMagnet.save(_);
       
-      ret[consts.WORDS].push( currentWord.data[consts.LEMMA] );
-      tools.addMagnet( game, player, currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], currentMagnet.data.x, currentMagnet.data.y, _ );  //replace it with a new magnet
+      ret[consts.WORDS].push( tools.addMagnet( game, player, currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], currentMagnet.data.x, currentMagnet.data.y, _ ) );  //replace it with a new magnet
     }
     
     score = scoringTime( words, tiles, _ );
+    
     player.data[consts.SCORE] += score;
     ret[consts.SCORE] = player.data[consts.SCORE];
     
-    game.data[consts.GAME_OVER] = isTheGameOver( game, _ );
     game.data[consts.ACTION_DONE] = false;
     game.data[consts.PHRASE_COUNT]++;
-    game.data[consts.TURN]++;
+    
+    game.data[consts.GAME_OVER] = isTheGameOver( game, _ );
+    if( !game.data[consts.GAME_OVER] ) game.data[consts.TURN]++;
     
     player.save(_);
     game.save(_);
@@ -151,7 +152,8 @@ function placePhrase( game, username, pathID, magnetIDs, _ )
   return ret;
 }
 
-function scoringTime( words, tiles, _ ){
+function scoringTime( words, tiles, _ )
+{
   var i, j;
   var mult = 0;
   var score = consts.BASE_POINTS;
@@ -195,7 +197,7 @@ function scoringTime( words, tiles, _ ){
     mult += secondTileInstruction.data[consts.MULT];
   }
   
-  if( mult != 0 ){
+  if( mult !== 0 ){
     score = score * mult;
   }
   
@@ -216,13 +218,13 @@ function isTheGameOver( game, _ )
 function canIPlayWithMadness( words, wordCount, _ ){
   var madness = 0;
   
-  if( words.length == 0 ){
+  if( words.length === 0 ){
     madness = 1;
   }else if( words.length != wordCount ){
     madness = 2;
   }
   
-  if( madness != 0 ) console.log( "madness? " + madness );
+  if( madness !== 0 ) console.log( "madness? " + madness );
   
   return madness;
 }
@@ -232,8 +234,9 @@ function createGame( usernames, level, _ )
   var now;
   var time = 0;
   var start = new Date().getTime();
-  
-  var i, j, k = 0;
+
+  var player;
+  var a, i, j, k = 0;
   var gameID = tools.getNewGameID(_);
   var playerCount = usernames.length;
 
@@ -254,7 +257,8 @@ function createGame( usernames, level, _ )
     pathCount: 0,
     phraseCount: 0,
     usernames: usernames,
-    playerCount: playerCount
+    playerCount: playerCount,
+    resignedCount: 0
   }, _ );
 
   now = new Date().getTime();
@@ -263,41 +267,53 @@ function createGame( usernames, level, _ )
   start = new Date().getTime();
   
   game.index( consts.GAME_INDEX, consts.ID, gameID, _ );
-  for( var a = 0; a < playerCount; a++ )  //creates a player instance for each player
-  {
-    var username = usernames[a];
-    var user = retriever.getUser( username, _ );
-    
-    var player = tools.createNode({
-      type: consts.PLAYER,
-      username: username,
-      score: 0,
-      order: a
-    }, _ );
-    
-    user.createRelationshipTo( game, consts.PLAYS, {}, _ );
-    game.createRelationshipTo( player, consts.BEING_PLAYED_BY, {}, _ );
-  }
   
   now = new Date().getTime();
   time = now - start;
   console.log("cg3: " + time );
-  
+  start = new Date().getTime();
   
   try
   {
     randomizeBoard( game, level, _ );
-    start = new Date().getTime();
-    for( i = 0; i < consts.BALANCE.length; i++ ){
-      for( j = 0; j < consts.BALANCE[i]; j++ ){
-        tools.addMagnet( game, player, consts.CLASS_NAMES[i], k > 9 ? (k-12) * 0.09 : k * 0.09, k > 9 ? 0.2 + randomizer.getSignedRandomInRange(0, 0.01) : 0.1 + randomizer.getSignedRandomInRange(0, 0.01), _ );
-        k++;
-      }
-    }
-    
+
     now = new Date().getTime();
     time = now - start;
     console.log("cg4: " + time );
+    start = new Date().getTime();
+    
+    for( a = 0; a < playerCount; a++ )  //creates a player instance for each player
+    {
+      var username = usernames[a];
+      var user = retriever.getUser( username, _ );
+      
+      player = tools.createNode({
+        type: consts.PLAYER,
+        username: username,
+        score: 0,
+        order: a,
+        resigned: false
+      }, _ );
+      
+      user.createRelationshipTo( game, consts.PLAYS, {}, _ );
+      game.createRelationshipTo( player, consts.BEING_PLAYED_BY, {}, _ );
+      
+      now = new Date().getTime();
+      time = now - start;
+      console.log("cg5: " + time );
+      start = new Date().getTime();
+      
+      k = 0;
+      for( i = 0; i < consts.BALANCE.length; i++ ){
+        for( j = 0; j < consts.BALANCE[i]; j++ ){
+          tools.addMagnet( game, player, consts.CLASS_NAMES[i], k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03, k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01), _ );
+          k++;
+        }
+      }
+    }
+    now = new Date().getTime();
+    time = now - start;
+    console.log("cg6: " + time );
   }
   catch( ex )
   {
@@ -337,7 +353,8 @@ function randomizeBoard( game, level, _ )
   console.log("rb2: " + time );
   start = new Date().getTime();
   
-  tools.addPath( game, first, second, 5, true, _ );
+//   tools.addPath( game, first, second, 5, true, _ );
+  tools.addPath( game, first, second, 0, true, _ );
   tools.addPath( game, third, second, 3, true, _ );
   tools.addPath( game, third, second, 5, false, _ );
   tools.addPath( game, first, third, 4, false, _ );
@@ -347,57 +364,45 @@ function randomizeBoard( game, level, _ )
   console.log("rb3: " + time );
 }
 
-function operate( op, requestData, requestIO, broadcastEvent, isAction, isEndTurn, _ ) {
-  var start = new Date().getTime();
-  process.stdout.write( op );
-  
-  var game = retriever.getGame( requestData.gameID, _ );
-  if( game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]] == requestData[consts.USERNAME] ){
-    if( !isAction || ( isAction && !game.data[consts.ACTION_DONE] ) ){
-      if( op != "end:turn" ){
-        runOperation( op, game, requestData, _ );
-      }
-      
-      if( isAction ){
-        operations.setActionDone( game, true, _ );
-      }
-      
-      if( isEndTurn ){
-        operations.endTurn( game, _ );
-      }
-      
-      var jsonObjs = tools.getGameObject( game, game.data[consts.USERNAMES], 0, _ );
-      
-      if( requestIO != false ){
-        requestIO.respond( jsonObjs[ requestData[consts.USERNAME] ] );
-      }
-      
-      if( broadcastEvent != false ){
-        broadcast( game, requestData[consts.USERNAME], broadcastEvent, jsonObjs );
-      }
-      var end = new Date().getTime();
-      var time = end - start;
-      console.log( " took: " + time + "ms" );
-    }
-  }
-};
-
-function runOperation( op, game, data, _ )
-{  
-  if( op == "swap:words" ){
-    actions.swapWords( game, data[consts.USERNAME], data.magnetIDs, _ );
-  }
-};
-
-function broadcast( game, eventName, jsonObjs )
+function broadcastGameObject( game, eventName, jsonObjs )
 {
   for( var i = 0; i < game.data[consts.PLAYER_COUNT]; i++ ){
     sockets[ "game" + game.data.id ][ game.data[consts.USERNAMES][i] ].emit( eventName, jsonObjs[ game.data[consts.USERNAMES][i] ] );
   }
-};
+}
 
-//  Randomize array element order in-place using Fisher-Yates shuffle algorithm.*
-function shuffleArray( array ){
+function broadcast( game, eventName, responseData )
+{
+  for( var i = 0; i < game.data[consts.PLAYER_COUNT]; i++ ){
+    sockets[ "game" + game.data.id ][ game.data[consts.USERNAMES][i] ].emit( eventName, responseData );
+  }
+}
+
+function fillGameUpdateData( game, data, _ )
+{
+  var i = 0;
+  var player;
+  var responseData = data;
+  
+  responseData.gameOver = game.data[consts.GAME_OVER];
+  
+  for( i = 0; i < game.data[consts.PLAYER_COUNT]; i++ ){
+    player = retriever.getGamePlayerByID( game.id, game.data[consts.USERNAMES][i], _ );
+    responseData.playerInfo.push({
+      username: game.data[consts.USERNAMES][i],
+      score: player.data[consts.SCORE],
+      active: game.data[consts.GAME_OVER] === true ? false :
+        game.data[consts.USERNAMES][i] === game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]],
+      resigned: player.data[consts.RESIGNED]
+    });
+  }
+  
+  return responseData;
+}
+
+//  Randomize array element order in-place using the Fisher-Yates shuffle algorithm.*
+function shuffleArray( array )
+{
   for( var i = array.length - 1; i > 0; i-- ){
     var j = Math.floor( Math.random() * (i + 1) );
     var temp = array[i];
@@ -420,7 +425,7 @@ app.io.route( "account:login", function( req, _ )
   var responseData = { success: false };
   var user = users.login( req.data.username, req.data[consts.PASSWORD], _ );
   
-  if( user != false ){
+  if( user !== false ){
     active[ req.data[consts.USERNAME] ] = { socket: req.io, active: true, lastActive: new Date() };
     responseData = { success: true };
   }
@@ -470,13 +475,13 @@ app.io.route( "game:queue", function( req, _ )
       var start2 = new Date().getTime();
       game = createGame( usernames, 0, _ );
       var now2 = new Date().getTime();
-      console.log("8: " + ( now2 - start2 ) );
+      console.log("q: " + ( now2 - start2 ) );
       
       if( game )
       {
         sockets[ "game" + game.data[consts.ID] ] = tempSockets;
         jsonObjs = tools.getGameObject( game, usernames, _ );
-        broadcast( game, consts.START_GAME, jsonObjs );
+        broadcastGameObject( game, consts.START_GAME, jsonObjs );
       }
       
       var end = new Date().getTime();
@@ -488,25 +493,24 @@ app.io.route( "game:queue", function( req, _ )
 
 app.io.route( "game:place-phrase", function( req, _ )
 {
-  req.data.username = "ali";
-  
   var start = new Date().getTime();
   process.stdout.write("placing phrase ");
-  
+
   var ret;
-  var responseData = {};
+  var i = 0;
   var game = retriever.getGame( req.data.gameID, _ );
+  var responseData = { success: false, playerInfo: [] };
   
-  if( game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]] == req.data[consts.USERNAME] ){
-    
+  if( game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]] == req.data[consts.USERNAME] )
+  {
     ret = placePhrase( game, req.data[consts.USERNAME], req.data.pathID, req.data.words, _ );
     
-    responseData.score = ret.score;
-    responseData.active = game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]];
-    responseData.success = ret[consts.MADNESS] == 0;
-    
-    broadcast( game, "game:update", responseData );
+    responseData = fillGameUpdateData( game, responseData, _ );
+    responseData.words = ret[consts.WORDS];
+    responseData.success = ret[consts.MADNESS] === 0;
   }
+  
+  broadcast( game, "game:update", responseData );
   
   var end = new Date().getTime();
   var time = end - start;
@@ -522,25 +526,69 @@ app.io.route( "game:move-word", function( req, _ )
   if( game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]] == req.data[consts.USERNAME] ){
     operations.move( game.id, req.data.wordID, req.data.x, req.data.y, req.data.angle, _ );
   }
+  
   var end = new Date().getTime();
   var time = end - start;
   console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "game:swap-words", function( req, _ ) {
-  operate( "swap:words", req.data, req.io, false, true, false, _ );
-});
+app.io.route( "game:swap-words", function( req, _ )
+{
+  var start = new Date().getTime();
+  process.stdout.write("swapping words ");
 
-app.io.route( "swap:tile", function( req, _ ) {
-  operate( "swap:tile", req.data, req.io, consts.REFRESH, true, false, _ );
-});
-
-app.io.route( "add:tile", function( req, _ ) {
-  operate( "add:tile", req.data, req.io, consts.REFRESH, true, false, _ );
+  var responseData = { success: false, words: [] };
+  var game = retriever.getGame( req.data.gameID, _ );
+  
+  if( game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]] == req.data[consts.USERNAME] )
+  {
+    responseData.words = operations.swapWords( game, req.data[consts.USERNAME], req.data.words, _ );
+    
+    responseData.success = true;
+  }
+  req.io.respond( responseData );
+  
+  var end = new Date().getTime();
+  var time = end - start;
+  console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "end:turn", function( req, _ ) {
-  operate( "end:turn", req.data, req.io, consts.END_TURN, false, true, _ );
+  operations.endTurn( game, _ );
+});
+
+app.io.route( "game:resign", function( req, _ )
+{
+  var start = new Date().getTime();
+  process.stdout.write("resigning ");
+  
+  var ret;
+  var i = 0;
+  var player;
+  var game = retriever.getGame( req.data.gameID, _ );
+  var responseData = { success: false, playerInfo: [] };
+  
+  if( game.data[consts.GAME_OVER] === false )
+  {
+    player = retriever.getGamePlayerByID( game.id, game.data[consts.USERNAMES][i], _ );
+    player.data[consts.RESIGNED] = true;
+    game.data[consts.RESIGNED_COUNT]++;
+    
+    if( game.data[consts.RESIGNED_COUNT] + 1 >= game.data[consts.PLAYER_COUNT] ){
+      game.data[consts.GAME_OVER] = true;
+    }
+    
+    game.save(_);
+    player.save(_);
+    
+    responseData =  fillGameUpdateData( game, responseData, _ );
+    responseData.success = true;
+  }
+  broadcast( game, "game:update", responseData );
+
+  var end = new Date().getTime();
+  var time = end - start;
+  console.log( "took: " + time + "ms" );
 });
 
 console.log("server ready");

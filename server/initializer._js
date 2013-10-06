@@ -60,7 +60,7 @@ module.exports =
       currentWordNode.index( consts.WORD_LEMMA_INDEX, consts.LEMMA, currentWord.lemma, _ );
       
       var categories = currentWord.categories.split(', ');
-      if( categories.length > 0 && categories[0] != "" ){
+      if( categories.length > 0 && categories[0] !== "" ){
         currentWordNode.data.categories = categories;
         currentWordNode.save(_);
       }
