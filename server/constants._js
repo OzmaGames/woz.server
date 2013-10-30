@@ -4,8 +4,7 @@ module.exports =
 {
   //Score
   BASE_POINTS: 0,
-  UNCONNECTED_BONUS: 4,
-  RELATED_WORD_BONUS: 6,
+  RELATED_WORD_BONUS: 10,
   INSPIRATIONAL_PENALTY: 3,
   
   //Total Counts
@@ -16,17 +15,45 @@ module.exports =
   RELATED_ARRAY_INDEX: 7,
   
   CLASS_COUNTS: {
-    noun: 303,  //noun
-    verb: 193,  //verb
-    adverb: 78,  //adverb
-    pronoun: 42,  //pronoun
-    adjective: 132,  //adjective
-    preposition: 37,  //preposition
-    conjunction: 20,  //conjunction
-    related: 183,  //related
-    other: 5  //other
+    basic:{
+      noun: 134,  //noun
+      verb: 161,  //verb
+      adverb: 77,  //adverb
+      pronoun: 42,  //pronoun
+      adjective: 113,  //adjective
+      preposition: 36,  //preposition
+      conjunction: 20,  //conjunction
+      related: 0,  //related
+      other: 5  //other
+    },
+    starter:
+    {
+      noun: 165,  //noun
+      verb: 32,  //verb
+      adverb: 0,  //adverb
+      pronoun: 0,  //pronoun
+      adjective: 18,  //adjective
+      preposition: 0,  //preposition
+      conjunction: 0,  //conjunction
+      related: 183,  //related
+      other: 0  //other
+    },
+    nightfall:
+    {
+      noun: 73,  //noun
+      verb: 21,  //verb
+      adverb: 1,  //adverb
+      pronoun: 0,  //pronoun
+      adjective: 25,  //adjective
+      preposition: 0,  //preposition
+      conjunction: 0,  //conjunction
+      related: 0,  //related
+      other: 0  //other
+    }
   },
 
+  COLLECTION_NAMES:  [ "basic", "starter", "nightfall" ],
+  
   //Word Balance
   BALANCE: [
     1,  //noun
@@ -43,6 +70,7 @@ module.exports =
   CLASS_NAMES: [
     "noun",
     "verb",
+    
     "adverb",
     "pronoun",
     "adjective",
@@ -54,8 +82,8 @@ module.exports =
   
   //Indexes
   COUNT_NODE_ID : 1,
-  WORD_ID_INDEX : "wordIDIndex",
-  WORD_LEMMA_INDEX : "wordLemmaIndex",
+  WORD_ID_INDEX : "WordIDIndex",
+  WORD_LEMMA_INDEX : "WordLemmaIndex",
   
   GAME_INDEX : "gameIndex",
   IMAGE_INDEX : "imageIndex",

@@ -22,7 +22,8 @@ module.exports =
       password = salt + password;
       password = crypto.SHA3( password ).toString();
       
-      if( !retriever.getUser( username, _ )  )
+//       if( !retriever.getUser( username, _ )  )
+      if( true )
       {
         var user = tools.createNode({
           type: consts.USER,

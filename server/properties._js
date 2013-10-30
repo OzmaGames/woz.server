@@ -131,7 +131,7 @@ module.exports =
     
     INSTRUCTION: "instruction",
     MAGNET_PLAYER: "magnetPlayer",
-    MAGNET_PHRASE: "magnetPhrase",
+    MAGNET_PHRASE: "magnetPhrase"
   },
 
   //Count Node
@@ -140,12 +140,12 @@ module.exports =
     CW: "cw",
     NWORDS: "nWords",
     END_TILE: "endTile",
-    START_TILE: "startTile",
+    START_TILE: "startTile"
   },
   //Path & Phrases
 
   phrases: {
-    PATH_ID: "pathID",
+    PATH_ID: "pathID"
   },
 
   //Game
@@ -161,7 +161,7 @@ module.exports =
     TILE_COUNT: "tileCount",
     PATH_COUNT: "pathCount",
     PLAYER_COUNT: "playerCount",
-    PHRASE_COUNT: "phraseCount",
+    PHRASE_COUNT: "phraseCount"
   },
   
     ORDER: "order",
@@ -176,7 +176,7 @@ module.exports =
     LEMMA: "lemma",
     POINTS: "points",
     CLASSES: "classes",
-    CATEGORIES: "categories",
+    CATEGORIES: "categories"
   },
   
   MAGNETS: {
@@ -186,12 +186,12 @@ module.exports =
     ANGLE: "angle",
     OWNER: "owner",
     IS_RELATED: "isRelated",
-    REPRESENTED_WORD: "representedWord",
+    REPRESENTED_WORD: "representedWord"
   },
   
   IMAGE: {
     NAME: "name",
-    RELATED: "related",
+    RELATED: "related"
   },
   
   CONNECTED_TO: "connectedTo",
@@ -203,7 +203,7 @@ module.exports =
     MULT: "mult",
     BONUS: "bonus",
     LEVEL: "level",
-    CONDITION: "condition",
+    CONDITION: "condition"
   },
   
   SHORT_DESCRIPTION : "shortDescription",
@@ -223,7 +223,7 @@ module.exports =
     PASSWORD: "password",
     
     STARTING_BESOZ: 10
-  },
+  }
 
   //End of Constants
 };

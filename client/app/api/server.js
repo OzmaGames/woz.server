@@ -2,8 +2,8 @@
 
   var connected = $.Deferred();
 
+//   socket = io.connect("http://wordstesting.herokuapp.com:80");
   socket = io.connect("http://localhost:8080");
-//   socket = io.connect("http://wordstesting.herokuapp.com:80");  
   socket.on('connect', function () {
     connected.resolve();
     console.log("connected");

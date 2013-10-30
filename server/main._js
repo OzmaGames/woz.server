@@ -58,7 +58,13 @@ if ( environment.IS_HEROKU ) {
 
 try
 {
-  retriever.getCountNode(_);
+  var countNode = retriever.getCountNode(_);
+  
+//   consts.CLASS_COUNTS = {}; 
+//   for( var i = 0; i < consts.COLLECTION_NAMES.length; i++ ){
+//     consts.CLASS_COUNTS[ consts.COLLECTION_NAMES[i] ] = countNode.data[ consts.COLLECTION_NAMES + "ClassCounts" ];
+//   }
+  console.log( consts.CLASS_COUNTS );
 }
 catch( exception )
 {
@@ -71,7 +77,8 @@ catch( exception )
   console.log( "done." );
 }
 
-// loader.loadWords( _ );
+var allWords;
+allWords = loader.loadWords( _ );
 
 function placePhrase( game, username, pathID, magnetIDs, _ )
 {
@@ -168,15 +175,22 @@ function scoringTime( words, tiles, _ )
     var currentWord = words[i];
     
     score += currentWord.data[consts.POINTS];
+
+    console.log( "you're getting " + currentWord.data[consts.POINTS] + " points for " + currentWord.data[consts.LEMMA] );
+    
     for( j = 0; j < firstTileImage.data.related.length; j++ ){
-      if( firstTileImage.data.related[j] == currentWord.data[consts.REPRESENTED_WORD] ){
+      console.log( firstTileImage.data.related[j] + " - " + currentWord.data[consts.ID]);
+      if( firstTileImage.data.related[j] == currentWord.data[consts.ID] ){
         score += consts.RELATED_WORD_BONUS;
+        console.log( "and its related" );
       }
     }
     
     for( j = 0; j < secondTileImage.data.related.length; j++ ){
-      if( secondTileImage.data.related[j] == currentWord.data[consts.REPRESENTED_WORD] ){
+      console.log( secondTileImage.data.related[j] + " - " + currentWord.data[consts.ID]);
+      if( secondTileImage.data.related[j] == currentWord.data[consts.ID] ){
         score += consts.RELATED_WORD_BONUS;
+        console.log( "and its related" );
       }
     }
   }
@@ -229,22 +243,25 @@ function canIPlayWithMadness( words, wordCount, _ ){
   return madness;
 }
 
-function createGame( usernames, level, _ )
+function createGame( usernames, collectionName, level, _ )
 {
+  console.log( "1" );
   var now;
   var time = 0;
   var start = new Date().getTime();
 
   var player;
+  var nWords;
+  var randomArray;
   var a, i, j, k = 0;
   var gameID = tools.getNewGameID(_);
   var playerCount = usernames.length;
-
+  console.log( "2" );
   now = new Date().getTime();
   time = now - start;
   console.log("cg1: " + time );
   start = new Date().getTime();
-
+  console.log( "3" );
   var game = tools.createNode({
     type: consts.GAME,
     id: gameID,
@@ -260,14 +277,14 @@ function createGame( usernames, level, _ )
     playerCount: playerCount,
     resignedCount: 0
   }, _ );
-
+  console.log( "4" );
   now = new Date().getTime();
   time = now - start;
   console.log("cg2: " + time );
   start = new Date().getTime();
   
   game.index( consts.GAME_INDEX, consts.ID, gameID, _ );
-  
+  console.log( "5" );
   now = new Date().getTime();
   time = now - start;
   console.log("cg3: " + time );
@@ -275,18 +292,19 @@ function createGame( usernames, level, _ )
   
   try
   {
+    console.log( "6" );
     randomizeBoard( game, level, _ );
-
+    console.log( "7" );
     now = new Date().getTime();
     time = now - start;
     console.log("cg4: " + time );
     start = new Date().getTime();
-    
+    console.log( "8" );
     for( a = 0; a < playerCount; a++ )  //creates a player instance for each player
     {
       var username = usernames[a];
       var user = retriever.getUser( username, _ );
-      
+      console.log( "9" );
       player = tools.createNode({
         type: consts.PLAYER,
         username: username,
@@ -294,30 +312,31 @@ function createGame( usernames, level, _ )
         order: a,
         resigned: false
       }, _ );
-      
+      console.log( "10" );
       user.createRelationshipTo( game, consts.PLAYS, {}, _ );
       game.createRelationshipTo( player, consts.BEING_PLAYED_BY, {}, _ );
-      
+      console.log( "11" );
       now = new Date().getTime();
       time = now - start;
       console.log("cg5: " + time );
       start = new Date().getTime();
-      
+      console.log( "12" );
       k = 0;
       for( i = 0; i < consts.BALANCE.length; i++ ){
         for( j = 0; j < consts.BALANCE[i]; j++ ){
-          tools.addMagnet( game, player, consts.CLASS_NAMES[i], k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03, k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01), _ );
+          tools.addMagnet( game, player, collectionName, consts.CLASS_NAMES[i], k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03, k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01), _ );
           k++;
         }
       }
     }
+    console.log( "13" );
     now = new Date().getTime();
     time = now - start;
     console.log("cg6: " + time );
   }
   catch( ex )
   {
-    console.log( "Error creating initial tiles" );
+    console.log( "Error creating game" );
     console.log( ex );
   }
 //   console.log( "Added Game " + gameID + ". Node n. " + game.id );
@@ -447,6 +466,8 @@ app.io.route( "recover:password", function( req, _ ){
 
 app.io.route( "game:queue", function( req, _ )
 {
+console.log( "here" );
+  
   var playerCount = req.data[consts.PLAYER_COUNT];
   var queueType = playerCount -1;
   
@@ -473,7 +494,7 @@ app.io.route( "game:queue", function( req, _ )
       }
       
       var start2 = new Date().getTime();
-      game = createGame( usernames, 0, _ );
+      game = createGame( usernames, "starter", 0, _ );
       var now2 = new Date().getTime();
       console.log("q: " + ( now2 - start2 ) );
       
@@ -501,13 +522,15 @@ app.io.route( "game:place-phrase", function( req, _ )
   var game = retriever.getGame( req.data.gameID, _ );
   var responseData = { success: false, playerInfo: [] };
   
-  if( game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]] == req.data[consts.USERNAME] )
+  if( game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]] === req.data[consts.USERNAME] )
   {
     ret = placePhrase( game, req.data[consts.USERNAME], req.data.pathID, req.data.words, _ );
     
     responseData = fillGameUpdateData( game, responseData, _ );
+    
     responseData.words = ret[consts.WORDS];
     responseData.success = ret[consts.MADNESS] === 0;
+    responseData.placedPhrase = responseData.success ? req.data.words : [];
   }
   
   broadcast( game, "game:update", responseData );
@@ -554,7 +577,7 @@ app.io.route( "game:swap-words", function( req, _ )
 });
 
 app.io.route( "end:turn", function( req, _ ) {
-  operations.endTurn( game, _ );
+  operations.endTurn( req.data.game, _ );
 });
 
 app.io.route( "game:resign", function( req, _ )
@@ -586,6 +609,33 @@ app.io.route( "game:resign", function( req, _ )
   }
   broadcast( game, "game:update", responseData );
 
+  var end = new Date().getTime();
+  var time = end - start;
+  console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "manager:saveWord", function( req, _ )
+{
+  var start = new Date().getTime();
+  process.stdout.write("saving word ");
+
+  tools.saveWord( req.data.lemma, req.data.classes, req.data.categories, req.data,collections, req.data.versionOf, _ );
+  
+  var end = new Date().getTime();
+  var time = end - start;
+  console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "manager:getAllWords", function( req, _ )
+{
+  var start = new Date().getTime();
+  process.stdout.write("getting all words ");
+  var responseData = { success:false, words: [] }
+
+  responseData.words = allWords;
+  responseData.success = true;
+  req.io.respond( responseData );
+  
   var end = new Date().getTime();
   var time = end - start;
   console.log( "took: " + time + "ms" );

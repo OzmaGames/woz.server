@@ -24,9 +24,9 @@ module.exports =
     var games = [];
     
     var query =
-    "START m = node(" + userNodeID + ") " +
-    "MATCH m -[:" + consts.PLAYS + "]-> game " +
-    "RETURN game;";
+      "START m = node(" + userNodeID + ") " +
+      "MATCH m -[:" + consts.PLAYS + "]-> game " +
+      "RETURN game;";
     
     var resultsTemp = db.query(query, {}, _ );
     
@@ -37,10 +37,33 @@ module.exports =
     return games;
   },
   
-  getWordFromClassIndex: function( className, id, _ ){
+  getWord: function( lemma, _ )
+  {
     var word;
+    
     try{
-      word = db.getIndexedNodes( className + "ClassIndex", consts.ID, id, _ )[0];
+      var results= db.getIndexedNodes( consts.WORD_LEMMA_INDEX, consts.LEMMA, lemma, _ );
+      if( results && results.length > 0 ){
+        word = results[0]
+      }
+    }catch( ex ){
+      console.log( "couldn't find word in " + consts.WORD_LEMMA_INDEX );
+      console.log( ex.message );
+    }
+    
+    return word;
+  },
+  
+  getWordFromClassIndex: function( collectionName, className, id, _ )
+  {
+    var word;
+    
+    try{
+      console.log( "id: " + id );
+      console.log( " class: " + className );
+      console.log( "collection: " + collectionName );
+      
+      word = db.getIndexedNodes( collectionName + className + "ClassIndex", consts.ID, id, _ )[0];
       
     }catch( ex ){
       console.log( "couldn't find word in class index" );
@@ -49,8 +72,33 @@ module.exports =
     
     return word;
   },
+    
+  getWordsFromClassIndex: function( className, ids, _ )
+  {
+    console.log( ids );
+    var i = 0;
+    var words;
+    var query = "id: ";
+    
+    for( i = 0; i < ids.length; i++ ){
+      query += ids[i];
+      if( i < ids.length - 1 ){
+        query += " || id: ";
+      }
+    }
+    console.log( query );
+    try{
+      words = db.queryNodeIndex( className + "ClassIndex", query , _ );
+      
+    }catch( ex ){
+      console.log( "couldn't find word in class index" );
+      console.log( ex );
+    }
+    
+    return words;
+  },
 
-  getImageFromIndex: function( id, _ ){
+    getImageFromIndex: function( id, _ ){
     return db.getIndexedNodes( consts.IMAGE_INDEX, consts.ID, id, _ )[0];
   },
 
@@ -231,20 +279,40 @@ module.exports =
     var i = 0;
     var images = [];
     var resultsTemp;
-    
+
     var query =
       "START game = node(" + gameNodeID + "), word = node(" + wordNodeID + ") " +
       "MATCH game -[:hasTile]-> tile -[:representsImage]-> image -[:relatesTo]-> word " +
       "RETURN image;";
-    
+
     resultsTemp = db.query(query, {}, _ );
-    
+
     for( i = 0; i < resultsTemp.length; i++ ){
       images.push( resultsTemp[i].tile );
     }
-    
+
     return images;
   },
+
+//   getWordRelatedImages: function( gameNodeID, wordID, _ ){
+//     var i = 0;
+//     var images = [];
+//     var resultsTemp;
+//     
+//     var query =
+//       "START game = node(" + gameNodeID + ") " +
+//       "MATCH game -[:hasTile]-> tile -[:representsImage]-> image -[:relatesTo]-> word " +
+//       "WHERE word.id = " + wordID + " " +
+//       "RETURN image;";
+//     
+//     resultsTemp = db.query(query, {}, _ );
+//     
+//     for( i = 0; i < resultsTemp.length; i++ ){
+//       images.push( resultsTemp[i].tile );
+//     }
+//     
+//     return images;
+//   },
   
   getPlayerMagnets: function( playerNodeID, _ ){
     var magnets = [];
@@ -306,7 +374,7 @@ module.exports =
   getPlayerMagnetsAndWordsByID: function( playerNodeID, magnetIDs, _ ){
     var mw = [];
     var i = 0;
-
+    
     if( magnetIDs.length > 0 )
     {
       var query =
@@ -460,11 +528,23 @@ module.exports =
   {
     var words = [];
     var resultsTemp = db.queryNodeIndex( className + "ClassIndex", "id: (*)" , _ );
-    console.log( resultsTemp.length );
+    
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      words.push( resultsTemp[i] );
+    }
+    
+    return words;
+  },
+
+  getAllWordsData: function( _ )
+  {
+    var words = [];
+    var resultsTemp = db.queryNodeIndex( consts.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
+
     for( var i = 0; i < resultsTemp.length; i++ ){
       words.push( resultsTemp[i].data );
     }
-    
+
     return words;
   }
 };

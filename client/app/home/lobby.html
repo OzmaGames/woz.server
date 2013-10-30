@@ -1,0 +1,30 @@
+﻿<div>
+  <div class="grid" data-bind="foreach: lobby">
+    <h1 data-bind="text: title">My turn</h1>
+    <div class="table" data-bind="foreach: games">
+      <div class="game-item" data-bind="click: $root.select">
+        <div class="cell left">
+          <div class="pic" data-bind="css: collection.short"></div>
+          <div>
+            <div>Playing with <span class="name" data-bind="text: players[1].username"></span> - Using <span class="collection" data-bind="text: collection.name"></span> collection</div>
+            <div>Game started <span class="date" data-bind="text: startDate"></span></div>
+            <div><span data-bind="text: lastPhrase.username"></span> placed: <span class="phrase" data-bind="text: lastPhrase.phrase"></span> for <span class="point" data-bind="text: lastPhrase.score">9</span></div>
+          </div>
+        </div>
+        <div class="cell right">
+          <div class="icons">
+            <div class="time" data-bind="text: timeAgo"></div>
+            <div class="chat"><div data-bind="text: unreads">1</div></div>
+            <div class="resign"></div>
+          </div>
+          <div class="players" data-bind="foreach: players">
+            <div>
+              <span class="player" data-bind="text: username"></span>
+              <span class="score" data-bind="text: score"></span>
+            </div>            
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

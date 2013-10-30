@@ -21,13 +21,18 @@
   }
 
   Path.prototype.enter = function () {
-    if (activeWords() != null) {
-      var words = activeWords(), pm = this.pathModel;
+    var hasData = activeWords() != null,
+      pm = this.pathModel;
+
+    if (hasData) {
+      var words = activeWords();
       if (words.length != pm.nWords) return;
 
       for (var i = 0; i < pm.guiBoxes.length; i++) {
         pm.guiBoxes[i].enter(words[i]);
       }
+    } else {
+      if (pm && pm.onEnter) this.pathModel.onEnter(hasData, this.midPath);
     }
   }
 
@@ -39,6 +44,8 @@
       for (var i = 0; i < pm.guiBoxes.length; i++) {
         pm.guiBoxes[i].leave();
       }
+    } else {
+      if (this.pathModel && this.pathModel.onLeave) this.pathModel.onLeave();
     }
   }
 
@@ -47,9 +54,9 @@
       var words = activeWords(), pm = this.pathModel;
       if (words.length != pm.nWords) {
         if (words.length > pm.nWords)
-          app.woz.dialog.show("alert", "too many words");
+          app.dialog.show("alert", "too many words");
         else
-          app.woz.dialog.show("alert", "need more words");
+          app.dialog.show("alert", "need more words");
         return;
       }
 
@@ -63,11 +70,13 @@
     boxHoverEvents: {
       mouseenter: function (e) {
         activeBox = this.data.enter(activeWord());
-        this.data.pathModel.canvas.enter();
+        this.data.pathModel.canvas.enter(e);
       },
       mouseleave: function (e) {
         this.data.leave();
-        this.data.pathModel.canvas.leave();
+        if (this.data.pathModel.canvas) {
+          this.data.pathModel.canvas.leave();
+        }
       },
       mousedown: function (e) {
         this.data.pathModel.canvas.put();
@@ -75,18 +84,36 @@
     }
   }
 
+  Path.prototype.dispose = function () {
+    this.remove();
+    this._removeAll(this.pathModel.guiBoxes);
+    this.pathModel.guiBoxes = null;
+  }
+
   Path.prototype.setup = function () {
     console.log('%cPath Setup', 'background: orange; color: white', this.pathModel.id);
     var pm = this.pathModel, nWords = pm.nWords;
 
     if (pm.nWords == 0) {
-      nWords = 7;
+      nWords = 6;
     }
 
     if (pm.guiBoxes && pm.guiBoxes.length == nWords) {
       for (var i = 0; i < nWords; i++) {
         var box = pm.guiBoxes[i]
         box.updateModel(pm);
+      }
+    } else if (pm.guiBoxes) {
+      if (pm.guiBoxes.length > nWords) {
+        //remove
+        pm.guiBoxes[nWords].remove();
+        pm.removeWordAt(nWords);
+        pm.guiBoxes.splice(nWords, 1);
+      } else {
+        //Add
+        var box = new Box(nWords - 1, pm);
+        pm.guiBoxes.push(box);
+        this._displayItems.push(box);
       }
     } else {
       pm.guiBoxes = [];
@@ -103,11 +130,14 @@
 
     var pm = this.pathModel, nWords = pm.nWords;
 
+    if (pm.guiBoxes == null) return;
     this._cleanCycle();
 
     var desiredLength = Path.getDesiredLength(pm.guiBoxes);
     path = Path.getBestArc(pm.startTile.center, pm.endTile.center, desiredLength, pm.cw, nWords);
     this.cPoint = Path.cPoint;
+
+    this.midPath = path.getPointAt(path.length/2);
 
     var delta = path.length - desiredLength,
         visibleLength = path.length - 2 * (Path.options.tileMargin + Path.options.tileRadius),
@@ -139,6 +169,10 @@
       path.remove();
     } else {
       this._trash.push(path);
+      for (var i = 0; i < Path._trash.length; i++) {
+        this._trash.push(Path._trash[i]);
+      }
+      Path._trash = [];
     }
 
     scope.view.draw();
@@ -176,13 +210,15 @@
   Path.prototype._removeAll = function (arr) {
     if (arr == null) return;
     for (var i = 0; i < arr.length; i++) {
-      try { arr[i].remove(); } catch (ex) { }
+      arr[i].remove();
     }
   }
 
   Path.prototype.remove = function () {
     this._removeAll(this._trash);
     this._removeAll(this._displayItems);
+    this._displayItems = [];
+    this._trash = [];
   }
 
   Path.scope = paper;
@@ -190,7 +226,7 @@
   Path.getBestArc = function (from, to, desiredLength, clockwise, nWords, accuracy) {
     var scope = Path.scope,
       len = to.subtract(from).length,
-      minArc = Path.options.minArc * (nWords / 3),
+      minArc = Path.options.minArc * (nWords / 2),
       maxArc = Path.options.maxArc * (nWords / 3),
       line = new scope.Path.Line(from, to),
       cPoint = line.getPointAt(line.length / 2),
@@ -198,10 +234,13 @@
     line.remove();
     Path.cPoint = cPoint;
 
-    if (len > 450) {
-      maxArc *= 450 / len;
+    if (len > 550) {
+      maxArc *= 550 / len;
+      minArc = Path.options.minArc * (nWords / 4);
     }
     if (maxArc > 150) maxArc = 150;
+    maxArc = nWords * 30;
+    minArc = maxArc - 60;
 
     line = new scope.Path.Line(
       cPoint.subtract(vector.normalize(-minArc * (clockwise ? 1 : -1))),
@@ -228,11 +267,10 @@
       var circle = new scope.Path.Circle(cPoint, 5);
       circle.fillColor = 'orange';
       line.strokeColor = 'orange';
-      line.dashArray = [10, 12];
+      line.strokeWidth = 2;
       bestArc.strokeColor = 'grey';
-
-    //  Path._trash.push(line);
-    //  Path._trash.push(circle);
+      Path._trash.push(circle);
+      Path._trash.push(line);
     }
     else {
       line.remove();
@@ -255,13 +293,13 @@
       item.remove();
     }
     Path._trash = [];
-  }
+  }  
 
   Path.options = {
     tileRadius: 80,
     tileMargin: 5,
-    hoverMargin: 60,
-    rectMargin: 10,
+    hoverMargin: 48,
+    rectMargin: 0,
     minArc: 33,
     maxArc: 99,
     debug: 0,

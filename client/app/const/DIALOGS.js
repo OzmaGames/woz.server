@@ -15,14 +15,19 @@
       content: "Your opponent won!"
     },
 
+    GAME_OVER_SOLO_YOU_RESIGNED: {
+      heading: "GAME OVER!",
+      content: "Too bad! You resigned the game!"
+    },
+
     YOUR_TURN_FIRST_ROUND: {
       heading: "IT'S YOUR TURN!",
-      content: "To score you need to place a phrase, but first you can use the buttons on the left to choose one out of 3 actions: Swap words, Place tile and Swap tile. Use checkmark to skip turn."
+      content: "Place a phrase on the game board to score. Use action buttons to the left."
     },
 
     YOUR_TURN: {
       heading: "IT'S YOUR TURN!",
-      content: "Place a phrase, or use the buttons on the left to select an action. If you don't want to do anything, you can end your turn with the check mark button."
+      content: "Place a phrase on the game board to score. Use action buttons to the left."
     },
 
     THEIR_TURN: {
@@ -30,9 +35,9 @@
       content: "Work on your masterpiece while you wait for your opponent to place a phrase."
     },
 
-    YOUR_TURN_SELECT_MAGNETS: {
-      heading: "IT'S YOUR TURN! - Select a phrase!",
-      content: "Drag and drop words to make a phrase. A phrase must have 3 – 9 words. Select a phrase by circling it. Make sure the phrase is following the rules of the two tiles you wish to connect."
+    CIRCLE_WORDS: {
+      heading: "Select a Phrase!",
+      content: "Place a whole phrase on the game board, by circling it and then choose a path to place it."
     },
 
     YOUR_TURN_MAKE_PHRASE: {
@@ -48,12 +53,7 @@
     SWAP_WORDS: {
       heading: "SWAP WORDS",
       content: "Select the words you like to swap to exchange them for new ones. Then click \"Done\""
-    },
-
-    SWAP_TILE: {
-      heading: "SWAP TILE",
-      content: "You can only swap unlinked picture tiles. Circle the tile you like to swap to exchange it for a new one."
-    },
+    },    
 
     ACTIONS: {
 

@@ -15,19 +15,11 @@
   var confirmBox;
 
   function DynamicPath(paperScope, pathModel) {
-    var base = this;
-
-    //confirmBox = new ConfirmBox(scope = paperScope);
-    //confirmBox.events.mousedown = function () {
-    //  confirmBox.hide();
-    //  Box.options.animate = true;
-    //  base.pathModel.phrase._complete(true);
-    //  base.pathModel.phrase.words.valueHasMutated();
-    //  Box.options.animate = false;
-    //};
+    var base = this;    
 
     this.pathModel = pathModel;
     this.activeWord = null;
+    this.activeWords = null;
 
     this.events = {
       mouseenter: function (e) {
@@ -38,6 +30,19 @@
           }
           activePath = base;
           base.activeWord = word;
+        } else if (activeWords() != null) {
+          var words = activeWords();
+          if (words.length >= 3 && words.length <= 6) {
+            var arr = base.pathModel.guiBoxes;
+            for (var i = 0; i < arr.length; i++) {
+              arr[i].enter({});
+            }
+            activePath = base;
+            base.activeWords = words;
+          }
+        } else {
+          var pm = base.pathModel;
+          if (pm && pm.onEnter) pm.onEnter(false, base.midPath);
         }
       },
       mouseleave: function (e) {
@@ -48,6 +53,10 @@
           }
           activePath = null;
           base.activeWord = null;
+          base.activeWords = null;
+        } else {
+          var pm = base.pathModel;
+          if (pm && pm.onLeave) pm.onLeave();
         }
       }
     };
@@ -55,6 +64,14 @@
     this.events.mousedown = function (e) {
       if (base.activeWord != null) {
         base.pathModel.addWord(base.activeWord);
+        base.events.mouseleave(e);
+      } else if (base.activeWords != null) {
+        var words = base.activeWords;
+        for (var i = 0; i < words.length; i++) {
+          base.pathModel.addWord(words[i]);
+        }
+        base.pathModel.phrase._complete(true);
+        base.pathModel.phrase.words.valueHasMutated();
         base.events.mouseleave(e);
       }
     }
@@ -70,20 +87,16 @@
   DynamicPath.prototype.show = function () {
     console.log('%cDynamic Path', 'background: orange; color: white', this.pathModel.id + ' is being drawn');
 
-    var pm = this.pathModel, nWords = 7;
+    var pm = this.pathModel, nWords = 6;
 
     var confirmBtn = pm.phrase.words().length >= 3 && !pm.phrase.complete();
     if (confirmBtn) {
       if (this.confirmBox == undefined) {
         this.confirmBox = new Box(-1, null);
         this.confirmBox.button(pm);
-        this.confirmBox.show();        
+        this.confirmBox.show();
       }
-      for (var i = 0; i < nWords; i++) {
-        var box = pm.guiBoxes[i];
-        if (!box.hasData) { break; }
-      }
-      pm.guiBoxes.splice(i, 0, this.confirmBox);
+      pm.guiBoxes.splice(nWords, 0, this.confirmBox);
       nWords++;
     } else {
       if (this.confirmBox) {
@@ -102,8 +115,9 @@
     this._cleanCycle();
 
     var desiredLength = Path.getDesiredLength(pm.guiBoxes, nWords),
-      path = Path.getBestArc(pm.startTile.center, pm.endTile.center, desiredLength, pm.cw, nWords * 3 / 2);
+      path = Path.getBestArc(pm.startTile.center, pm.endTile.center, desiredLength, pm.cw, nWords);
     this.cPoint = Path.cPoint;
+    this.midPath = path.getPointAt(path.length / 2);
 
     var delta = path.length - desiredLength,
         visibleLength = path.length - 2 * (Path.options.tileMargin + Path.options.tileRadius),
@@ -119,7 +133,7 @@
 
       offset += half;
       var point = path.getPointAt(offset),
-         normal = path.getNormalAt(offset).normalize(Path.options.hoverMargin / 2);
+         normal = path.getNormalAt(offset).normalize(Path.options.hoverMargin / 1.5);
 
       hover.add(point.subtract(normal));
       hover.insert(0, point.add(normal));
@@ -163,12 +177,14 @@
 
   DynamicPath.prototype._hideCircles = function () {
     for (var i = 0; i < this.pathModel.guiBoxes.length; i++) {
-      this.pathModel.guiBoxes[i].hideIfEmpty();
+      if(this.pathModel.guiBoxes[i].isCircle)
+        this.pathModel.guiBoxes[i].hideIfEmpty();
     }
   }
   DynamicPath.prototype._showCircles = function () {
     for (var i = 0; i < this.pathModel.guiBoxes.length; i++) {
-      this.pathModel.guiBoxes[i].showIfEmpty();
+      if (this.pathModel.guiBoxes[i].isCircle)
+        this.pathModel.guiBoxes[i].showIfEmpty();
     }
   }
 

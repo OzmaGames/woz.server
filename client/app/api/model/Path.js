@@ -1,7 +1,5 @@
 ﻿define(['durandal/app', 'api/constants', 'api/utils'], function (app, constants, utils) {
-
-  //{id, nWords, startTile, endTile, cw, phrase: { words: [ {[words-object], index},.. ] } }
-  function Path(model, id, nWords, startTile, endTile, cw, phrase) {
+  function Path(model, id, nWords, startTile, endTile, cw, words) {
     var base = this;
 
     base.id = id;
@@ -9,24 +7,22 @@
     base.startTile = utils.find(model.tiles(), { id: startTile });
     base.endTile = utils.find(model.tiles(), { id: endTile });
     base.cw = (cw === undefined ? true : cw);
-    //base.cw = (base.startTile.y - base.endTile.y) < 0.1;
-    //base.cw = (Math.abs(base.startTile.y - base.endTile.y) < 0.2) || base.startTile.x > base.endTile.x;
-
-    var words = (phrase && phrase.words) ? phrase.words : [];
+    base.silence = false;
+    
     base.phrase = {
       _complete: ko.observable(false),
       playerId: 0,
       score: 0,
-      words: ko.observableArray(words)
+      words: ko.observableArray(words || [])
     };
 
     base.phrase.complete = ko.computed(function () {
-      return this.phrase._complete() === true || (this.nWords != 0 && this.phrase.words().length == this.nWords);
+      return this.phrase._complete() === true || this.phrase.words().length == 6  || (this.nWords != 0 && this.phrase.words().length == this.nWords);
     }, base);
 
     base.phrase.complete.subscribe(function (complete) {
-      if (complete) {
-        app.woz.dialog.show("confirm", { modal: true }).then(function (result) {
+      if (complete && !base.silence) {
+        app.dialog.show("confirm", { modal: true }).then(function (result) {
           model.activeWords(null);
           if (result == "cancel") {
             base.phrase._complete(false);
@@ -50,7 +46,7 @@
         word.word.isPlayed = (complete ? 2 : 1);
       });
     });
-
+    
     base.hasWordAt = function (index) {
       var entity = base._getEntityAt(index);
       return entity != null ? true : false;
@@ -80,9 +76,13 @@
           }
         }
       }
-      if ((nWords == 0 && index >= 7) || (nWords != 0 && index >= nWords) ) return false;
+      
+      if ((base.nWords == 0 && index >= 6) || (base.nWords != 0 && index >= base.nWords) ) return false;
 
-      if (null != ko.utils.arrayFirst(base.phrase.words(), function (entity) { return entity.index === index; })) return;
+      if (null != ko.utils.arrayFirst(base.phrase.words(), function (entity) { return entity.index === index; })) {
+        base.removeWordAt(index);
+        //return false;
+      }
 
       word.isPlayed = 1;
       base.phrase.words.push({ word: word, index: index });
@@ -103,6 +103,8 @@
     }
 
     base._removeEntity = function (entity) {
+      if (entity == null) return false;
+
       entity.word.isPlayed = 0;
       base.phrase.words.remove(entity);
 
@@ -121,7 +123,6 @@
       }      
     }    
   }
-
 
   return Path;
 });

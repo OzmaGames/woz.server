@@ -18,6 +18,12 @@
       return dfd;
     }
 
+    this.collapse = function (a, e) {
+      e.preventDefault();
+      e.stopPropagation();
+      base.el.toggleClass('minimized');
+    }
+
     this.onClose = function () { }
   }
 
@@ -33,11 +39,10 @@
   Slipper.prototype.attached = function (el) {
     this.el = $('.slipper', el);
 
+    var base = this;
     this.el.css({ y: -100, display: 'block', opacity: 0 })
       .transition({ y: 10, opacity: 1 }, 500, 'ease')
-      .transition({ y: 0 }, 300).promise().then(function () {
-        this.css({ y: 0 });
-      });
+      .transition({ y: 0 }, 300);
   }
 
   Slipper.prototype.canDeactivate = function (a, s, d) {

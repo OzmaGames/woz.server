@@ -1,5 +1,4 @@
-module.exports =
-{
+module.exports = {
   basic:
   [
   {
@@ -1204,11 +1203,6 @@ module.exports =
   },
   {
     "lemma": "under",
-    "classes": "preposition, adverb, adjective",
-    "categories": ""
-  },
-  {
-    "lemma": "through",
     "classes": "preposition, adverb, adjective",
     "categories": ""
   },

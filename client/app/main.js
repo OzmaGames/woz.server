@@ -5,7 +5,7 @@ requirejs.config({
     'plugins': '../lib/durandal/plugins',
     'transitions': '../lib/durandal/transitions',
     'paper': '../lib/paper/paper',
-    'socket': '../lib/socket.io.min',
+    'socket': '../lib/socket.io',
     'crypto.sha3': '../lib/crypto.sha3',
     
     'transitions/slidedown': 'api/transitions/slidedown'
@@ -17,7 +17,7 @@ define('jquery', function () { return jQuery; });
 define('knockout', ko);
 
 define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'api/server', 'api/datacontext', 'dialogs/_dialog',
-  '../lib/jquery.transit', '../lib/jquery.touch-punch', '../lib/crypto.sha3'],
+  '../lib/jquery.transit', '../lib/jquery.touch-punch', '../lib/crypto.sha3', 'api/knockout'],
   function (system, app, viewLocator, server, ctx, Dialog) {
     //>>excludeStart("build", true);
     system.debug(true);
@@ -42,13 +42,20 @@ define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'api/server',
       owner: this
     });
 
-    app.woz = {
-      dialog: Dialog
+    app.scrollUp = function () {
+      $("body").animate({ scrollTop: 0 }, "slow", "swing");
     };
 
+    app.scrollDown = function () {
+      $("body").animate({ scrollTop: 1000 }, "slow", "swing");
+    }
+
+    app.dialog = Dialog;
+    
     app.start().then(function () {
       viewLocator.useConvention();
       app.setRoot('shell', null, 'app');
     });
 
+    window.app = app;
   });

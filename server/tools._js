@@ -47,8 +47,17 @@ module.exports =
     
     game.save(_);
   },
+
+  addMagnets: function( game, player, className, wordIDs, x, y, _ )
+  {
+    var i = 0;
+    for( i = 0; i < wordIDs.length; i++ ){
+      this.addMagnet( game, player, className, wordIDs[i], x, y, _ );
+    }
   
-  addMagnet: function( game, player, className, x, y, _ )
+  },
+  
+  addMagnet: function( game, player, collectionName, className, x, y, _ )
   {
     var start = new Date().getTime();
     var now;
@@ -58,26 +67,28 @@ module.exports =
     var i = 0;
     var j = 0;
     var isRelated = false;
-    var magnets = retriever.getPlayerMagnets( player.id, _ );
-    var word = randomizer.getRandomWordByClass( className, _);
-    
-    for( i = 0; i < magnets.length; i ++ ){
-      if( magnets[i].data[consts.REPRESENTED_WORD] == word.data[consts.ID] ){
-        i = -1;
-        word = randomizer.getRandomWordByClass( className, _);
-      }
-    }
-    
+    console.log( "am1" );
+    console.log( collectionName );
+    console.log( className );
+    var word = randomizer.getRandomWordByClass( collectionName, className, _);
+    console.log( "am2" );
     now = new Date().getTime();
     time = now - start;
 //     console.log("am1: " + time );
     start = new Date().getTime();
-    
+    console.log( "am3" );
+    console.log( "game: " ); console.log( game.data );
+    console.log( "word: " ); console.log( word.data );
     isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
     if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
     if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
     var randomAngle = randomizer.getRandomInRange( consts.MIN_ANGLE, consts.MAX_ANGLE );
-    
+console.log( "am4" );
+    now = new Date().getTime();
+    time = now - start;
+//     console.log("am2: " + time );
+    start = new Date().getTime();
+    console.log( "am5" );
     var magnet = this.createNode({
       type: consts.MAGNET_PLAYER,
       id: game.data[consts.WORD_COUNT],
@@ -88,19 +99,15 @@ module.exports =
       x: x,
       y: y
     }, _ );
-    
-    now = new Date().getTime();
-    time = now - start;
-//     console.log("am2: " + time );
-    start = new Date().getTime();
-    
-    player.createRelationshipTo( magnet, consts.HAS_MAGNET, { id: game.data[consts.WORD_COUNT] }, _ );
-    magnet.createRelationshipTo( word, consts.REPRESENTS_WORD, {}, _ );
-    
+    console.log( "am6" );
     now = new Date().getTime();
     time = now - start;
 //     console.log("am3: " + time );
-    
+    start = new Date().getTime();
+    console.log( "am6" );
+    player.createRelationshipTo( magnet, consts.HAS_MAGNET, { id: game.data[consts.WORD_COUNT] }, _ );
+    magnet.createRelationshipTo( word, consts.REPRESENTS_WORD, {}, _ );
+    console.log( "am7" );
     ret = {
       id: game.data[consts.WORD_COUNT],
       angle: randomAngle,
@@ -110,10 +117,14 @@ module.exports =
       lemma: word.data[consts.LEMMA],
       points: word.data[consts.POINTS]
     };
-
+    console.log( "am8" );
     game.data[consts.WORD_COUNT]++;
     game.save(_);
-
+    
+    now = new Date().getTime();
+    time = now - start;
+//     console.log("am4: " + time );
+    
     return ret;
   },
   
@@ -121,7 +132,7 @@ module.exports =
   {
     var tile;
     var i = 0;
-    
+    console.log( "at1" );
     if( game.data[consts.TILE_COUNT] < consts.MAX_TILES ){
       var image = randomizer.getRandomImage(_);
       var images = retriever.getGameTileImages( game.id, _ );
@@ -129,36 +140,47 @@ module.exports =
       var instructions = retriever.getGameTileInstructions( game.id, _ );
       if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
       if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
+
+      console.log( images.length );
+      console.log( "at2" );
+
+for( i = 0; i < images.length; i++ ){
+console.log( images[i].data );
+}
       
       for( i = 0; i < images.length; i++ ){
-        if( image.data.id == images[i].data.id ){
+        if( image.data.name == images[i].data.name ){
           image = randomizer.getRandomImage(_);
           i = -1;
         }
       }
-      
+      console.log( "at3" );
       for( i = 0; i < instructions.length; i++ ){
         if( instruction.data.id == instructions[i].data.id ){
           instruction = randomizer.getRandomInstruction(_);
           i = -1;
         }
       }
+      console.log( "at4" );
+      
+      console.log( "imagem" );
+      console.log( image.data );
       
       tile = this.createNode({
         type: consts.TILE,
         id: game.data[consts.TILE_COUNT],
-        representedImage: image.data.id,
+        representedImage: image.data.name,
         representedInstruction: instruction.data.id,
         connectedTo: [ 0, 0, 0, 0, 0 ],
         angle: 0,
         x: x,
         y: y
       }, _ );
-      
+      console.log( "at5" );
       game.createRelationshipTo( tile, consts.HAS_TILE, { id: game.data[consts.TILE_COUNT] }, _ );
       tile.createRelationshipTo( image, consts.REPRESENTS_IMAGE, {}, _ );
       tile.createRelationshipTo( instruction, consts.REPRESENTS_INSTRUCTION, {}, _ );
-      
+      console.log( "at6" );
       game.data[consts.TILE_COUNT]++;
       game.save(_);
     }
@@ -171,6 +193,39 @@ module.exports =
     
     for( var i = 0; i < games.length; i++ ){
       gameObjs.push( this.getGameObject( games[i], usernames, _ ) );
+    }
+  },
+
+  saveWord: function( lemma, classes, categories, collections, versionOf, _ )
+  {
+    var i, j;
+    var word = retriever.getWord( lemma, _ );
+
+    if( word )
+    {
+      word.data[consts.CLASSES] = classes;
+      word.data[consts.CATEGORIES] = categories;
+      word.data[consts.COLLECTIONS] = collections;
+      word.data[consts.versionOf] = versionOf;
+    }
+    else
+    {
+      currentWordNode = tools.createNode({
+        type: consts.WORD,
+        lemma: lemma,
+        points: randomizer.getRandomIntegerInRange(0, 4),
+        collections: collections,
+        versionOf: versionOf
+      }, _ );
+      
+      currentWordNode.index( collectionName + consts.WORD_LEMMA_INDEX, consts.LEMMA, currentWord.lemma, _ );
+      
+      for( i = 0; i < classes.length; i++ ){
+        for( j = 0; j < collections.length; j++ ){
+          currentWordNode.index( collections[j] + consts.WORD_LEMMA_INDEX, consts.LEMMA, currentWord.lemma, _ );
+          currentWordNode.index( collections[j] + classes[i] + "ClassIndex", consts.ID, lassCounts[collections[j]][classes[i]]++, _ );
+        }
+      }
     }
   },
   
@@ -202,7 +257,7 @@ module.exports =
         nWords: currentPath[consts.NWORDS],
         startTile: currentPath[consts.START_TILE],
         endTile: currentPath[consts.END_TILE],
-        cw:  currentPath[consts.CW],
+        cw:  currentPath[consts.CW]
       });
     }
     
@@ -241,6 +296,7 @@ module.exports =
         y : currentTile[consts.Y],
         imageName : gameInfo.image[imageID][consts.NAME],
         instruction : gameInfo.instruction[instructionID][consts.SHORT_DESCRIPTION],
+        description : gameInfo.instruction[instructionID][consts.LONG_DESCRIPTION],
         bonus : gameInfo.instruction[instructionID][consts.BONUS],
         mult : gameInfo.instruction[instructionID][consts.MULT]
       });
@@ -293,7 +349,7 @@ function getMagnetObject( magnets, words, owner ){
             y: currentMagnet[consts.Y],
             isRelated: currentMagnet[consts.IS_RELATED],
             lemma: words[w][consts.LEMMA],
-            points: words[w][consts.POINTS],
+            points: words[w][consts.POINTS]
           });
           break;
         }

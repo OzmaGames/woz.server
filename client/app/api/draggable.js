@@ -5,7 +5,7 @@
 
     var $el = $(this), zIndex = $el.css('z-index'), hasMoved = false;
 
-    if($.support.touch) $el.touchPunch();
+    if ($.support.touch) $el.touchPunch();
 
     var events = {
       mousedown: function (e) {
@@ -29,12 +29,19 @@
           windowTop: $(window).scrollTop()
         };
 
+        if (opt.centerBased) {
+          opt.within.t += startPoint.h / 2;
+          opt.within.b += startPoint.h / 2;
+          opt.within.l += startPoint.w / 2;
+          opt.within.r += startPoint.w / 2;
+        }
+
         $el.css('z-index', 1000);
         $el.addClass('drag');
 
         opt.dragStart.call(e);
         if (!$el.data("immovable") || $el.data("immovable")() !== true) { //false or null
-          opt.parent.bind("mousemove", startPoint, events.mousemove);          
+          opt.parent.bind("mousemove", startPoint, events.mousemove);
         }
         opt.parent.one("mouseup", startPoint, events.mouseup);
         return startPoint;
@@ -54,9 +61,9 @@
         if ($el.position().top < opt.within.t) {
           top = opt.within.t;
           $el.css({ top: top });
-        }        
-        
-        if (hasMoved) {
+        }
+
+        if (hasMoved && opt.usePercentage) {
           top = 100.0 * top / (opt.within.b - opt.within.t);
           left = 100.0 * left / (opt.within.r - opt.within.l);
           $el.css({
@@ -74,7 +81,8 @@
         var newTop = e.pageY + e.data.t,
             newLeft = e.pageX + e.data.l;
 
-        //if (newTop < opt.within.t) newTop = opt.within.t;
+
+        if (opt.topLimit && newTop < opt.within.t) newTop = opt.within.t;
         if (newLeft < opt.within.l) newLeft = opt.within.l;
         if (newTop + e.data.h > opt.within.b) newTop = opt.within.b - e.data.h;
         if (newLeft + e.data.w > opt.within.r) newLeft = opt.within.r - e.data.w;
@@ -86,70 +94,31 @@
         hasMoved = true;
 
         if (e.data.windowTop != 0 && e.pageY - e.data.windowTop < 100) {
-          //var diff = e.pageY - e.data.windowTop;
           e.data.windowTop = e.data.windowTop - 50;
           if (e.data.windowTop < 0) e.data.windowTop = 0;
           $("body").animate({ scrollTop: e.data.windowTop }, "fast");
         }
-        //console.log(e.pageY, e.clientY, e.screenY);
-
-        //console.log(e.data.windowTop);
       },
 
       isWithinBoundaries: function (e) {
         var newTop = e.pageY + e.data.t,
             newLeft = e.pageX + e.data.l;
 
-        if (newTop - e.data.h / 2 < opt.within.t || newTop + e.data.h / 2 > opt.within.b || newLeft - e.data.w / 2 < opt.within.l || newLeft + e.data.w / 2 > opt.within.r)
+        if (
+          newTop < opt.within.t ||
+          newTop + e.data.h > opt.within.b ||
+          newLeft < opt.within.l ||
+          newLeft + e.data.w > opt.within.r)
           return false;
 
         return true;
-      },
-
-      //touch: function(event) {
-      //  if (event.originalEvent.touches.length > 1) {
-      //    // Ignore multi-touch events
-      //    return false;
-      //  }
-      //  event.preventDefault();
-
-      //  var touch = event.originalEvent.changedTouches[0];
-
-      //  event.pageX = touch.pageX;
-      //  event.pageY = touch.pageY;
-
-      //  return touch;
-      //}
+      }
     };
 
     $el.bind({
-      mousedown: events.mousedown,
-      //touchstart: function (e) {
-      //  var startPoint;
-      //  if (events.touch(e)) startPoint = events.mousedown(e); else return;
-
-      //  var $target = $(e.target);
-      //  $target.bind({
-      //    touchmove: function (e) {
-      //      e.data = startPoint;
-      //      if (events.touch(e)) events.mousemove(e);
-      //    },
-      //    touchend: function (e) {
-      //      e.data = startPoint;
-      //      if (events.touch(e)) events.mouseup(e);
-      //      $target.unbind("");
-      //    },
-      //    touchcancel: function (e) {
-      //      alert('c');
-      //      e.data = startPoint;
-      //      if (events.touch(e)) events.mouseup(e);
-      //      $target.unbind();
-      //    }
-      //  });
-      //}
+      mousedown: events.mousedown
     });
 
-    //Clean up garbage        
     $el.data('draggable', this);
 
     this.dispose = function () {
@@ -168,7 +137,10 @@
     move: function () { },
     parent: $(document),
     dragable: true,
-    cursor: "pointer"
+    usePercentage: true,
+    cursor: "pointer",
+    centerBased: false,
+    topLimit: false
   };
 
 });

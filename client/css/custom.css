@@ -37,8 +37,43 @@ html {
 body {
     width: 100%;
     height: 100%;
-    background: #9e7959 url('../images/app/background-texture.jpg') repeat;
+    background: #986B31 url('../images/app/background-texture.jpg') repeat;
 }
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: cambria!important;
+    font-weight: normal;
+    color: #986B31;
+    -webkit-text-shadow: 0px 0px 1px #986B31;
+    text-shadow: 0px 0px 1px #986B31;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+    font-size: 1.5em;
+}
+
+h2 {
+    font-size: 2em;
+}
+
+h3 {
+    font-size: .9em;
+}
+
+h4 {
+    font-size: .8em;
+}
+
+h5 {
+    font-size: .7em;
+}
+
+h6 {
+    font-size: .6em;
+}
+
+
 
 #app {
     position: absolute;
@@ -159,7 +194,7 @@ body {
     }
 
         #game-main .logo-fixed-size .logo-wrapper {
-            top: 20px;
+            top: 10px;
         }
 
     #game-main hr {
@@ -220,7 +255,7 @@ body {
 
 #players {
     position: absolute;
-    top: 20px;
+    top: 10px;
     right: 20px;
 }
 
@@ -329,15 +364,14 @@ body {
     }
 
         #tiles .tile.active {
-            width: 100%;
             height: 100%;
-            left: 80px !important;
+            width: 100%;
             top: 80px !important;
             z-index: 4;
         }
 
             #tiles .tile.active .mask {
-                border-radius: 5%;
+                border-radius: 50%;
                 width: 100%;
                 height: 100%;
                 z-index: 5;
@@ -348,11 +382,7 @@ body {
                 top: 10px;
                 margin-left: -40px;
                 z-index: 6;
-                -moz-transform: rotate(0deg);
-                -webkit-transform: rotate(0deg);
-                -ms-transform: rotate(0deg);
-                -o-transform: rotate(0deg);
-                transform: rotate(0deg);
+                opacity: 0;
             }
 
         #tiles .tile.drag {
@@ -390,24 +420,38 @@ body {
         }
 
         #tiles .tile .instruction {
-            -moz-transition: left .5s ease-in-out, top .5s ease-in-out;
-            -o-transition: left .5s ease-in-out, top .5s ease-in-out;
-            -webkit-transition: left .5s ease-in-out, top .5s ease-in-out;
-            transition: left .5s ease-in-out, top .5s ease-in-out;
+            -moz-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .5s ease-in-out;
+            -o-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .5s ease-in-out;
+            -webkit-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .5s ease-in-out;
+            transition: left .5s ease-in-out, top .5s ease-in-out, opacity .5s ease-in-out;
         }
+
+            #tiles .tile .instruction .help, body .instruction .help {
+                position: absolute;
+                content: "";
+                top: 15px;
+                right: 0px;
+                background-image: url(../images/game/Help_Btn_Up.png);
+                -moz-background-size: 100% 100%;
+                -o-background-size: 100% 100%;
+                -webkit-background-size: 100% 100%;
+                background-size: 100% 100%;
+                width: 25px;
+                height: 25px;
+                cursor: pointer;
+            }
+
+                #tiles .tile .instruction .help:hover, body .instruction .help:hover {
+                    background-image: url(../images/game/Help_Btn_Down.png);
+                }
 
         #tiles .tile .instruction, body .instruction {
             z-index: 5;
             position: absolute;
             top: -30px;
-            left: -20px;
+            left: 10px;
             width: 80px;
             height: 50px;
-            -moz-transform: rotate(-15deg) translate3d(0,0,0);
-            -webkit-transform: rotate(-15deg) translate3d(0,0,0);
-            -ms-transform: rotate(-15deg) translate3d(0,0,0);
-            -o-transform: rotate(-15deg) translate3d(0,0,0);
-            transform: rotate(-15deg) translate3d(0,0,0);
             background-color: rgba(255, 255, 255, 0.9);
             padding: 10px 20px 0 20px;
             border-radius: 50%;
@@ -421,6 +465,9 @@ body {
             -webkit-backface-visibility: hidden;
             -moz-backface-visibility: hidden;
             backface-visibility: hidden;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-shadow: 0px 0px 1px #bad7e4;
+            text-shadow: 0px 0px 1px #bad7e4;
         }
 
             #tiles .tile .instruction .info, body .instruction .info {
@@ -429,6 +476,54 @@ body {
                 font-weight: bold;
                 font-size: large;
             }
+
+        #tiles .tile .rest {
+            position: absolute;
+            z-index: 5;
+            right: -30px;
+            top: 0;
+            visibility: hidden;
+        }
+
+        #tiles .tile:hover .rest {
+            visibility: visible;
+        }
+
+        #tiles .tile .rest .thumbnail {
+            margin-bottom: 3px;
+            border: 3px solid white;
+            border-radius: 100%;
+            width: 40px;
+            height: 40px;
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+        }
+
+            #tiles .tile .rest .thumbnail:hover {
+                border-color: orange;
+            }
+
+            #tiles .tile .rest .thumbnail:last-child {
+                margin-bottom: 0;
+            }
+
+        #tiles .tile .control {
+            visibility: hidden;
+            position: absolute;
+            top: 50px;
+            left: 0px;
+            width: 45px;
+            z-index: 5;
+            background-color: white;
+            border-radius: 100%;
+            color: #976b2c;
+        }
+
+        #tiles .tile:hover .control {
+            visibility: visible;
+        }
 
 #workspace {
     position: relative;
@@ -454,10 +549,6 @@ body {
     font-size: 22px;
     font-family: CopseRegular;
     cursor: pointer;
-    -moz-transform-origin: 50% 50%;
-    -ms-transform-origin: 50% 50%;
-    -o-transform-origin: 50% 50%;
-    -webkit-transform-origin: 50% 50%;
     -moz-transition-duration: .2s,.2s,0,0,0;
     -o-transition-duration: .2s,.2s,0,0,0;
     -webkit-transition-duration: .2s,.2s,0,0,0;
@@ -470,12 +561,6 @@ body {
     transition-timing-function: ease-in-out;
     transition-duration: .2s,.2s,0,0,0;
     transition-property: all, box-shadow, opacity, width, height;
-    /*transform-origin: 50% 50%;*/
-    -webkit-transform: translate3d(0,0,0);
-    -moz-transform: translate3d(0,0,0);
-    -ms-transform: translate3d(0,0,0);
-    -o-transform: translate3d(0,0,0);
-    transform: translate3d(0,0,0);
     -webkit-backface-visibility: hidden;
     -moz-backface-visibility: hidden;
     backface-visibility: hidden;
@@ -540,6 +625,46 @@ body {
         cursor: default!important;
     }
 
+#tiles .magnet {
+}
+
+.magnet-placeholder {
+    position: absolute;
+    width: 43px;
+    height: 23px;
+    -moz-transition: all .4s ease, top .5s ease-out, left .5s ease-out;
+    -o-transition: all .4s ease, top .5s ease-out, left .5s ease-out;
+    -webkit-transition: all .4s ease, top .5s ease-out, left .5s ease-out;
+    transition: all .4s ease, top .5s ease-out, left .5s ease-out;
+}
+
+    .magnet-placeholder .circle {
+        margin: 0 auto;
+        border-radius: 100%;
+        width: 15px;
+        height: 15px;
+        margin-top: 4px;
+        background-color: #CBB28F;
+    }
+
+    .magnet-placeholder .box {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 1px solid #CBB28F;
+        border-radius: 2px;
+        color: #38270b;
+        font-size: 16px;
+        padding-top: 2px;
+        font-family: CopseRegular;
+        text-align: center;
+    }
+
+    .magnet-placeholder.hover .box, .magnet-placeholder.hover .circle {
+        box-shadow: 0 0 15px #986B31, 0 0 15px #986B31 inset;
+    }
 
 
 .button-small {
@@ -688,34 +813,70 @@ button.sign-up {
     color: red;
 }
 
-input[type="text"], input[type="password"] {
-    cursor: text;
+.confirm-box {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    z-index: 5;
+    -moz-transition: left .5s 1s ease, top .5s 1s ease;
+    -o-transition: left .5s 1s ease, top .5s 1s ease;
+    -webkit-transition: left .5s 1s ease, top .5s 1s ease;
+    transition: left .5s 1s ease, top .5s 1s ease;
 }
 
-#option-swap-words {
-    background-image: url('../images/app/dialogs/actions/option-swap-words.png');
-}
+    .confirm-box.ready {
+        -moz-transition-delay: 0;
+        -o-transition-delay: 0;
+        -webkit-transition-delay: 0;
+        transition-delay: 0;
+    }
 
-#option-place-tile {
-    background-image: url('../images/app/dialogs/actions/option-place-tile.png');
-}
+    .confirm-box .button {
+        position: absolute;
+        text-align: center;
+        background-image: url('../images/game/Checkmark_Btn_Test2.png');
+        -moz-background-size: 100% 100%;
+        -o-background-size: 100% 100%;
+        -webkit-background-size: 100% 100%;
+        background-size: 100% 100%;
+        width: 80px;
+        height: 80px;
+        top: 0;
+        left: 0;
+        cursor: pointer;
+        -moz-transition: all 10s ease;
+        -o-transition: all 10s ease;
+        -webkit-transition: all 10s ease;
+        transition: all 10s ease;
+    }
 
-#option-swap-tile {
-    background-image: url('../images/app/dialogs/actions/option-swap-tile.png');
-}
+    .confirm-box .tooltip {
+        position: relative;
+        text-align: center;
+        top: -120px;
+        left: -30px;
+        width: 80px;
+        padding: 20px 30px;
+        border-radius: 50% 50% 50% 50%;
+        background-color: rgba(255, 255, 255, 0.9);
+        -moz-box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.9);
+        -ms-box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.9);
+        -o-box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.9);
+        -webkit-box-shadow: 0 0 5px 5px rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.9);
+        color: #b49363;
+        font-family: CopseRegular;
+    }
 
-#option-sneak-peek {
-    background-image: url('../images/app/dialogs/actions/option-sneak-peek.png');
-}
+        .confirm-box .tooltip.cw {
+            top: 100px !important;
+        }
 
-#option-no-action {
-    background-image: url('../images/app/dialogs/actions/option-no-action.png');
-}
+/*#region Icons */
 
-
-.icons {
+.action-icons {
     background: #faf5ef;
-    padding: 5px 5px 0 5px;
+    padding: 5px;
     -moz-border-radius: 8px;
     -ms-border-radius: 8px;
     -o-border-radius: 8px;
@@ -723,147 +884,163 @@ input[type="text"], input[type="password"] {
     border-radius: 8px;
 }
 
-.action-icons {
-    border: 2px solid #cab193;
-    margin-bottom: 5px;
-}
-
 .normal-icons {
     margin: 2px;
-    padding-bottom: 5px;
 }
 
 .icon {
-    width: 40px;
-    height: 40px;
     margin-bottom: 5px;
-    background-position: center center;
-    background-repeat:no-repeat;
-    -moz-background-size: 100% 100%;
-    -o-background-size: 100% 100%;
-    -webkit-background-size: 100% 100%;
-    background-size: 100% 100%;
     border: 1px solid transparent;
+    border-radius: 3px;
+    -moz-transition: background-color .5s ease, opacity .5s ease;
+    -o-transition: background-color .5s ease, opacity .5s ease;
+    -webkit-transition: background-color .5s ease, opacity .5s ease;
+    transition: background-color .5s ease, opacity .5s ease;
 }
 
     .icon:hover:not(.disabled) {
         border: 1px solid #b8b0a3;
-        border-radius: 3px;
     }
 
-.action-icon {
-}
-
-.confirm-box {
-    position: absolute;
-    width: 80px;
-    height: 80px;    
-}
-.confirm-box .button{
-    position:absolute;
-    text-align: center;
-    background-image: url('../images/game/Checkmark_Btn_Up.png');
-    -moz-background-size: 100% 100%;
-    -o-background-size: 100% 100%;
-    -webkit-background-size: 100% 100%;
-    background-size: 100% 100%;
-    width: 80px;
-    height: 80px;
-    top:0;left:0;
-    cursor: pointer;    
-}
-
-.confirm-box .tooltip{
-    position:relative;
-    text-align:center;
-    top:-100px;
-    left:-30px;
-    width: 80px;
-    padding: 20px 30px;
-    border-radius: 50% 50% 50% 50%;
-    background-color: rgba(255, 255, 255, 0.9);
-    -moz-box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.9);
-    -ms-box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.9);
-    -o-box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.9);
-    -webkit-box-shadow: 0 0 5px 5px rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.9);
-    color: #b49363;
-    font-family:CopseRegular; 
-}
-.confirm-box .tooltip.cw{
-    top: 100px !important;
-}
-
-#swap-words {
-    background-image: url('../images/game/swap-words-icon.png');
-    background-repeat: no-repeat;
-    -moz-transition: all .5s ease-in-out;
-    -o-transition: all .5s ease-in-out;
-    -webkit-transition: all .5s ease-in-out;
-    transition: all .5s ease-in-out;
-}
-
-    #swap-words:active:not(.disabled):not(.cancel) {
-        background-image: url('../images/game/swap-words-icon-active.png');
+    .icon.disabled:not(.cancel) {
+        opacity: 0.4;
+        filter: alpha(opacity=40);
+        background-color: #000;
     }
 
-    #swap-words.disabled {
-        background-image: url('../images/game/swap-words-icon-disabled.png');
+        .icon.disabled:not(.cancel) i {
+            -webkit-filter: grayscale(100%);
+            -moz-filter: grayscale(100%);
+            -o-filter: grayscale(100%);
+            filter: grayscale(100%);
+        }
+
+    .icon.cancel, .icon.disabled {
+        border-color: #faf5ef;
     }
 
-    #swap-words.cancel {
+    .icon.cancel {
+        opacity: 0.9;
+        filter: alpha(opacity=90); /* msie */
+        background-color: #f0323f;
+    }
+
+    .icon:last-child {
+        margin-bottom: 0;
+    }
+
+    .icon i {
+        background-repeat: no-repeat;
+        -moz-background-size: 100% 100%;
+        -o-background-size: 100% 100%;
+        -webkit-background-size: 100% 100%;
+        background-size: 100% 100%;
+        width: 40px;
+        height: 40px;
+        display: block;
         -moz-transition: all .5s ease-in-out;
         -o-transition: all .5s ease-in-out;
         -webkit-transition: all .5s ease-in-out;
         transition: all .5s ease-in-out;
+        cursor: pointer;
+    }
+
+        .icon i:not(:empty) {
+            display: table-cell;
+            vertical-align: middle;
+            background-color: #bad7e4;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+            .icon i:not(:empty):hover, .icon i:not(:empty):active {
+                background-color: #8ab;
+            }
+
+    .icon.cancel i:not(:empty) {
+        -moz-transform: rotateY(360deg)!important;
+        -ms-transform: rotateY(360deg)!important;
+        -o-transform: rotateY(360deg)!important;
+        -webkit-transform: rotateY(360deg)!important;
+        transform: rotateY(360deg)!important;
+        background-color: orange;
+    }
+
+    .icon.cancel i {
         -moz-transform: rotateY(180deg);
         -ms-transform: rotateY(180deg);
         -o-transform: rotateY(180deg);
         -webkit-transform: rotateY(180deg);
         transform: rotateY(180deg);
+    }
+
+
+    .icon.action {
+    }
+
+    .icon i.export {
+        background-color: pink;
+    }
+
+    .icon:active i.export, .icon:hover i.export {
+        background-color: hotpink;
+    }
+
+    .icon i.swap-words {
+        background-image: url('../images/game/swap-words-icon.png');
+    }
+
+    .icon:active:not(.disabled):not(.cancel) i.swap-words, .icon:hover:not(.disabled):not(.cancel) i.swap-words {
+        background-image: url('../images/game/swap-words-icon-active.png');
+    }
+
+    .icon.disabled i.swap-words {
+        background-image: url('../images/game/swap-words-icon-disabled.png');
+    }
+
+    .icon.cancel i.swap-words {
         background-image: url('../images/game/swap-words-icon-cancel.png');
     }
 
-#add-tile {
-    background-image: url('../images/game/add-tile-icon.png');
-}
+    .icon i.circle-words {
+        background-image: url('../images/game/add-tile-icon.png');
+    }
 
-    #add-tile:active:not(.disabled) {
+    .icon:active:not(.disabled) i.circle-words, .icon:hover:not(.disabled) i.circle-words {
         background-image: url('../images/game/add-tile-icon-active.png');
     }
 
-#swap-tile {
-    background-image: url('../images/game/swap-tile-icon.png');
-}
+    .icon i.swap-tiles {
+        background-image: url('../images/game/swap-tile-icon.png');
+    }
 
-    #swap-tile:active:not(.disabled) {
+    .icon:active:not(.disabled) i.swap-tiles, .icon:hover:not(.disabled) i.swap-tiles {
         background-image: url('../images/game/swap-tile-icon-active.png');
     }
 
-#end-turn {
-    background-image: url('../images/game/end-turn-icon.png');
-}
-
-    #end-turn:active:not(.disabled) {
-        background-image: url('../images/game/end-turn-icon-avtive.png');
+    .icon i.resign {
+        background-image: url('../images/game/end-game-icon.png');
     }
 
-#end-game:active:not(.disabled) {
-    background-image: url('../images/game/end-game-icon-active.png');
-}
+    .icon:active:not(.disabled) i.resign {
+        background-image: url('../images/game/end-game-icon-active.png');
+    }
 
-.normal-icon {
-    margin-bottom: 0;
-}
+/*#endregion */
 
-#end-game {
-    background-image: url('../images/game/end-game-icon.png');
-}
+
+
 
 .dialog {
-    position: fixed;    
+    position: fixed;
     z-index: 10;
+    font-family: CopseRegular;
+    -webkit-font-smoothing: antialiased;
 }
+
+    .dialog.absolute {
+        position: absolute;
+    }
 
     .dialog.bottom-center {
         bottom: 0;
@@ -875,6 +1052,12 @@ input[type="text"], input[type="password"] {
         top: 0;
         width: 100%;
         text-align: center;
+        height: 0px;
+    }
+
+    .dialog.top-left {
+        top: 0;
+        left: 0;
     }
 
     .dialog.modal .ui-overlay {
@@ -893,9 +1076,9 @@ input[type="text"], input[type="password"] {
 
     .dialog .loading {
         position: relative;
-        z-index: 10;
+        z-index: 11;
         margin: 0 auto;
-        width: 300px;
+        width: 350px;
         height: 70px;
         text-align: center;
         top: 250px;
@@ -904,7 +1087,7 @@ input[type="text"], input[type="password"] {
 
     .dialog .alert {
         position: relative;
-        z-index: 10;
+        z-index: 11;
         /*margin: 0 90px;*/
         padding: 20px 30px;
         border-radius: 50% 50% 50% 50%;
@@ -922,10 +1105,9 @@ input[type="text"], input[type="password"] {
 
     .dialog .confirm {
         position: relative;
-        z-index: 10;
+        z-index: 11;
         margin: 0 auto;
-        width: 200px;
-        height: 70px;
+        width: 250px;
         background-image: url('../images/app/confirm/confirm-background.png');
         background-position: center bottom;
         -moz-background-size: 100% 100%;
@@ -935,7 +1117,12 @@ input[type="text"], input[type="password"] {
         text-align: center;
         color: #976b2c;
         line-height: 120%;
+        padding: 10px;
     }
+
+        .dialog .confirm p {
+            padding: 5px 0;
+        }
 
     .dialog button {
         font-weight: bold;
@@ -946,18 +1133,18 @@ input[type="text"], input[type="password"] {
         -o-border-radius: 5px;
         -webkit-border-radius: 5px;
         border-radius: 5px;
-        margin: 20px 5px 0px 5px;
+        margin: 10px 5px;
+        padding: 7px 10px;
         text-align: center;
         background-image: url('../images/button-background-up.jpg');
         color: #976b2c;
-        padding: 7px 10px;
     }
 
     .dialog .slipper {
         position: relative;
         z-index: 11;
         margin: 0 auto;
-        width: 615px;
+        width: 555px;
         top: -30px;
         background-image: url('../images/app/dialogs/background.png');
         background-position: center bottom;
@@ -968,13 +1155,172 @@ input[type="text"], input[type="password"] {
         text-align: center;
         color: #976b2c;
         line-height: 120%;
-        padding: 40px 30px 30px 30px;
+        padding: 40px 30px 20px 30px;
         cursor: pointer;
+        -moz-transition: width .5s ease, padding .5s ease;
+        -o-transition: width .5s ease, padding .5s ease;
+        -webkit-transition: width .5s ease, padding .5s ease;
+        transition: width .5s ease, padding .5s ease;
     }
 
+        .dialog .slipper .btnCommand {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 30px;
+            height: 18px;
+            background-image: url('../images/game/ArrowMinimize_Btn.png');
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+            -moz-transition: all .5s .1s ease-in-out;
+            -o-transition: all .5s .1s ease-in-out;
+            -webkit-transition: all .5s .1s ease-in-out;
+            transition: all .5s .1s ease-in-out;
+            cursor: pointer;
+        }
+
+        .dialog .slipper .content {
+            font-size: .95em;
+        }
+
         .dialog .slipper h1 {
-            font-size: 1.5em;
+            font-family: cambria!important;
+            font-size: 1.2em;
+            font-weight: bold;
             margin-bottom: 10px;
+            -webkit-text-shadow: 0px 0px 1px #c95;
+            text-shadow: 0px 0px 1px #c95;
+            -moz-transition: all .5s ease;
+            -o-transition: all .5s ease;
+            -webkit-transition: all .5s ease;
+            transition: all .5s ease;
+        }
+
+        .dialog .slipper.minimized {
+            width: 300px;
+            padding-top: 35px;
+            padding-bottom: 10px;
+        }
+
+            .dialog .slipper.minimized .btnCommand {
+                -moz-transform: rotate(180deg);
+                -ms-transform: rotate(180deg);
+                -o-transform: rotate(180deg);
+                -webkit-transform: rotate(180deg);
+                transform: rotate(180deg);
+            }
+
+            .dialog .slipper.minimized .content {
+                display: none;
+            }
+
+            .dialog .slipper.minimized h1 {
+                font-weight: bold;
+                font-size: 1.0em;
+                margin-bottom: 0px;
+            }
+
+
+    .dialog .control {
+        position: absolute;
+        z-index: 3;
+        width: 45px;
+        margin-left: -15px;
+        margin-top: -40px;
+        background-color: white;
+        text-align: center;
+        color: #976b2c;
+        padding: 5px 7px;
+        cursor: pointer;
+        border-radius: 5px;
+        box-shadow: 2px 2px 5px gray;
+        -webkit-text-shadow: 0px 0px 1px #999;
+        text-shadow: 0px 0px 1px #999;
+    }
+
+        .dialog .control .nWords {
+            float: left;
+            width: 30px;
+        }
+
+        .dialog .control .btnDel {
+            float: left;
+            width: 10px;
+            font-family: CopseRegular;
+            font-size: 1.5em;
+        }
+
+        .dialog .control .btnCW {
+            float: left;
+            width: 10px;
+            font-family: CopseRegular;
+            font-size: 0.6em;
+        }
+
+        .dialog .control .up, .dialog .control .down, .control .up, .control .down {
+            float: left;
+            width: 30px;
+            height: 9px;
+            background-image: url('../images/game/ArrowMinimize_Btn.png');
+            background-position: center center;
+            background-repeat: no-repeat;
+            -moz-background-size: 15px 9px;
+            -o-background-size: 15px 9px;
+            -webkit-background-size: 15px 9px;
+            background-size: 15px 9px;
+        }
+
+        .dialog .control .down, .control .down {
+            -moz-transform: rotate(180deg);
+            -ms-transform: rotate(180deg);
+            -o-transform: rotate(180deg);
+            -webkit-transform: rotate(180deg);
+            transform: rotate(180deg);
+        }
+
+        .dialog .control .number, .control .number {
+            width: 30px;
+            text-align: center;
+            float: left;
+            font-family: CopseRegular;
+            font-size: 1.5em;
+        }
+
+    .dialog .window {
+        position: relative;
+        margin: 0 auto;
+        z-index: 11;
+        width: 240px;
+        background-color: white;
+        text-align: left;
+        color: #39280C;
+        padding: 10px 30px;
+        cursor: pointer;
+        border-radius: 5px;
+        box-shadow: 2px 2px 5px gray;
+        -webkit-text-shadow: 0px 0px 1px #999;
+        text-shadow: 0px 0px 1px #999;
+    }
+
+        .dialog .window .close {
+            display: block;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-image: url('../images/game/Close_Btn.png');
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+            width: 16px;
+            height: 16px;
+        }
+
+        .dialog .window h1 {
+            font-size: 1em;
+            margin-bottom: 5px;
         }
 
     .dialog .notice {
@@ -1005,7 +1351,7 @@ input[type="text"], input[type="password"] {
         }
 
 
-@media (min-resolution: 100dpi) {
+@media (min-resolution: 100dppx) {
     .dialog .confirm {
         width: 400px!important;
         height: 140px;
@@ -1058,3 +1404,519 @@ input[type="text"], input[type="password"] {
     text-align: center;
     background-image: url('../images/big-button-background-up.jpg');
 }
+
+
+/*#region Form - controls */
+
+input[type="checkbox"], input[type="radio"] {
+    position: absolute;
+    display: none;
+}
+
+    input[type="checkbox"] + span {
+        display: inline-block;
+        width: 3em;
+        height: 1em;
+        border: 2px solid #cfa972;
+        border-radius: 1em;
+        margin: 0 .5em;
+        /*margin-top: 1.2em;*/
+        padding: 1px;
+        overflow: hidden;
+        background-image: linear-gradient(90deg, #f5cf76 50%, #e5d7bd 50%), linear-gradient(rgba(0,0,0,.1), transparent);
+        -moz-background-size: 200% 100%;
+        -o-background-size: 200% 100%;
+        -webkit-background-size: 200% 100%;
+        background-size: 200% 100%;
+        background-position: 100% 0;
+        -moz-transition-duration: .4s;
+        -o-transition-duration: .4s;
+        -webkit-transition-duration: .4s;
+        transition-duration: .4s;
+        -moz-transition-property: padding, width, background-position, text-indent, box-shadow;
+        -o-transition-property: padding, width, background-position, text-indent, box-shadow;
+        -webkit-transition-property: padding, width, background-position, text-indent, box-shadow;
+        transition-property: padding, width, background-position, text-indent, box-shadow;
+        box-shadow: 0 .1em .1em rgba(0,0,0,.2) inset, 0 .3em 0 .1em rgba(0,0,0,.05) inset;
+        float: right;
+    }
+
+    input[type="checkbox"]:checked + span {
+        padding-left: 2em;
+        width: 1em;
+        background-position: 0 0;
+        box-shadow: 0 .1em .1em rgba(255,255,255,.2) inset, 0 .3em 0 .1em rgba(255,255,255,.2) inset;
+    }
+
+    input[type="checkbox"] + span:before {
+        content: 'On';
+        float: left;
+        width: 1.65em;
+        height: 1.65em;
+        margin-top: -.1em;
+        margin-left: -.1em;
+        border: 1px solid rgba(152, 107, 49,.9);
+        border-radius: inherit;
+        background: white;
+        box-shadow: -1px -1px 5px .02px white inset, -.1em -.2em .7em .4em #cfa972 inset, 1px 1px .5em rgba(0,0,0,.9);
+        color: #986B31;
+        -webkit-text-shadow: 0 1px 1px rgba(0,0,0,.3);
+        text-shadow: 0 1px 1px rgba(0,0,0,.3);
+        text-indent: -2.5em;
+    }
+
+    input[type="checkbox"]:active + span:before {
+    }
+
+    input[type="checkbox"]:focus + span, label:focus + span {
+        box-shadow: 0 1px 1px rgba(0,0,0,.2) inset, 0 .45em 0 .1em rgba(0,0,0,.05) inset, 0 0 .5em 1px #986B31;
+    }
+
+    input[type="checkbox"]:checked:focus + span {
+        box-shadow: 0 .1em .1em rgba(255,255,255,.2) inset, 0 .3em 0 .1em rgba(255,255,255,.2) inset, 0 1px 1px rgba(0,0,0,.2) inset, 0 .45em 0 .1em rgba(0,0,0,.05) inset, 0 0 .5em 1px #986B31;
+    }
+
+    input[type="checkbox"] + span:before,
+    input[type="checkbox"] + span:after {
+        font: bold 60%/1.7 CopseRegular;
+        text-transform: uppercase;
+    }
+
+    input[type="checkbox"] + span:after {
+        content: 'Off';
+        float: left;
+        text-indent: .5em;
+        color: rgba(0,0,0,.45);
+    }
+
+    input[type="radio"] + span {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        border-radius: inherit;
+        -moz-transition: .4s background-color, .4s box-shadow;
+        -o-transition: .4s background-color, .4s box-shadow;
+        -webkit-transition: .4s background-color, .4s box-shadow;
+        transition: .4s background-color, .4s box-shadow;
+    }
+
+    input[type="radio"]:checked + span {
+        background-color: white;
+        box-shadow: 0 0 10px 3px #986B31;
+    }
+
+label {
+    position: relative;
+    display: block;
+    padding: 1em;
+    margin-bottom: .5em;
+    border: 2px solid #d7bea2;
+    border-radius: 7px;
+    background: #f9f8f4;
+    text-transform: uppercase;
+    font-family: CopseRegular;
+    font-size: 1em;
+    font-weight: normal;
+    line-height: 18px;
+    color: #986B31;
+    width: 22em;
+    -webkit-text-shadow: 0 0 2px #986B31;
+    text-shadow: 0 0 2px #986B31;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    z-index: 1;
+    cursor: pointer;
+}
+
+    label.radio {
+        padding-top: .55em;
+        padding-bottom: .55em;
+        overflow: visible;
+    }
+
+    label .text {
+        margin-left: 80px;
+        display: inline-block;
+    }
+
+    label .pic {
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        bottom: -10px;
+        width: 90px;
+        -moz-background-size: 100% 100%;
+        -o-background-size: 100% 100%;
+        -webkit-background-size: 100% 100%;
+        background-size: 100% 100%;
+    }
+
+        label .pic span {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            border-radius: 100%;
+            border: 3px solid white;
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+        }
+
+    label:last-child {
+        margin-bottom: 0;
+    }
+
+    label .description {
+        display: block;
+        font-size: .8em;
+        -webkit-text-shadow: 0 0 0px #986B31;
+        text-shadow: 0 0 0px #986B31;
+        text-transform: none;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    label.select {
+    }
+
+        label.select .description {
+            float: right;
+        }
+
+        label.select + ul {
+            width: 24em!important;
+        }
+
+select.woz {
+    border: 2px solid #d7bea2;
+    padding: .8em;
+    border-radius: 7px;
+    width: 387px;
+    cursor: pointer;
+}
+
+.container.y, .container.x, .container.group {
+    padding: .5em;
+    margin-bottom: .5em;
+}
+
+.container.y {
+    max-height: 11.8em;
+    border: 2px solid #d7bea2;
+    border-radius: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 400px;
+    background-color: #F2EBE3;
+}
+
+ul.container.y {
+    padding: 0;
+}
+
+.container.group {
+}
+
+.container.y:last-of-type, container.group:last-of-type {
+    margin-bottom: 0;
+}
+
+.grid {
+    position: relative;
+    max-width: 850px;
+    width: 100%;
+    padding: 10px;
+    margin: 0 auto;
+}
+
+    .grid .col {
+        width: 400px;
+        padding-right: 40px;
+        float: left;
+        overflow: visible;
+    }
+
+        .grid .col:last-child {
+            padding-right: 0;
+        }
+
+    .grid h1 {
+        padding-left: 10px;
+        text-transform: uppercase;
+    }
+
+    .grid ul {
+        list-style: none;
+    }
+
+        .grid ul li {
+            display: block;
+            width: 100%;
+            height: 1em;
+            padding: .8em;
+            font-family: CopseRegular;
+            font-weight: normal;
+            color: #986B31;
+            background-color: #F9F8F4;
+            border-bottom: 1px solid #d7bea2;
+            cursor: pointer;
+        }
+
+            .grid ul li:last-child {
+                border-bottom: none;
+            }
+
+            .grid ul li.header {
+                color: white;
+                background-color: #cfa972;
+                padding: .4em;
+                text-transform: capitalize;
+                cursor: default;
+            }
+
+            .grid ul li:hover:not(.header) {
+                background-color: #f1ebe2;
+            }
+
+            .grid ul li:active, .grid ul li.active {
+                background-color: #d9cfc0!important;
+                font-weight: bold;
+                cursor: default;
+            }
+
+    .grid input[type="text"] {
+        padding: .8em;
+        border: 1px solid #d7bea2;
+        background-color: #F9F8F4;
+        box-shadow: none;
+        width: 350px;
+    }
+
+        .grid input[type="text"] ~ span {
+            position: relative;
+            display: inline-block;
+            width: 1.8em;
+            height: 1.4em;
+            top: .3em;
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+            cursor: pointer;
+        }
+
+            .grid input[type="text"] ~ span.clear {
+                background-image: url('../images/game/add.png');
+            }
+
+                .grid input[type="text"] ~ span.clear:hover, .grid input[type="text"] ~ span.clear:active {
+                    background-image: url('../images/game/add-active.png');
+                }
+
+            .grid input[type="text"] ~ span.find {
+                width: 1.6em;
+                margin-left: -2em;
+                background-image: url('../images/game/find.png');
+            }
+
+                .grid input[type="text"] ~ span.find:hover, .grid input[type="text"] ~ span.find:active {
+                    background-image: url('../images/game/find-active.png');
+                }
+
+.scroll {
+    position: relative;
+}
+
+    /*.scroll:after{
+    content:"";
+    position:absolute;
+    top:0;
+    right:0;
+    bottom:0;
+    width:5px;
+    height:100%;
+    background-color:rgba(192, 157, 108, .3);
+}*/
+
+    .scroll::-webkit-scrollbar {
+        width: 12px;
+        background-color: rgba(192, 157, 108, .3);
+    }
+
+    .scroll::-webkit-scrollbar-thumb {
+        border-radius: 8px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.5);
+        background-color: #c8b39b;
+        width: 5px;
+    }
+
+.pic.woz {
+    background-image: url('../images/game/wordsofoz_collection.png');
+}
+
+.pic.nf {
+    background-image: url('../images/game/nightfall_collection.png');
+}
+
+.pic.loc {
+    background-image: url('../images/game/lifeofcolor_collection.png');
+}
+
+.grid .table {
+    display: table;
+    border-collapse: separate;
+    border-spacing: 1em;
+}
+
+.game-item {
+    display: table-row;
+    font-family: cambria;
+    font-weight: normal;
+    font-size: .9em;
+    line-height: 1.5em;
+    color: #986B31;
+    -webkit-text-shadow: 0 0 1px #986B31;
+    text-shadow: 0 0 1px #986B31;
+    -webkit-font-smoothing: antialiased;
+    cursor: pointer;
+}
+.game-item:hover .cell{
+    background-color: rgb(255, 254, 250)!important;
+}
+
+    .game-item .cell {
+        position: relative;
+        display: table-cell;
+        padding: .5em;
+        margin-bottom: .5em;
+        border: 2px solid #d7bea2;
+        border-radius: 7px;
+        background: #f9f8f4;
+        width: 22em;
+    }
+
+        .game-item .cell.left {
+            width: 60em;
+        }
+
+        .game-item .cell.right {
+            width: 15em;
+        }
+
+    .game-item .pic {
+        position: absolute;
+        top: -.75em;
+        height: 7em;
+        width: 8em;
+        -moz-background-size: auto 100%;
+        -o-background-size: auto 100%;
+        -webkit-background-size: auto 100%;
+        background-size: auto 100%;
+        background-repeat: no-repeat;
+    }
+
+        .game-item .pic + div {
+            margin-left: 9em;
+        }
+
+    .game-item .name {
+        font-weight: bold;
+    }
+
+    .game-item .collection {
+        font-style: italic;
+        margin-right: .2em;
+    }
+
+    .game-item .date {
+        font-style: italic;
+    }
+
+    .game-item .phrase {
+        font-weight: bold;
+        font-size:1.2em;
+    }
+    .game-item .phrase:after,.game-item .phrase:before{
+        content: '"';
+    }
+
+    .game-item .point {
+        font-weight: bold;
+    }
+    .game-item .point:after {
+         content: " points"
+    }
+
+    .game-item .icons {
+        position: relative;
+    }
+
+        .game-item .icons .time {
+            border: 1px solid #d7bea2;
+            border-radius: 3px;
+            box-shadow: 0 0 2px #d7bea2;
+            padding: 0 2px;
+            display: inline-block;
+        }
+
+        .game-item .icons .chat {
+            position: absolute;
+            top: -.25em;
+            display: inline-block;
+            width: 2.5em;
+            height: 2.5em;
+            padding-left: .5em;
+            background-image: url('../images/game/chat.png');
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+        }
+
+            .game-item .icons .chat > div {
+                padding: .4em 0 0 .8em;
+                font-size: .8em;
+            }
+
+        .game-item .icons .resign {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 2em;
+            height: 2em;
+            background-image: url('../images/game/end-game-icon.png');
+            background-repeat: no-repeat;
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+        }
+        .game-item .icons .resign:hover,.game-item .icons .resign:active  {
+            background-image: url('../images/game/end-game-icon-active.png');            
+        }
+
+    .game-item .players {
+        position: absolute;
+        bottom: .5em;
+        left: 0;
+        line-height: 1em;
+        width: 10.5em;
+    }
+
+        .game-item .players .player {
+            font-size: .8em;
+            float: left;
+            margin-left: 1em;
+            width: 8em;
+        }
+
+        .game-item .players .score {
+            float: right;
+            font-weight: bold;
+        }
+/*#endregion */

@@ -1,55 +1,53 @@
-﻿define(['durandal/app', 'api/datacontext', 'paper', 'jquery'], function (app, ctx, Paper, $) {
+﻿define(['durandal/system', 'durandal/app', 'api/datacontext', 'paper'], function (system, app, ctx, Paper) {
 
-  var scope = paper;
-  var unplayedWords = ctx.unplayedWords;
+  var unplayedWords = ctx.unplayedWords, tool, dfd;
 
-  return {
-    draw: draw, setup: setup, redraw: redraw,
-    setScope: function (paperScope) { scope = paperScope; }
+  circleWords = {
+    load: function () {
+      dfd = system.defer();
+      draw();
+      return dfd.promise();
+    },
+    reload: redraw,
+    unload: unload
   };
 
-  function setup(canvas) {
-    //scope = new paper.PaperScope();
-    //scope.setup(canvas);    
+  return circleWords;
 
-    draw();
+  function unload() {
+    if (tool) {
+      tool.detach('mousedown');
+      tool.detach('mouseup');
+      tool.detach('mousedrag');
+      tool.remove();
+      tool = null;
+    }
   }
 
   function redraw() {
-
     draw();
   }
 
-  function draw() {
-    //return;
-    var tool = new scope.Tool(), stars = [], path;
+  function draw() {    
+    tool = new paper.Tool(), stars = [], path;    
 
-    //tool.minDistance = 32;
-    tool.fixedDistance = 32;
-
-    //var text = new paper.PointText({
-    //  point: new paper.Point(100, 300),
-    //  content: ''
-    //});
-    //text.fillColor = 'black';
-
+    tool.minDistance = 16;
+    tool.maxDistance = 32;
+   
     tool.onMouseDown = function (event) {
-      //text.content = "mouseDown";
-      path = new scope.Path();
+      path = new paper.Path();
       path.add(event.point);
-      path.strokeColor = 'red';
+      //path.strokeColor = 'red';
       stars = [];
-      //addStarAt(event.point);
+      addStarAt(event.point);
     };
 
     tool.onMouseDrag = function (event) {
-      //text.content = "drag " + path.length;
       path.add(event.point);
-      //addStarAt(event.point);
+      addStarAt(event.point);
     };
 
     tool.onMouseUp = function (event) {
-      //text.content = "mouseup " + path.length;
       if (path.length == 0) return;
       path.closePath();
 
@@ -57,21 +55,21 @@
 
       if (selection.length < 3) {
         console.log("Too few words!");
+        dfd.reject(selection);
       } else if (selection.length > 9) {
         console.log("Too many words!");
-        app.woz.dialog.show("alert", "Too many words!");
-      } else {
-        selection = Sort(selection);
-        ctx.activeWords(selection);
-        $("body").animate({ scrollTop: 0 }, "slow");
-
+        app.dialog.show("alert", "Too many words!");
+        dfd.reject(selection);
+      } else {        
+        selection = Sort(selection);        
         for (var i = 0; i < selection.length; i++) console.log(selection[i].lemma);
+        dfd.resolve(selection);
       }
       path.remove();
     };
 
     addStarAt = function (point) {
-      star = new scope.Raster("star");
+      star = new paper.Raster("star");
 
       star.position = point;
       star.rotate(Math.floor(Math.random() * 360));
@@ -106,7 +104,6 @@
         }
       }
       words.splice(words.indexOf(upper), 1);
-      //console.log(upper);
       return upper;
     }
 

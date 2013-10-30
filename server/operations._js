@@ -15,7 +15,7 @@ module.exports =
   {
     var ret = [];
     console.log( "gonna swap" + game.data[consts.ACTION_DONE] );
-    if( game.data[consts.ACTION_DONE] == false ){
+    if( game.data[consts.ACTION_DONE] === false ){
       this.setActionDone( game, true, _ );
       console.log( "im swapping" );
       var mw;
@@ -44,7 +44,7 @@ module.exports =
         {
           currentWord = words[i];
           currentMagnet = magnets[i];
-          console.log( "nLigacoes" + currentMagnet.outgoing( consts.REPRESENTS_WORD, _ ).length );
+
           currentMagnet.outgoing( consts.REPRESENTS_WORD, _ )[0]["delete"](_);
           randomClass = currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ];
 

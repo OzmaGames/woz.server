@@ -1,4 +1,5 @@
 var neo4j = require("neo4j"),
+  loader = require("./loader._js"),
   consts = require("./constants._js"),
   retriever = require("./retriever._js");
 
@@ -13,18 +14,31 @@ module.exports =
     for( var i = 0; i < consts.BALANCE.length; i ++ ){
       total += consts.BALANCE[i];
       if( randomC < total ){
-        var randomN = Math.floor( this.getRandomInRange( 0, consts.CLASS_COUNTS[i] ) );
-        word = retriever.getWordInClassIndex( consts.CLASS_NAMES[i] +  "ClassIndex", randomN, _ );
+        var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[i] - 1 ) );
+//         word = retriever.getWordFromClassIndex( consts.CLASS_NAMES[i], randomN, _ );
+        word = loader.getWords()[className][randomN];
         break;
       }
     }
     return word;
   },
 
-  getRandomWordByClass : function( className, _ )
+  getRandomWordByClass : function( collectionName, className, _ )
   {
-    var randomN = Math.floor( this.getRandomInRange( 0, consts.CLASS_COUNTS[className] ) );
-    var word = retriever.getWordFromClassIndex( className, randomN, _ );
+    collectionName = className === "related" ? "starter" : collectionName;
+    console.log( "grwbc1" );
+    var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[collectionName][className] - 1 ) );
+    console.log( "grwbc2" );
+    var word = retriever.getWordFromClassIndex( collectionName, className, randomN, _ );
+    console.log( "grwbc3" );
+    
+    return word;
+  },
+
+  getRandomWordByClassWithLoader : function( collectionName, className, _ )
+  {
+    var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[collectionName][className] - 1 ) );
+    var word = loader.getWords()[className][randomN];
     
     return word;
   },
@@ -33,10 +47,10 @@ module.exports =
   {
     var randomN = Math.floor( Math.random() *  getTotalImageCount() );
     var image = retriever.getImageFromIndex( randomN, _ );
-
+    
     return image;
   },
-
+  
   getRandomInstruction : function( _ )
   {
     var randomN = Math.floor( Math.random() *  getTotalInstructionCount() );
@@ -44,23 +58,47 @@ module.exports =
     
     return instruction;
   },
-
+  
   getRandomInRange: function( min, max )
   {
     return Math.random() * ( max - min ) + min;
   },
-
+  
   getRandomIntegerInRange: function( min, max )
   {
     return Math.round( this.getRandomInRange( min, max ) );
   },
-
+  
   getSignedRandomInRange: function( min, max )
   {
     var random = Math.random() * ( max - min ) + min;
     return (Math.random() > 0.5) ? random : (0 - random);
   },
-
+  
+  getArrayOfUniqueRandomIntegerInRange: function( size, min, max )
+  {
+    var i = 0;
+    var j = 0;
+    var temp = 0;
+    var ret = [];
+    
+    for( i = 0; i < size; i++ ){
+      temp = this.getRandomIntegerInRange( min, max );
+      if( i > 0 ){
+        for( j = 0; j < ret.length; j++ ){
+          if( ret[j] === temp ){
+            i--;
+            break;
+          }
+        }
+      }
+      if( j === ret.length ){
+        ret.push( temp );
+      }
+    }
+    
+    return ret;
+  }
   
 };
 
