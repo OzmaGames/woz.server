@@ -82,6 +82,7 @@ module.exports =
   
   //Indexes
   COUNT_NODE_ID : 1,
+  BOARD_INDEX: "boardIndex",
   WORD_ID_INDEX : "WordIDIndex",
   WORD_LEMMA_INDEX : "WordLemmaIndex",
   
@@ -156,18 +157,22 @@ module.exports =
   LEMMA: "lemma",
   WORDS: "words",
   IMAGE: "image",
+  BOARD: "board",
   PHRASE: "phrase",
   PLAYER: "player",
+  
   INSTRUCTION: "instruction",
   MAGNET_PLAYER: "magnetPlayer",
   MAGNET_PHRASE: "magnetPhrase",
   
   //Count Node
   GAME_COUNT: "gameCount",
+  BOARD_COUNT: "boardCount",
 
   //Path & Phrases
   CW: "cw",
   NWORDS: "nWords",
+  NBOARDS: "nBoards",
   PATH_ID: "pathID",
   END_TILE: "endTile",
   START_TILE: "startTile",

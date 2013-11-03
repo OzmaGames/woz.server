@@ -39,6 +39,12 @@ var io = app.io();
 var active = {};
 var sockets = {};
 var queue =  [ [], [] ];
+var countNode;
+
+var i = 0;
+
+console.log( i++ );
+console.log( i );
 
 // performance stuff
 // order without having to get the players object
@@ -58,7 +64,7 @@ if ( environment.IS_HEROKU ) {
 
 try
 {
-  var countNode = retriever.getCountNode(_);
+  countNode = retriever.getCountNode(_);
   
 //   consts.CLASS_COUNTS = {}; 
 //   for( var i = 0; i < consts.COLLECTION_NAMES.length; i++ ){
@@ -74,6 +80,7 @@ catch( exception )
   users.addUser( "ali", "12345", "", "", "", "eng", consts.STARTING_BESOZ, _ );
   users.addUser( "pedro", "12345", "", "", "", "eng", consts.STARTING_BESOZ, _ );
 
+  countNode = retriever.getCountNode(_);
   console.log( "done." );
 }
 
@@ -633,6 +640,119 @@ app.io.route( "manager:getAllWords", function( req, _ )
   var responseData = { success:false, words: [] }
 
   responseData.words = allWords;
+  responseData.success = true;
+  req.io.respond( responseData );
+  
+  var end = new Date().getTime();
+  var time = end - start;
+  console.log( "took: " + time + "ms" );
+});
+
+// define(['api/server/connection'], function (cnn) {
+  //
+//   input: {}
+//   output: [{id, tiles:[{id, x, y, angle}], paths:[{id, startTile, endTile, cw, nWords, minCurve, maxCurve}], level}, {..}]
+//   cnn.addEmission("manager:gameboards");
+//
+//   input: {gameboard object}
+//   output: {success: true|false}
+//   cnn.addEmission("manager:gameboard");
+//   /*
+//    f *or add:     id is not given? or null is set?
+//    for edit:    id is provided
+//      for remove:  id is provided along with destroy property-> {id:#, destroy: true}
+//      */
+//   });
+
+app.io.route( "manager:getBoards", function( req, _ )
+{
+  var start = new Date().getTime();
+  process.stdout.write("getting all boards ");
+  var responseData = { success:false, boards: [] }
+
+  if( countNode.data[consts.BOARD_COUNT] !== 0 ){
+    responseData.boards = retriever.getAllBoards( _ );
+  }
+  
+  responseData.success = true;
+  req.io.respond( responseData );
+  
+  var end = new Date().getTime();
+  var time = end - start;
+  console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "manager:setBoard", function( req, _ )
+{
+  var start = new Date().getTime();
+  process.stdout.write("setting board ");
+
+  var i;
+  var id;
+  var path;
+  var tile;
+  var paths;
+  var tiles;
+  var tileNode;
+  var pathNode;
+  var boardNode;
+  var responseData = { success:false }
+
+
+  
+  if( req.data.id === -1 ){
+    id = tools.getNewBoardID(_);
+    boardNode = tools.createNode({
+      type: consts.BOARD,
+      id: id,
+      level: req.data.level
+    }, _ );
+    boardNode.index( consts.BOARD_INDEX, consts.ID, id, _ );
+  }else{
+    boardNode = retriever.getBoard( req.data.id, _ );
+    
+    boardNode.data.level = req.data.level;
+    
+    paths = retriever.getBoardPaths( boardNode.id, _ );
+    for( i = 0; i < paths.length; i++ ){
+      paths[i].delete( _, true );
+    }
+    
+    tiles = retriever.getBoardTiles( boardNode.id, _ );
+    for( i = 0; i < tiles.length; i++ ){
+      tiles[i].delete( _, true );
+    }
+  }
+  for( i = 0; i < req.data.paths.length; i++ ){
+    path = req.data.paths[i];
+
+    pathNode = tools.createNode({
+      type: consts.PATH,
+      id: id,
+      cw: path.cw,
+      nWords: path.nWords,
+      endTile: path.endTile,
+      startTile: path.startTile,
+      minCurve: 0,
+      maxCurve: 0
+
+    }, _ );
+    boardNode.createRelationshipTo( pathNode, consts.HAS_PATH, {}, _ );
+  }
+
+  for( i = 0; i < req.data.tiles.length; i++ ){
+    tile = req.data.tiles[i];
+
+    tileNode = tools.createNode({
+      type: consts.TILE,
+      id: id,
+      x: tile.x,
+      y: tile.y,
+      angle: tile.angle
+    }, _ );
+    boardNode.createRelationshipTo( tileNode, consts.HAS_TILE, {}, _ );
+  }
+  
   responseData.success = true;
   req.io.respond( responseData );
   

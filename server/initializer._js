@@ -44,7 +44,7 @@ module.exports =
   {
     var i, j, k;
     var currentWordNode = false;
-    var countNode = tools.createNode( { gameCount : 0 }, _ );
+    var countNode = tools.createNode( { gameCount : 0, boardCount: 0 }, _ );
     
     try{
       for( j = 0; j < collectionNames.length; j++ ){

@@ -98,7 +98,7 @@ module.exports =
     return words;
   },
 
-    getImageFromIndex: function( id, _ ){
+  getImageFromIndex: function( id, _ ){
     return db.getIndexedNodes( consts.IMAGE_INDEX, consts.ID, id, _ )[0];
   },
 
@@ -546,6 +546,71 @@ module.exports =
     }
 
     return words;
+  },
+
+  getAllBoards: function( _ )
+  {
+    var boards = [];
+    var resultsTemp = db.queryNodeIndex( consts.BOARD_INDEX, "id: (*)" , _ );
+
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      boards.push( resultsTemp[i] );
+    }
+
+    return boards;
+  },
+
+  getBoard: function( id, _ )
+  {
+    var board;
+
+    try{
+      var results= db.getIndexedNodes( consts.BOARD_INDEX, consts.ID, id, _ );
+      if( results && results.length > 0 ){
+        board = results[0];
+      }
+    }catch( ex ){
+      console.log( "couldn't find board in " + consts.BOARD_INDEX);
+      console.log( ex.message );
+    }
+
+    return board;
+  },
+
+  getBoardPaths: function( boardNodeID, _ )
+  {
+    var paths = [];
+
+    var query =
+      "START m = node(" + boardNodeID + ") " +
+      "MATCH m -[:" + consts.HAS_PATH + "]-> path " +
+      "RETURN path;";
+
+    var resultsTemp = db.query(query, {}, _ );
+
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      paths.push( resultsTemp[i].path);
+    }
+
+    return paths;
+  },
+  
+  getBoardTiles: function( boardNodeID, _ )
+  {
+    var tiles = [];
+
+    var query =
+      "START m = node(" + boardNodeID + ") " +
+      "MATCH m -[:" + consts.HAS_TILE + "]-> tile " +
+      "RETURN tile;";
+
+    var resultsTemp = db.query(query, {}, _ );
+
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      tiles.push( resultsTemp[i].tile );
+    }
+
+    return tiles;
   }
 };
   

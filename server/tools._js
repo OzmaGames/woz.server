@@ -11,8 +11,15 @@ module.exports =
 
   createNode : function( properties, _ )
   {
-    var node = db.createNode( properties );
-    var savedNode = node.save(_);
+  var node;
+  var savedNode;
+
+  try{
+    node = db.createNode( properties );
+    savedNode = node.save(_);
+    }catch( exc ){
+      console.log( exc.message );
+    }
     
     return savedNode;
   },
@@ -25,6 +32,16 @@ module.exports =
     countNode.save(_);
     
     return newGameID;
+  },
+
+  getNewBoardID: function ( _ )
+  {
+    var countNode = retriever.getCountNode( _ );
+    var newBoardID = countNode.data[consts.BOARD_COUNT]++;
+
+    countNode.save(_);
+
+    return newBoardID;
   },
 
   addPath: function( game, startTile, endTile, nWords, cw, _ ){
