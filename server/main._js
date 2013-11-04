@@ -648,32 +648,30 @@ app.io.route( "manager:getAllWords", function( req, _ )
   console.log( "took: " + time + "ms" );
 });
 
-// define(['api/server/connection'], function (cnn) {
-  //
-//   input: {}
-//   output: [{id, tiles:[{id, x, y, angle}], paths:[{id, startTile, endTile, cw, nWords, minCurve, maxCurve}], level}, {..}]
-//   cnn.addEmission("manager:gameboards");
-//
-//   input: {gameboard object}
-//   output: {success: true|false}
-//   cnn.addEmission("manager:gameboard");
-//   /*
-//    f *or add:     id is not given? or null is set?
-//    for edit:    id is provided
-//      for remove:  id is provided along with destroy property-> {id:#, destroy: true}
-//      */
-//   });
-
 app.io.route( "manager:getBoards", function( req, _ )
 {
   var start = new Date().getTime();
   process.stdout.write("getting all boards ");
-  var responseData = { success:false, boards: [] }
 
-  if( countNode.data[consts.BOARD_COUNT] !== 0 ){
-    responseData.boards = retriever.getAllBoards( _ );
-  }
+  var i = 0;
+  var tiles;
+  var paths;
+  var board;
+  var boards;
+  var responseData = { success:false, boards: [] }
   
+  if( countNode.data[consts.BOARD_COUNT] !== 0 ){
+    boards = retriever.getAllBoards( _ );
+    for( i = 0; i < boards.length; i++ ){
+      board = boards[i].data;
+      
+      board.tiles = retriever.getBoardTilesData( boards[i].id, _ );
+      board.paths = retriever.getBoardPathsData( boards[i].id, _ );
+      
+      responseData.boards.push( board );
+    }
+  }
+
   responseData.success = true;
   req.io.respond( responseData );
   
@@ -696,18 +694,18 @@ app.io.route( "manager:setBoard", function( req, _ )
   var tileNode;
   var pathNode;
   var boardNode;
-  var responseData = { success:false }
-
+  var responseData = { success:false };
 
   
   if( req.data.id === -1 ){
-    id = tools.getNewBoardID(_);
+    id = tools.getNewBoardID( _ );
     boardNode = tools.createNode({
       type: consts.BOARD,
       id: id,
       level: req.data.level
     }, _ );
-    boardNode.index( consts.BOARD_INDEX, consts.ID, id, _ );
+    
+  boardNode.index( consts.BOARD_INDEX, consts.ID, id, _ );
   }else{
     boardNode = retriever.getBoard( req.data.id, _ );
     
@@ -723,9 +721,10 @@ app.io.route( "manager:setBoard", function( req, _ )
       tiles[i].delete( _, true );
     }
   }
+  
   for( i = 0; i < req.data.paths.length; i++ ){
     path = req.data.paths[i];
-
+    
     pathNode = tools.createNode({
       type: consts.PATH,
       id: id,

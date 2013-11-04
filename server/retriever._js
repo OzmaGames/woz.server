@@ -550,20 +550,21 @@ module.exports =
 
   getAllBoards: function( _ )
   {
+  var i = 0;
     var boards = [];
     var resultsTemp = db.queryNodeIndex( consts.BOARD_INDEX, "id: (*)" , _ );
-
-    for( var i = 0; i < resultsTemp.length; i++ ){
+    
+    for( i = 0; i < resultsTemp.length; i++ ){
       boards.push( resultsTemp[i] );
     }
-
+    
     return boards;
   },
 
   getBoard: function( id, _ )
   {
     var board;
-
+    
     try{
       var results= db.getIndexedNodes( consts.BOARD_INDEX, consts.ID, id, _ );
       if( results && results.length > 0 ){
@@ -598,6 +599,42 @@ module.exports =
   getBoardTiles: function( boardNodeID, _ )
   {
     var tiles = [];
+    
+    var query =
+      "START m = node(" + boardNodeID + ") " +
+      "MATCH m -[:" + consts.HAS_TILE + "]-> tile " +
+      "RETURN tile;";
+    
+    var resultsTemp = db.query(query, {}, _ );
+    
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      tiles.push( resultsTemp[i].tile );
+    }
+    
+    return tiles;
+  },
+
+  getBoardPathsData: function( boardNodeID, _ )
+  {
+    var paths = [];
+
+    var query =
+      "START m = node(" + boardNodeID + ") " +
+      "MATCH m -[:" + consts.HAS_PATH + "]-> path " +
+      "RETURN path;";
+
+    var resultsTemp = db.query(query, {}, _ );
+
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      paths.push( resultsTemp[i].path.data);
+    }
+
+    return paths;
+  },
+
+  getBoardTilesData: function( boardNodeID, _ )
+  {
+    var tiles = [];
 
     var query =
       "START m = node(" + boardNodeID + ") " +
@@ -607,14 +644,15 @@ module.exports =
     var resultsTemp = db.query(query, {}, _ );
 
     for( var i = 0; i < resultsTemp.length; i++ ){
-      tiles.push( resultsTemp[i].tile );
+      tiles.push( resultsTemp[i].tile.data );
     }
 
     return tiles;
   }
 };
   
-  function getEndNodesByRelType( nodeID, relationshipType, _ ){
+  function getEndNodesByRelType( nodeID, relationshipType, _ )
+  {
     var results = [];
     if( checkAlpha( nodeID ) && checkAlpha( relationshipType ) )
     {
@@ -635,7 +673,8 @@ module.exports =
     return results;
   }
 
-  function checkAlpha( source ) {
+  function checkAlpha( source )
+  {
     var isAlpha = true;
     
     var lowerBoundNum = '0'.charCodeAt( 0 );
