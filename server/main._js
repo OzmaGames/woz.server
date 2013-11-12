@@ -290,6 +290,7 @@ function createGame( usernames, collectionName, level, _ )
   var a, i, j, k = 0;
   var gameID = tools.getNewGameID(_);
   var playerCount = usernames.length;
+  var startDate = Date.parse( new Date() );
   
   now = new Date().getTime();
   time = now - start;
@@ -310,6 +311,8 @@ function createGame( usernames, collectionName, level, _ )
     usernames: usernames,
     playerCount: playerCount,
     collection: collectionName,
+    lastMod: startDate,
+    startDate: startDate,
     resignedCount: 0
   }, _ );
   
