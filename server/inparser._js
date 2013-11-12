@@ -58,7 +58,7 @@ function checkLetters( n, where, words, isBegin, _ ) //if not begin -> end
   for( var i = 0; i < words.length; i++ )
   {
     var currentWord = words[i];
-    var currentLetter = currentWord.data[consts.LEMMA].substr( isBegin ? 0 : currentWord.data[consts.LEMMA].length - 1, 1);
+    var currentLetter = currentWord.data[props.WORD.LEMMA].substr( isBegin ? 0 : currentWord.data[props.WORD.LEMMA].length - 1, 1);
     
     if( lettersCount.hasOwnProperty( currentLetter ) ){
       lettersCount[currentLetter]++;
@@ -95,7 +95,7 @@ function checkCount( n, where, words, _ )
 
   for( var i = 0; i < words.length; i++ ){
     var currentWord = words[i];
-    if( currentWord.data[consts.LEMMA].length == where )
+    if( currentWord.data[props.WORD.LEMMA].length == where )
     {
       matches++;
     }

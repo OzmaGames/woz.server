@@ -1,97 +1,108 @@
 var oz = oz || {};
 
 var neo4j = require( "neo4j" ),
+  tools = require( "./tools._js" ),
+  types = require( "./types._js" ),
+  props = require( "./properties._js" ),
   consts = require( "./constants._js" ),
   retriever = require("./retriever._js"),
-  retriever = require("./retriever._js"),
+  rels = require( "./relationships._js" ),
   randomizer = require("./randomizer._js");
-  
-
 
 module.exports =
 {
 
-  swapWords: function( game, username, magnetIDs, _ )
+  addMagnet: function( game, player, collectionName, className, x, y, _ )
   {
-    var ret = [];
-    console.log( "gonna swap" + game.data[consts.ACTION_DONE] );
-    if( game.data[consts.ACTION_DONE] === false ){
-      this.setActionDone( game, true, _ );
-      console.log( "im swapping" );
-      var mw;
-      
-      var words = [];
-      var magnets = [];
-      
-      var randomClass;
-      var currentWord;
-      var currentMagnet;
-      
-      console.log( "1" );
-      var player = retriever.getGamePlayerByID( game.id, username, _ );
-      mw = retriever.getPlayerMagnetsAndWordsByID( player.id, magnetIDs, _ );
-      console.log( "2" );
-      for( i = 0; i < mw.length; i ++ )
-      {
-        words.push( mw[i].word );
-        magnets.push( mw[i].magnet );
-      }
-      
-      for( var i = magnets.length - 1; i >= 0; i-- )
-      {
-      console.log( "3" );
-        try
-        {
-          currentWord = words[i];
-          currentMagnet = magnets[i];
-
-          currentMagnet.outgoing( consts.REPRESENTS_WORD, _ )[0]["delete"](_);
-          randomClass = currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ];
-
-          currentWord = randomizer.getRandomWordByClass( randomClass , _);
-
-          ret.push({
-            id: currentMagnet.data[consts.ID],
-            angle: currentMagnet.data[consts.ANGLE],
-            x: currentMagnet.data[consts.X],
-            y: currentMagnet.data[consts.Y],
-            isRelated: currentMagnet.data[consts.IS_RELATED],
-            lemma: currentWord.data[consts.LEMMA],
-            points: currentWord.data[consts.POINTS]
-          });
-          console.log( "4" );
-          currentMagnet.data[ consts.REPRESENTED_WORD ] = currentWord.data[consts.ID];
-          currentMagnet.createRelationshipTo( currentWord, consts.REPRESENTS_WORD, {}, _ );
-          currentMagnet.save(_);
-        }
-        catch( ex )
-        {
-          console.log( "Error swapping words: " );
-          console.log( ex );
-        }
-      }
-    }
+    var start = new Date().getTime();
+    var now;
+    var time;
+    
+    var ret;
+    var i = 0;
+    var j = 0;
+    var isRelated = false;
+    
+    var word = randomizer.getRandomWordByClass( collectionName, className, _);
+    
+    now = new Date().getTime();
+    time = now - start;
+//     console.log("am1: " + time );
+    start = new Date().getTime();
+    
+    
+    isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
+    if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
+    if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
+    var randomAngle = randomizer.getRandomInRange( consts.MIN_ANGLE, consts.MAX_ANGLE );
+    
+    now = new Date().getTime();
+    time = now - start;
+//     console.log("am2: " + time );
+    start = new Date().getTime();
+    
+    var magnet = tools.createNode({
+      type: types.MAGNET_PLAYER,
+      id: game.data[props.GAME.WORD_COUNT],
+      representedWord: word.data[props.WORD.LEMMA],
+      owner: player.data[props.PLAYER.USERNAME],
+      isRelated: isRelated,
+      angle: randomAngle,
+      x: x,
+      y: y,
+      class: className,
+      collection: collectionName
+    }, _ );
+    
+    now = new Date().getTime();
+    time = now - start;
+//     console.log("am3: " + time );
+    start = new Date().getTime();
+    
+    player.createRelationshipTo( magnet, rels.HAS_MAGNET, { id: game.data[props.GAME.WORD_COUNT] }, _ );
+    magnet.createRelationshipTo( word, rels.REPRESENTS_WORD, {}, _ );
+    
+    ret = {
+      id: game.data[props.GAME.WORD_COUNT],
+      angle: randomAngle,
+      x: x,
+      y: y,
+      isRelated: isRelated,
+      lemma: word.data[props.WORD.LEMMA],
+      points: word.data[props.WORD.POINTS]
+    };
+    
+    game.data[props.GAME.WORD_COUNT]++;
+    game.save(_);
+    
+    now = new Date().getTime();
+    time = now - start;
+//     console.log("am4: " + time );
+    
     return ret;
   },
-  
+
   move: function( gameNodeID, magnetID, x, y, angle, _ )
   {
     var magnet = retriever.getGameMagnetByID( gameNodeID, magnetID, _ );
     
-    entity.data[consts.X] = x;
-    entity.data[consts.Y] = y;
-    entity.data[consts.ANGLE] = angle;
-    entity.save(_);
+    magnet.data[props.MAGNET.X] = x;
+    magnet.data[props.MAGNET.Y] = y;
+    magnet.data[props.MAGNET.ANGLE] = angle;
+    
+    magnet.save(_);
   },
   
-  setActionDone: function( game, actionDone, _ ){
-    game.data[consts.ACTION_DONE] = actionDone;
+  setActionDone: function( game, actionDone, _ )
+  {
+    game.data[props.GAME.ACTION_DONE] = actionDone;
     game.save(_);
   },
   
-  endTurn: function( game, _ ){
+  endTurn: function( game, _ )
+  {
     this.setActionDone( game, false, _ );
-    game.data[consts.TURN]++;
+    game.data[props.GAME.TURN]++;
     game.save(_);
   }
 };

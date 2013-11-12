@@ -1,8 +1,12 @@
 var oz = oz || {};
 
 var neo4j = require("neo4j"),
+  types = require("./types._js"),
   tools = require("./tools._js"),
+  indexes = require("./indexes._js"),
+  props = require("./properties._js"),
   consts = require("./constants._js"),
+  rels = require("./relationships._js"),
   randomizer = require("./randomizer._js"),
   environment = require("./environment._js"),
   
@@ -71,7 +75,7 @@ module.exports =
           var currentWord = collection[i];
           
           if( j !== 0 ){
-            currentWordNode = db.getIndexedNodes( consts.WORD_LEMMA_INDEX, consts.LEMMA, currentWord.lemma, _ )[0];
+            currentWordNode = db.getIndexedNodes( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ )[0];
           }
           
           if( currentWordNode ){
@@ -79,7 +83,7 @@ module.exports =
             currentWordNode.data.collections.push( collectionName );
           }else{
             currentWordNode = tools.createNode({
-              type: consts.WORD,
+              type: types.WORD,
               lemma: currentWord.lemma,
               points: randomizer.getRandomIntegerInRange(0, 4),
               collections: [collectionName],
@@ -87,8 +91,9 @@ module.exports =
               versionOf: ""
             }, _ );
             
-            currentWordNode.index( consts.WORD_LEMMA_INDEX, consts.LEMMA, currentWord.lemma, _ );
-            currentWordNode.index( collectionName + consts.WORD_LEMMA_INDEX, consts.LEMMA, currentWord.lemma, _ );
+            console.log( indexes.WORD_LEMMA_INDEX + " " + currentWord.lemma );
+            currentWordNode.index( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
+            currentWordNode.index( collectionName + indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
             
             var categories = currentWord.categories.split(', ');
             if( categories.length > 0 && categories[0] !== "" ){
@@ -99,7 +104,7 @@ module.exports =
             var classes = currentWord.classes.split(', ');
             
             for( k = 0; k < classes.length; k++ ){
-              currentWordNode.index( collectionName + classes[k] + "ClassIndex", consts.ID, classCounts[collectionName][classes[k]]++, _ );
+              currentWordNode.index( collectionName + classes[k] + "ClassIndex", props.ID, classCounts[collectionName][classes[k]]++, _ );
             }
             currentWordNode.data.classes = classes;
             currentWordNode.save(_);
@@ -118,23 +123,23 @@ module.exports =
     for( i = 0; i < defaultImages.length; i++ ){
       var currentImage = defaultImages[i];
       var currentImageNode = tools.createNode({
-        type: consts.IMAGE,
+        type: types.IMAGE,
         name: currentImage.name,
         collection: "starter",
         related: currentImage.related
       }, _ );
-      currentImageNode.index( consts.IMAGE_INDEX, consts.ID, i, _ );
+      currentImageNode.index( indexes.IMAGE_INDEX, props.ID, i, _ );
       
       var relatedWordsIDs =[];
       var relatedWords = currentImage.related.split(', ');
       for( j = 0; j < relatedWords.length; j++ ){
         try{
-          var relatedWordNode = db.getIndexedNodes( consts.WORD_LEMMA_INDEX, consts.LEMMA, relatedWords[j], _ )[0];
+          var relatedWordNode = db.getIndexedNodes( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, relatedWords[j], _ )[0];
           relatedWordNode.data.classes.push( "related" );
           relatedWordNode.save(_);
           
-          currentImageNode.createRelationshipTo( relatedWordNode, consts.RELATES_TO, {}, _ );
-          relatedWordNode.index( "relatedClassIndex", consts.ID, classCounts.starter.related++, _ );
+          currentImageNode.createRelationshipTo( relatedWordNode, rels.RELATES_TO, {}, _ );
+          relatedWordNode.index( "relatedClassIndex", props.ID, classCounts.starter.related++, _ );
         }catch( ex ){
           console.log( "didnt work for " + relatedWords[j] );
         }
@@ -148,7 +153,7 @@ module.exports =
     for( i = 0; i < defaultInstructions.length; i++ ){
       var currentInstruction = defaultInstructions[i];
       var currentInstructionNode = tools.createNode({
-        type: consts.INSTRUCTION,
+        type: types.INSTRUCTION,
         id: i,
         mult: currentInstruction.mult,
         bonus: currentInstruction.bonus,
@@ -156,10 +161,26 @@ module.exports =
         shortDescription: currentInstruction.shortDescription,
         longDescription: currentInstruction.longDescription
       }, _ );
-      currentInstructionNode.index( consts.INSTRUCTION_INDEX, consts.ID, i, _ );
+      currentInstructionNode.index( indexes.INSTRUCTION_INDEX, props.ID, i, _ );
       
       if( print ) console.log( "added instruction: " + currentInstruction.condition );
     }
+    
+    var user = tools.createNode({
+      type: types.USER,
+      username : "ozma",
+      salt: "ozma",
+      password : "ozma",
+      email: "ozma@ozma.com",
+      name: "ozma",
+      surname: "ozma",
+      language: "ozma",
+      gamesPlayed: 0,
+      besoz: 0
+    }, _ );
+    
+    user.index( indexes.USER_INDEX, props.USER.USERNAME, "ozma", _ );
+    
     
     console.log( classCounts );
 //     for( j = 0; j < collectionNames.length; j++ ){

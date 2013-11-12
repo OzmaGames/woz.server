@@ -9,16 +9,21 @@ var neo4j = require("neo4j"),
     
     tools = require("./tools._js"),
     users = require("./users._js"),
+    types = require("./types._js"),
     loader = require("./loader._js"),
     mailer = require("./mailer._js"),
     actions = require("./actions._js"),
+    props = require("./properties._js"),
     consts = require("./constants._js"),
+    indexes = require("./indexes._js"),
     inparser = require("./inparser._js"),
+    rels = require("./relationships._js"),
     retriever = require("./retriever._js"),
     randomizer = require("./randomizer._js"),
     operations = require("./operations._js"),
     environment = require("./environment._js"),
-    initializer = require("./initializer._js");
+    initializer = require("./initializer._js"),
+    boardManager = require("./boardManager._js");
 
 var db = new neo4j.GraphDatabase(environment.DB_URL);  
 var app = express();
@@ -34,21 +39,17 @@ app.use( express.cookieParser() );
 
 app.http();
 
+// fix swap words concurrency (and some other things as well i guess)
+// fix getWordfromClassIndex
+// fix collections in placing phrases
+// fix games played
+
 var io = app.io();
 
 var active = {};
 var sockets = {};
 var queue =  [ [], [] ];
 var countNode;
-
-var i = 0;
-
-console.log( i++ );
-console.log( i );
-
-// performance stuff
-// order without having to get the players object
-// getPlayerMagnetsAndWordsByID doesnt work with [].length == 0;
 
 io.set("log level", 1);
 
@@ -77,8 +78,6 @@ catch( exception )
   console.log( "initializing db." );
 
   initializer.initDB( _ );
-  users.addUser( "ali", "12345", "", "", "", "eng", consts.STARTING_BESOZ, _ );
-  users.addUser( "pedro", "12345", "", "", "", "eng", consts.STARTING_BESOZ, _ );
 
   countNode = retriever.getCountNode(_);
   console.log( "done." );
@@ -86,6 +85,39 @@ catch( exception )
 
 var allWords;
 allWords = loader.loadWords( _ );
+
+var managerWords = [];
+var versions = {};
+var word;
+var i = 0 ;
+
+for( i = 0; i < allWords.length; i++ ){
+  word = allWords[i];
+  
+  if( word[props.WORD.VERSION_OF].length === 0 ){
+    managerWords.push( word );
+  }else{
+    if( versions.hasOwnProperty( word.lemma ) ){
+      versions[ word.lemma ].push( word );
+    }else{
+      versions[ word.lemma ] = [ word ];
+    }
+  }
+  
+  for( i = 0; i < managerWords.length; i++ ){
+    word  = managerWords[i];
+    if( versions.hasOwnProperty( word.lemma ) ){
+      word.versions = versions[word.lemma];
+    }
+  }
+  
+  for( i = 0; i < managerWords.length; i++ ){
+    word  = managerWords[i];
+    if( word.hasOwnProperty( "versions" ) && word.versions.length > 0 ){
+      console.log( word );
+    }
+  }
+}
 
 function placePhrase( game, username, pathID, magnetIDs, _ )
 {
@@ -116,49 +148,49 @@ function placePhrase( game, username, pathID, magnetIDs, _ )
     magnets.push( mw[i].magnet );
   }
   
-  ret[consts.MADNESS] = canIPlayWithMadness( words, wordCount, _ );
+  ret.madness = canIPlayWithMadness( words, wordCount, _ );
   
-  if( ret[consts.MADNESS] === 0 )
+  if( ret.madness === 0 )
   {
     phrase = tools.createNode({
-      type: consts.PHRASE,
-      id: game.data[consts.PHRASE_COUNT],
+      type: types.PHRASE,
+      id: game.data[props.GAME.PHRASE_COUNT],
       wordCount: wordCount
     }, _ );
     
-    player.createRelationshipTo( phrase, consts.WROTE, {}, _ );
-    game.createRelationshipTo( phrase, consts.HAS_PHRASE, {}, _ );
+    player.createRelationshipTo( phrase, rels.WROTE, {}, _ );
+    game.createRelationshipTo( phrase, rels.HAS_PHRASE, {}, _ );
     
     for( i = 0; i < wordCount; i++ )  //disconnect from the player, connect to the phrase. replace with new magnets
     {  
       var currentWord = words[i];
       var currentMagnet = magnets[i];
-      var rToPlayer = currentMagnet.incoming( consts.HAS_MAGNET, _ )[0];
+      var rToPlayer = currentMagnet.incoming( rels.HAS_MAGNET, _ )[0];
       rToPlayer["delete"](_);
       
-      phrase.createRelationshipTo( currentMagnet, consts.HAS_MAGNET, { order : i }, _ );
-      currentMagnet.data[consts.OWNER] = phrase.data[consts.ID];
-      currentMagnet.data[consts.TYPE] = consts.MAGNET_PHRASE;
+      phrase.createRelationshipTo( currentMagnet, rels.HAS_MAGNET, { order : i }, _ );
+      currentMagnet.data[props.MAGNET.OWNER] = phrase.data[props.ID];
+      currentMagnet.data[props.MAGNET.TYPE] = types.MAGNET_PHRASE;
       currentMagnet.save(_);
       
-      ret[consts.WORDS].push( tools.addMagnet( game, player, currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], currentMagnet.data.x, currentMagnet.data.y, _ ) );  //replace it with a new magnet
+      ret.words.push( opearations.addMagnet( game, player, currentWord.data.collections[0],currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], currentMagnet.data.x, currentMagnet.data.y, _ ) );  //replace it with a new magnet
     }
     
     score = scoringTime( words, tiles, _ );
     
-    player.data[consts.SCORE] += score;
-    ret[consts.SCORE] = player.data[consts.SCORE];
+    player.data[props.PLAYER.SCORE] += score;
+    ret[props.PLAYER.SCORE] = player.data[props.PLAYER.SCORE];
     
-    game.data[consts.ACTION_DONE] = false;
-    game.data[consts.PHRASE_COUNT]++;
+    game.data[props.GAME.ACTION_DONE] = false;
+    game.data[props.GAME.PHRASE_COUNT]++;
     
-    game.data[consts.GAME_OVER] = isTheGameOver( game, _ );
-    if( !game.data[consts.GAME_OVER] ) game.data[consts.TURN]++;
+    game.data[props.GAME.GAME_OVER] = isTheGameOver( game, _ );
+    if( !game.data[props.GAME.GAME_OVER] ) game.data[props.GAME.TURN]++;
     
     player.save(_);
     game.save(_);
-
-//     console.log( "Placed phrase " + phrase.data[consts.ID] + " on node n. " + phrase.id );
+    
+//     console.log( "Placed phrase " + phrase.data[props.ID] + " on node n. " + phrase.id );
   }
   else
     console.log( "Hold on mister, respect the rules!" );
@@ -175,47 +207,41 @@ function scoringTime( words, tiles, _ )
   var secondTileImage = retriever.getTileImage( tiles[1].id, _ );
   var firstTileInstruction = retriever.getTileInstruction( tiles[0].id, _ );
   var secondTileInstruction = retriever.getTileInstruction( tiles[1].id, _ );
-  var satisfiedFirstInstruction = inparser.checkInstruction( firstTileInstruction.data[consts.CONDITION], words, _ );
-  var satisfiedSecondInstruction = inparser.checkInstruction( secondTileInstruction.data[consts.CONDITION], words, _ );
+  var satisfiedFirstInstruction = inparser.checkInstruction( firstTileInstruction.data[props.INSTRUCTION.CONDITION], words, _ );
+  var satisfiedSecondInstruction = inparser.checkInstruction( secondTileInstruction.data[props.INSTRUCTION.CONDITION], words, _ );
   
   for( i = 0; i < words.length; i++ ){
     var currentWord = words[i];
     
-    score += currentWord.data[consts.POINTS];
-
-    console.log( "you're getting " + currentWord.data[consts.POINTS] + " points for " + currentWord.data[consts.LEMMA] );
+    score += currentWord.data[props.WORD.POINTS];
     
     for( j = 0; j < firstTileImage.data.related.length; j++ ){
-      console.log( firstTileImage.data.related[j] + " - " + currentWord.data[consts.ID]);
-      if( firstTileImage.data.related[j] == currentWord.data[consts.ID] ){
+      if( firstTileImage.data.related[j] == currentWord.data[props.WORD.ID] ){
         score += consts.RELATED_WORD_BONUS;
-        console.log( "and its related" );
       }
     }
     
     for( j = 0; j < secondTileImage.data.related.length; j++ ){
-      console.log( secondTileImage.data.related[j] + " - " + currentWord.data[consts.ID]);
-      if( secondTileImage.data.related[j] == currentWord.data[consts.ID] ){
+      if( secondTileImage.data.related[j] == currentWord.data[props.WORD.ID] ){
         score += consts.RELATED_WORD_BONUS;
-        console.log( "and its related" );
       }
     }
   }
   
   if( satisfiedFirstInstruction ){
-    score += firstTileInstruction.data[consts.BONUS];
+    score += firstTileInstruction.data[props.INSTRUCTION.BONUS];
   }
   
   if( satisfiedSecondInstruction ){
-    score += secondTileInstruction.data[consts.BONUS];
+    score += secondTileInstruction.data[props.INSTRUCTION.BONUS];
   }
   
   if( satisfiedFirstInstruction ){
-    mult += firstTileInstruction.data[consts.MULT];
+    mult += firstTileInstruction.data[props.INSTRUCTION.MULT];
   }
   
   if( satisfiedSecondInstruction ){
-    mult += secondTileInstruction.data[consts.MULT];
+    mult += secondTileInstruction.data[props.INSTRUCTION.MULT];
   }
   
   if( mult !== 0 ){
@@ -229,7 +255,7 @@ function isTheGameOver( game, _ )
 {
   var over = false;
   
-  if( game.data[consts.PHRASE_COUNT] == game.data[consts.PATH_COUNT] ){
+  if( game.data[props.GAME.PHRASE_COUNT] == game.data[props.GAME.PATH_COUNT] ){
     over = true;
   }
   
@@ -252,7 +278,8 @@ function canIPlayWithMadness( words, wordCount, _ ){
 
 function createGame( usernames, collectionName, level, _ )
 {
-  console.log( "1" );
+  collectionName = "starter";
+  
   var now;
   var time = 0;
   var start = new Date().getTime();
@@ -263,14 +290,14 @@ function createGame( usernames, collectionName, level, _ )
   var a, i, j, k = 0;
   var gameID = tools.getNewGameID(_);
   var playerCount = usernames.length;
-  console.log( "2" );
+  
   now = new Date().getTime();
   time = now - start;
   console.log("cg1: " + time );
   start = new Date().getTime();
-  console.log( "3" );
+  
   var game = tools.createNode({
-    type: consts.GAME,
+    type: types.GAME,
     id: gameID,
     level: level,
     turn: 0,
@@ -282,16 +309,17 @@ function createGame( usernames, collectionName, level, _ )
     phraseCount: 0,
     usernames: usernames,
     playerCount: playerCount,
+    collection: collectionName,
     resignedCount: 0
   }, _ );
-  console.log( "4" );
+  
   now = new Date().getTime();
   time = now - start;
   console.log("cg2: " + time );
   start = new Date().getTime();
   
-  game.index( consts.GAME_INDEX, consts.ID, gameID, _ );
-  console.log( "5" );
+  game.index( indexes.GAME_INDEX, props.ID, gameID, _ );
+  
   now = new Date().getTime();
   time = now - start;
   console.log("cg3: " + time );
@@ -299,44 +327,56 @@ function createGame( usernames, collectionName, level, _ )
   
   try
   {
-    console.log( "6" );
     randomizeBoard( game, level, _ );
-    console.log( "7" );
+    
     now = new Date().getTime();
     time = now - start;
     console.log("cg4: " + time );
     start = new Date().getTime();
-    console.log( "8" );
+    
     for( a = 0; a < playerCount; a++ )  //creates a player instance for each player
     {
       var username = usernames[a];
-      var user = retriever.getUser( username, _ );
-      console.log( "9" );
+      var user = retriever.getUser( username, _ ); 
+      
+      if( !user.data.hasOwnProperty( user.data[props.USER.NGAMES] ) ){
+        user.data[props.USER.NGAMES] = 0;
+      }
+      user.data[props.USER.NGAMES]++;
+      user.save( _ );
+      
       player = tools.createNode({
-        type: consts.PLAYER,
+        type: types.PLAYER,
         username: username,
         score: 0,
         order: a,
         resigned: false
       }, _ );
-      console.log( "10" );
-      user.createRelationshipTo( game, consts.PLAYS, {}, _ );
-      game.createRelationshipTo( player, consts.BEING_PLAYED_BY, {}, _ );
-      console.log( "11" );
+      
+      user.createRelationshipTo( game, rels.PLAYS, {}, _ );
+      game.createRelationshipTo( player, rels.BEING_PLAYED_BY, {}, _ );
+      
       now = new Date().getTime();
       time = now - start;
       console.log("cg5: " + time );
       start = new Date().getTime();
-      console.log( "12" );
+      
       k = 0;
-      for( i = 0; i < consts.BALANCE.length; i++ ){
-        for( j = 0; j < consts.BALANCE[i]; j++ ){
-          tools.addMagnet( game, player, collectionName, consts.CLASS_NAMES[i], k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03, k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01), _ );
+      for( i = 0; i < consts.BALANCE_BASIC.length; i++ ){
+        for( j = 0; j < consts.BALANCE_BASIC[i]; j++ ){
+          operations.addMagnet( game, player, "basic", consts.CLASS_NAMES[i], k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03, k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01), _ );
+          k++;
+        }
+      }
+      
+      for( i = 0; i < consts.BALANCE_COLLECTION.length; i++ ){
+        for( j = 0; j < consts.BALANCE_COLLECTION[i]; j++ ){
+          operations.addMagnet( game, player, collectionName, consts.CLASS_NAMES[i], k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03, k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01), _ );
           k++;
         }
       }
     }
-    console.log( "13" );
+    
     now = new Date().getTime();
     time = now - start;
     console.log("cg6: " + time );
@@ -392,15 +432,19 @@ function randomizeBoard( game, level, _ )
 
 function broadcastGameObject( game, eventName, jsonObjs )
 {
-  for( var i = 0; i < game.data[consts.PLAYER_COUNT]; i++ ){
-    sockets[ "game" + game.data.id ][ game.data[consts.USERNAMES][i] ].emit( eventName, jsonObjs[ game.data[consts.USERNAMES][i] ] );
+  console.log( "bgo1" );
+  console.log( jsonObjs );
+  for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
+    console.log( "bgo2" );
+    sockets[ "game" + game.data.id ][ game.data[props.GAME.USERNAMES][i] ].emit( eventName, jsonObjs[ game.data[props.GAME.USERNAMES][i] ] );
+    console.log( "bgo3" );
   }
 }
 
 function broadcast( game, eventName, responseData )
 {
-  for( var i = 0; i < game.data[consts.PLAYER_COUNT]; i++ ){
-    sockets[ "game" + game.data.id ][ game.data[consts.USERNAMES][i] ].emit( eventName, responseData );
+  for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
+    sockets[ "game" + game.data.id ][ game.data[props.GAME.USERNAMES][i] ].emit( eventName, responseData );
   }
 }
 
@@ -413,13 +457,13 @@ function fillGameUpdateData( game, data, _ )
   responseData.gameOver = game.data[consts.GAME_OVER];
   
   for( i = 0; i < game.data[consts.PLAYER_COUNT]; i++ ){
-    player = retriever.getGamePlayerByID( game.id, game.data[consts.USERNAMES][i], _ );
+    player = retriever.getGamePlayerByID( game.id, game.data[props.GAME.USERNAMES][i], _ );
     responseData.playerInfo.push({
-      username: game.data[consts.USERNAMES][i],
-      score: player.data[consts.SCORE],
-      active: game.data[consts.GAME_OVER] === true ? false :
-        game.data[consts.USERNAMES][i] === game.data[consts.USERNAMES][game.data[consts.TURN] % game.data[consts.PLAYER_COUNT]],
-      resigned: player.data[consts.RESIGNED]
+      username: game.data[props.GAME.USERNAMES][i],
+      score: player.data[props.PLAYER.SCORE],
+      active: game.data[props.GAME.GAME_OVER] === true ? false :
+      game.data[consts.USERNAMES][i] === game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]],
+      resigned: player.data[props.PLAYER.RESIGNED]
     });
   }
   
@@ -443,17 +487,23 @@ function shuffleArray( array )
 // });
 
 app.io.route( "account:sign-up", function( req, _ ){
-  users.addUser( req.data.username, req.data[consts.PASSWORD], "ozma@oz.ma", "pedrils", "karbob", "eng", consts.STARTING_BESOZ, _ );
+  console.log( "signing up" );
+  var success = users.addUser( req.data.username, req.data.password, "ozma@oz.ma", "pedrils", "karbob", "eng", consts.STARTING_BESOZ, _ );
+  console.log( success );
+  req.io.respond( { success: success } );
+  console.log( "signed up" );
 });
 
 app.io.route( "account:login", function( req, _ )
 {  
   var responseData = { success: false };
-  var user = users.login( req.data.username, req.data[consts.PASSWORD], _ );
+  var user = users.login( req.data.username, req.data.password, _ );
   
   if( user !== false ){
     active[ req.data[consts.USERNAME] ] = { socket: req.io, active: true, lastActive: new Date() };
     responseData = { success: true };
+  }else{
+    responseData.message = "Sorry, that user or password was not recognized. Please try again.";
   }
   
   req.io.respond( responseData );
@@ -466,22 +516,18 @@ app.io.route( "logout", function( req, _ ){
 });
 
 app.io.route( "recover:password", function( req, _ ){
-  mailer.recoverPassword(  req.data[ consts.USERNAME ], _ );
+  mailer.recoverPassword(  req.data.username, _ );
   
   req.io.respond( true );
 });
 
 app.io.route( "game:queue", function( req, _ )
-{
-console.log( "here" );
-  
-  var playerCount = req.data[consts.PLAYER_COUNT];
+  {
+  var playerCount = req.data.playerCount;
   var queueType = playerCount -1;
   
-  if( users.login( req.data[consts.USERNAME], req.data[consts.PASSWORD], _ ) ){
-    console.log( "queued " + req.data[consts.USERNAME] );
-    
-    queue[queueType].push({ username: req.data[consts.USERNAME], socket: req.io });
+  if( users.login( req.data.username, req.data.password, _ ) ){
+    queue[queueType].push({ username: req.data.username, socket: req.io });
     req.io.respond({ success: true });
     
     if( queue[queueType].length >= playerCount )
@@ -496,20 +542,23 @@ console.log( "here" );
       
       for( i = 0; i < playerCount; i++ ){
         var user = queue[queueType].pop();
-        usernames.push( user[consts.USERNAME] );
-        tempSockets[user[consts.USERNAME]] = user[consts.SOCKET];
+        usernames.push( user[props.USER.USERNAME] );
+        tempSockets[user[props.USER.USERNAME]] = user[props.PLAYER.SOCKET];
       }
       
       var start2 = new Date().getTime();
       game = createGame( usernames, "starter", 0, _ );
       var now2 = new Date().getTime();
       console.log("q: " + ( now2 - start2 ) );
-      
-      if( game )
-      {
-        sockets[ "game" + game.data[consts.ID] ] = tempSockets;
+      console.log( "1" );
+      if( game ){
+        console.log( "2" );
+        sockets[ "game" + game.data[props.ID] ] = tempSockets;
+        console.log( "3" );
         jsonObjs = tools.getGameObject( game, usernames, _ );
+        console.log( "4" );
         broadcastGameObject( game, consts.START_GAME, jsonObjs );
+        console.log( "5" );
       }
       
       var end = new Date().getTime();
@@ -638,7 +687,7 @@ app.io.route( "manager:getAllWords", function( req, _ )
   var start = new Date().getTime();
   process.stdout.write("getting all words ");
   var responseData = { success:false, words: [] }
-
+  
   responseData.words = allWords;
   responseData.success = true;
   req.io.respond( responseData );
@@ -648,113 +697,25 @@ app.io.route( "manager:getAllWords", function( req, _ )
   console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "manager:getBoards", function( req, _ )
+app.io.route( "manager:manageBoards", function( req, _ )
 {
   var start = new Date().getTime();
-  process.stdout.write("getting all boards ");
-
-  var i = 0;
-  var tiles;
-  var paths;
-  var board;
-  var boards;
-  var responseData = { success:false, boards: [] }
+  process.stdout.write( req.data.command + " " );
   
-  if( countNode.data[consts.BOARD_COUNT] !== 0 ){
-    boards = retriever.getAllBoards( _ );
-    for( i = 0; i < boards.length; i++ ){
-      board = boards[i].data;
-      
-      board.tiles = retriever.getBoardTilesData( boards[i].id, _ );
-      board.paths = retriever.getBoardPathsData( boards[i].id, _ );
-      
-      responseData.boards.push( board );
-    }
+  var responseData = { success:false }
+  
+  if( req.data.command === "set" ){
+    responseData = boardManager.setBoard( req.data.id, req.data.level, req.data.tiles, req.data.paths, _ );
+  }else if( req.data.command === "getAll" ){
+    responseData = boardManager.getBoards( countNode, _ );
+  }else if( req.data.command === "get" ){
+    
+  }else if( req.data.command === "delete" ){
+    responseData = boardManager.deleteBoard( req.data.id, _ );
   }
 
-  responseData.success = true;
   req.io.respond( responseData );
-  
-  var end = new Date().getTime();
-  var time = end - start;
-  console.log( "took: " + time + "ms" );
-});
 
-app.io.route( "manager:setBoard", function( req, _ )
-{
-  var start = new Date().getTime();
-  process.stdout.write("setting board ");
-
-  var i;
-  var id;
-  var path;
-  var tile;
-  var paths;
-  var tiles;
-  var tileNode;
-  var pathNode;
-  var boardNode;
-  var responseData = { success:false };
-
-  
-  if( req.data.id === -1 ){
-    id = tools.getNewBoardID( _ );
-    boardNode = tools.createNode({
-      type: consts.BOARD,
-      id: id,
-      level: req.data.level
-    }, _ );
-    
-  boardNode.index( consts.BOARD_INDEX, consts.ID, id, _ );
-  }else{
-    boardNode = retriever.getBoard( req.data.id, _ );
-    
-    boardNode.data.level = req.data.level;
-    
-    paths = retriever.getBoardPaths( boardNode.id, _ );
-    for( i = 0; i < paths.length; i++ ){
-      paths[i].delete( _, true );
-    }
-    
-    tiles = retriever.getBoardTiles( boardNode.id, _ );
-    for( i = 0; i < tiles.length; i++ ){
-      tiles[i].delete( _, true );
-    }
-  }
-  
-  for( i = 0; i < req.data.paths.length; i++ ){
-    path = req.data.paths[i];
-    
-    pathNode = tools.createNode({
-      type: consts.PATH,
-      id: id,
-      cw: path.cw,
-      nWords: path.nWords,
-      endTile: path.endTile,
-      startTile: path.startTile,
-      minCurve: 0,
-      maxCurve: 0
-
-    }, _ );
-    boardNode.createRelationshipTo( pathNode, consts.HAS_PATH, {}, _ );
-  }
-
-  for( i = 0; i < req.data.tiles.length; i++ ){
-    tile = req.data.tiles[i];
-
-    tileNode = tools.createNode({
-      type: consts.TILE,
-      id: id,
-      x: tile.x,
-      y: tile.y,
-      angle: tile.angle
-    }, _ );
-    boardNode.createRelationshipTo( tileNode, consts.HAS_TILE, {}, _ );
-  }
-  
-  responseData.success = true;
-  req.io.respond( responseData );
-  
   var end = new Date().getTime();
   var time = end - start;
   console.log( "took: " + time + "ms" );

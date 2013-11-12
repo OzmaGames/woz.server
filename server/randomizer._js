@@ -26,11 +26,13 @@ module.exports =
   getRandomWordByClass : function( collectionName, className, _ )
   {
     collectionName = className === "related" ? "starter" : collectionName;
-    console.log( "grwbc1" );
+    
+    if( consts.CLASS_COUNTS[collectionName][className] == 0)
+      return retriever.getWord( "green", _ );
+    
     var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[collectionName][className] - 1 ) );
-    console.log( "grwbc2" );
+   
     var word = retriever.getWordFromClassIndex( collectionName, className, randomN, _ );
-    console.log( "grwbc3" );
     
     return word;
   },

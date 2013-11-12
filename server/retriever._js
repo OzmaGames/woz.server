@@ -1,5 +1,9 @@
 var neo4j = require("neo4j"),
+  types = require("./types._js"),
+  indexes = require("./indexes._js"),
+  props = require("./properties._js"),
   consts = require("./constants._js"),
+  rels = require("./relationships._js"),
   environment = require("./environment._js");
 
 var db = new neo4j.GraphDatabase(environment.DB_URL);
@@ -12,11 +16,13 @@ module.exports =
   },
 
   getUser: function( username, _ ){
-    return db.getIndexedNodes( consts.USER_INDEX, consts.USERNAME, username, _ )[0];
+    var users = db.getIndexedNodes( indexes.USER_INDEX, props.USER.USERNAME, username, _ );
+    
+    return users[0];
   },
   
   getGame: function( id, _ ){
-    return db.getIndexedNodes( consts.GAME_INDEX, consts.ID, id, _ )[0];
+    return db.getIndexedNodes( indexes.GAME_INDEX, props.GAME.ID, id, _ )[0];
   },
 
   getUserGames: function( userNodeID, _ )
@@ -25,7 +31,7 @@ module.exports =
     
     var query =
       "START m = node(" + userNodeID + ") " +
-      "MATCH m -[:" + consts.PLAYS + "]-> game " +
+      "MATCH m -[:" + rels.PLAYS + "]-> game " +
       "RETURN game;";
     
     var resultsTemp = db.query(query, {}, _ );
@@ -42,12 +48,12 @@ module.exports =
     var word;
     
     try{
-      var results= db.getIndexedNodes( consts.WORD_LEMMA_INDEX, consts.LEMMA, lemma, _ );
+      var results = db.getIndexedNodes( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, lemma, _ );
       if( results && results.length > 0 ){
         word = results[0]
       }
     }catch( ex ){
-      console.log( "couldn't find word in " + consts.WORD_LEMMA_INDEX );
+      console.log( "couldn't find word in " + indexes.WORD_LEMMA_INDEX );
       console.log( ex.message );
     }
     
@@ -59,11 +65,11 @@ module.exports =
     var word;
     
     try{
-      console.log( "id: " + id );
-      console.log( " class: " + className );
-      console.log( "collection: " + collectionName );
-      
-      word = db.getIndexedNodes( collectionName + className + "ClassIndex", consts.ID, id, _ )[0];
+      if( className === "related" ){
+        word = db.getIndexedNodes( "relatedClassIndex", props.ID, id, _ )[0];
+      }else{
+        word = db.getIndexedNodes( collectionName + className + "ClassIndex", props.ID, id, _ )[0];
+      }
       
     }catch( ex ){
       console.log( "couldn't find word in class index" );
@@ -75,7 +81,6 @@ module.exports =
     
   getWordsFromClassIndex: function( className, ids, _ )
   {
-    console.log( ids );
     var i = 0;
     var words;
     var query = "id: ";
@@ -86,7 +91,7 @@ module.exports =
         query += " || id: ";
       }
     }
-    console.log( query );
+    
     try{
       words = db.queryNodeIndex( className + "ClassIndex", query , _ );
       
@@ -99,19 +104,19 @@ module.exports =
   },
 
   getImageFromIndex: function( id, _ ){
-    return db.getIndexedNodes( consts.IMAGE_INDEX, consts.ID, id, _ )[0];
+    return db.getIndexedNodes( indexes.IMAGE_INDEX, props.ID, id, _ )[0];
   },
 
   getInstructionFromIndex: function( id, _ ){
-    return db.getIndexedNodes( consts.INSTRUCTION_INDEX, consts.ID, id, _ )[0];
+    return db.getIndexedNodes( indexes.INSTRUCTION_INDEX, props.ID, id, _ )[0];
   },
   
   //Gets the player instance of the player with the given username for a given game
   getGamePlayerByID: function( gameNodeID, username, _ ){
     var query =
       "START m = node(" + gameNodeID + ") " +
-      "MATCH m -[:" + consts.BEING_PLAYED_BY + "]-> player " +
-      "WHERE player." + consts.USERNAME + " = \'" + username + "\' " +
+      "MATCH m -[:" + rels.BEING_PLAYED_BY + "]-> player " +
+      "WHERE player." + rels.USERNAME + " = \'" + username + "\' " +
       "RETURN player;";
     
     var player = db.query(query, {}, _ )[0].player;
@@ -124,8 +129,8 @@ module.exports =
   {
     var query =
       "START m = node(" + gameNodeID + ") " +
-      "MATCH m -[:" + consts.HAS_PATH + "]-> path " +
-      "WHERE path." + consts.ID + " = " + pathID + " " +
+      "MATCH m -[:" + rels.HAS_PATH + "]-> path " +
+      "WHERE path." + props.ID + " = " + pathID + " " +
       "RETURN path;";
     
     var path = db.query(query, {}, _ )[0].path;
@@ -141,7 +146,7 @@ module.exports =
     var query =
       "START m = node(" + pathNodeID + ") " +
       "MATCH m -[r]-> tile " +
-      "WHERE type(r) = \"" + consts.STARTS_WITH + "\" OR type(r) = \"" + consts.ENDS_WITH + "\" " +
+      "WHERE type(r) = \"" + rels.STARTS_WITH + "\" OR type(r) = \"" + rels.ENDS_WITH + "\" " +
       "RETURN tile;";
     
     var resultsTemp = db.query(query, {}, _ );
@@ -158,7 +163,7 @@ module.exports =
   {
     var query =
       "START m = node(" + pathNodeID + ") " +
-      "MATCH m -[:" + consts.STARTS_WITH + "]-> tile " +
+      "MATCH m -[:" + rels.STARTS_WITH + "]-> tile " +
       "RETURN tile;";
     
     var tile = db.query(query, {}, _ )[0].tile;
@@ -171,7 +176,7 @@ module.exports =
   {
     var query =
       "START m = node(" + pathNodeID + ") " +
-      "MATCH m -[:" + consts.ENDS_WITH + "]-> tile " +
+      "MATCH m -[:" + rels.ENDS_WITH + "]-> tile " +
       "RETURN tile;";
 
     var tile = db.query(query, {}, _ )[0].tile;
@@ -233,7 +238,7 @@ module.exports =
     
     var query =
     "START m = node(" + gameNodeID + ") " +
-    "MATCH m -[:" + consts.HAS_TILE + "]-> t -[:" + consts.REPRESENTS_IMAGE + "]-> image " +
+    "MATCH m -[:" + indexes.HAS_TILE + "]-> t -[:" + indexes.REPRESENTS_IMAGE + "]-> image " +
     "RETURN image;";
     
     var resultsTemp = db.query(query, {}, _ );
@@ -252,7 +257,7 @@ module.exports =
     
     var query =
       "START m = node(" + gameNodeID + ") " +
-      "MATCH m -[:" + consts.HAS_TILE + "]-> t -[:" + consts.REPRESENTS_INSTRUCTION + "]-> instruction " +
+      "MATCH m -[:" + indexes.HAS_TILE + "]-> t -[:" + indexes.REPRESENTS_INSTRUCTION + "]-> instruction " +
       "RETURN instruction;";
     
     var resultsTemp = db.query(query, {}, _ );
@@ -268,7 +273,7 @@ module.exports =
   getGameMagnetByID: function( gameNodeID, magnetID, _ ){
     var query =
       "START m = node(" + gameNodeID + ") " +
-      "MATCH m -[:beingPlayedBy]-> player -[:hasMagnet]-> magnet " +
+      "MATCH m -[:" + indexes.BEING_PLAYED_BY + "]-> player -[:" + indexes.HAS_MAGNET + "]-> magnet " +
       "WHERE magnet.id = " + magnetID + " " +
       "RETURN magnet;";
     
@@ -282,7 +287,7 @@ module.exports =
 
     var query =
       "START game = node(" + gameNodeID + "), word = node(" + wordNodeID + ") " +
-      "MATCH game -[:hasTile]-> tile -[:representsImage]-> image -[:relatesTo]-> word " +
+      "MATCH game -[:hasTile]-> tile -[:" + indexes.REPRESENTS_IMAGE + "]-> image -[:" + indexes.RELATES_TO + "]-> word " +
       "RETURN image;";
 
     resultsTemp = db.query(query, {}, _ );
@@ -319,7 +324,7 @@ module.exports =
     
     var query =
       "START m = node(" + playerNodeID + ") " +
-      "MATCH m -[:" + consts.HAS_MAGNET + "]-> magnet " +
+      "MATCH m -[:" + rels.HAS_MAGNET + "]-> magnet " +
       "RETURN distinct magnet;";
     
     var resultsTemp = db.query( query, {}, _ );
@@ -337,7 +342,7 @@ module.exports =
     
     var query =
       "START m = node(" + playerNodeID + ") " +
-      "MATCH m -[:" + consts.HAS_MAGNET + "]-> magnet ";
+      "MATCH m -[:" + rels.HAS_MAGNET + "]-> magnet ";
     
     for( var a = 0; a < magnetIDs.length; a++ ){
       if( a === 0 ){
@@ -358,18 +363,6 @@ module.exports =
     
     return results;
   },
-
-  getGamePlayers: function( gameNodeID, _ ){
-    var players = getEndNodesByRelType( gameNodeID, consts.BEING_PLAYED_BY, _ );
-    
-    return players;
-  },
-
-  getMagnetWord: function( magnetNodeID, _ ){
-    var word = getEndNodesByRelType( magnetNodeID, consts.REPRESENTS_WORD, _ );
-    
-    return word[0];
-  },
   
   getPlayerMagnetsAndWordsByID: function( playerNodeID, magnetIDs, _ ){
     var mw = [];
@@ -379,8 +372,8 @@ module.exports =
     {
       var query =
       "START m = node(" + playerNodeID + ") " +
-      "MATCH m -[r]-> magnet -[:" + consts.REPRESENTS_WORD + "]-> word " +
-      "WHERE type(r) = \'" + consts.HAS_MAGNET + "\' and ( ";
+      "MATCH m -[r]-> magnet -[:" + rels.REPRESENTS_WORD + "]-> word " +
+      "WHERE type(r) = \'" + rels.HAS_MAGNET + "\' and ( ";
       for( i = 0; i < magnetIDs.length; i++ ){
         if( i === 0 ){
           query += "r.id = " + magnetIDs[i];
@@ -405,8 +398,8 @@ module.exports =
     
     var query =
     "START m = node(" + playerNodeID + ") " +
-    "MATCH m -[r]-> magnet -[:" + consts.REPRESENTS_WORD + "]-> word " +
-    "WHERE type(r) = \'" + consts.HAS_MAGNET + "\' and ( ";
+    "MATCH m -[r]-> magnet -[:" + rels.REPRESENTS_WORD + "]-> word " +
+    "WHERE type(r) = \'" + rels.HAS_MAGNET + "\' and ( ";
     for( i = 0; i < magnetIDs.length; i++ ){
       if( i === 0 ){
         query += "r.id = " + magnetIDs[i];
@@ -452,13 +445,13 @@ module.exports =
   },
   
   getTileImage: function( tileNodeID, _ ){
-    var image = getEndNodesByRelType( tileNodeID, consts.REPRESENTS_IMAGE, _ )[0];
+    var image = getEndNodesByRelType( tileNodeID, rels.REPRESENTS_IMAGE, _ )[0];
     
     return image;
   },
   
   getTileInstruction: function( tileNodeID, _ ){
-    var instruction = getEndNodesByRelType( tileNodeID, consts.REPRESENTS_INSTRUCTION, _ )[0];
+    var instruction = getEndNodesByRelType( tileNodeID, rels.REPRESENTS_INSTRUCTION, _ )[0];
     
     return instruction;
   },
@@ -486,7 +479,7 @@ module.exports =
     for( var q = 0; q < resultsCount; q++ ){
       try{
         var queryResult = queryResults.pop().result;
-        gameData[ queryResult.data[consts.TYPE] ].push( queryResult.data );
+        gameData[ queryResult.data.type ].push( queryResult.data );
       } catch( e ) {
         console.log( "Error Getting GameInfo:" );
         console.log( queryResult.data );
@@ -504,15 +497,15 @@ module.exports =
     var magnetsLength = magnets.length;
     
     for ( var m = 0; m < magnetsLength; m++ ){
-      if( magnets[m][consts.OWNER] == owner ){
+      if( magnets[m][props.MAGNET.OWNER] == owner ){
         var currentMagnet = magnets[m];
         for( var w = 0; w < wordsLength; w++ ){
-          if( words[w][consts.ID] == currentMagnet[consts.REPRESENTED_WORD] ){
+          if( words[w][props.ID] == currentMagnet[props.WORD.REPRESENTED_WORD] ){
             magnetInfo.push({
-              id: currentMagnet[consts.ID],
-              angle: currentMagnet[consts.ANGLE],
-              x: currentMagnet[consts.X],
-              y: currentMagnet[consts.Y],
+              id: currentMagnet[props.ID],
+              angle: currentMagnet[props.MAGNET.ANGLE],
+              x: currentMagnet[props.MAGNET.X],
+              y: currentMagnet[props.MAGNET.Y],
               word: words[w]
             });
             break;
@@ -539,12 +532,13 @@ module.exports =
   getAllWordsData: function( _ )
   {
     var words = [];
-    var resultsTemp = db.queryNodeIndex( consts.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
-
+    
+    var resultsTemp = db.queryNodeIndex( indexes.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
+    
     for( var i = 0; i < resultsTemp.length; i++ ){
       words.push( resultsTemp[i].data );
     }
-
+    
     return words;
   },
 
@@ -552,7 +546,7 @@ module.exports =
   {
   var i = 0;
     var boards = [];
-    var resultsTemp = db.queryNodeIndex( consts.BOARD_INDEX, "id: (*)" , _ );
+    var resultsTemp = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
     
     for( i = 0; i < resultsTemp.length; i++ ){
       boards.push( resultsTemp[i] );
@@ -566,12 +560,12 @@ module.exports =
     var board;
     
     try{
-      var results= db.getIndexedNodes( consts.BOARD_INDEX, consts.ID, id, _ );
+      var results= db.getIndexedNodes( indexes.BOARD_INDEX, props.ID, id, _ );
       if( results && results.length > 0 ){
         board = results[0];
       }
     }catch( ex ){
-      console.log( "couldn't find board in " + consts.BOARD_INDEX);
+      console.log( "couldn't find board in " + indexes.BOARD_INDEX);
       console.log( ex.message );
     }
 
@@ -584,7 +578,7 @@ module.exports =
 
     var query =
       "START m = node(" + boardNodeID + ") " +
-      "MATCH m -[:" + consts.HAS_PATH + "]-> path " +
+      "MATCH m -[:" + rels.HAS_PATH + "]-> path " +
       "RETURN path;";
 
     var resultsTemp = db.query(query, {}, _ );
@@ -602,7 +596,7 @@ module.exports =
     
     var query =
       "START m = node(" + boardNodeID + ") " +
-      "MATCH m -[:" + consts.HAS_TILE + "]-> tile " +
+      "MATCH m -[:" + rels.HAS_TILE + "]-> tile " +
       "RETURN tile;";
     
     var resultsTemp = db.query(query, {}, _ );
@@ -620,7 +614,7 @@ module.exports =
 
     var query =
       "START m = node(" + boardNodeID + ") " +
-      "MATCH m -[:" + consts.HAS_PATH + "]-> path " +
+      "MATCH m -[:" + rels.HAS_PATH + "]-> path " +
       "RETURN path;";
 
     var resultsTemp = db.query(query, {}, _ );
@@ -638,7 +632,7 @@ module.exports =
 
     var query =
       "START m = node(" + boardNodeID + ") " +
-      "MATCH m -[:" + consts.HAS_TILE + "]-> tile " +
+      "MATCH m -[:" + rels.HAS_TILE + "]-> tile " +
       "RETURN tile;";
 
     var resultsTemp = db.query(query, {}, _ );
@@ -650,65 +644,3 @@ module.exports =
     return tiles;
   }
 };
-  
-  function getEndNodesByRelType( nodeID, relationshipType, _ )
-  {
-    var results = [];
-    if( checkAlpha( nodeID ) && checkAlpha( relationshipType ) )
-    {
-      var query =
-      "START m = node(" + nodeID + ") " +
-      "MATCH m -[:" + relationshipType + "]-> result " +
-      "RETURN result;";
-      
-      var resultsTemp = db.query(query, {}, _ );
-      
-      var a = resultsTemp.length;
-      while( a-- )
-      {
-        results.push( resultsTemp[a].result );
-      }
-    }
-    
-    return results;
-  }
-
-  function checkAlpha( source )
-  {
-    var isAlpha = true;
-    
-    var lowerBoundNum = '0'.charCodeAt( 0 );
-    var upperBoundNum = '9'.charCodeAt( 0 );
-    var upperBoundLower = 'z'.charCodeAt( 0 );
-    var lowerBoundLower = 'a'.charCodeAt( 0 );
-    var upperBoundUpper = 'Z'.charCodeAt( 0 );
-    var lowerBoundUpper = 'A'.charCodeAt( 0 );
-    
-    var stringLength = source.length;
-    for ( var i = 0; i < stringLength; i++ )
-    {
-      var ch = source.charCodeAt(i);
-      
-      if ( ! (
-        ( ch <= upperBoundNum && ch >= lowerBoundNum ) ||
-        ( ch <= upperBoundUpper && ch >= lowerBoundUpper ) ||
-        ( ch <= upperBoundLower && ch >= lowerBoundLower ) ) )
-      {
-        isAlpha = false;
-        break;
-      }
-    }
-    
-    return isAlpha;
-  }
-
-// getEntity: function( gameNodeID, entityType, entityID, _ ){
-//     var query =
-//     "START m = node(" + gameNodeID + ") " +
-//     "MATCH m -[*1..2]-> entity " +
-//     "WHERE entity.type =~ \'" + entityType + ".*\' AND entity.id = " + entityID + " " +
-//     "RETURN entity;";
-// 
-//     return db.query(query, {}, _ )[0].entity;
-//   },
-  

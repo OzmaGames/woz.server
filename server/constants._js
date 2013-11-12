@@ -55,16 +55,28 @@ module.exports =
   COLLECTION_NAMES:  [ "basic", "starter", "nightfall" ],
   
   //Word Balance
-  BALANCE: [
+  BALANCE_BASIC: [
     1,  //noun
-    4,  //verb
+    1,  //verb
     1,  //adverb
     2,  //pronoun
-    3,  //adjective
+    1,  //adjective
     2,  //preposition
     1,  //conjunction
-    4,  //related
+    0,  //related
     2  //other
+  ],
+
+  BALANCE_COLLECTION: [
+    2,  //noun
+    2,  //verb
+    0,  //adverb
+    0,  //pronoun
+    2,  //adjective
+    0,  //preposition
+    0,  //conjunction
+    3,  //related
+    0  //other
   ],
   
   CLASS_NAMES: [
@@ -122,122 +134,6 @@ module.exports =
   START_GAME: "game:start",
   QUEUE: "game:queue",
   
-  //Relationships
-  //Player
-  PLAYS : "plays",
-  WROTE : "wrote",
-  BEING_PLAYED_BY : "beingPlayedBy",
 
-  //Magnets & Tiles
-  ENDS_WITH: "endsWith",
-  RELATES_TO: "relatesTo",
-  STARTS_WITH: "startsWith",
-  REPRESENTS_WORD: "representsWord",
-  REPRESENTS_IMAGE: "representsImage",
-  REPRESENTS_INSTRUCTION: "representsInstruction",
-
-  //Has
-  HAS_TILE : "hasTile",
-  HAS_PATH : "hasPath",
-  HAS_PHRASE : "hasPhrase",
-  HAS_MAGNET : "hasMagnet",
-
-  //Properties
-  //Common
-  ID : "id",
-  TYPE: "type",
-  NAME : "name",
-  
-  //Types
-  GAME: "game",
-  WORD: "word",
-  PATH: "path",
-  TILE: "tile",
-  USER: "user",
-  LEMMA: "lemma",
-  WORDS: "words",
-  IMAGE: "image",
-  BOARD: "board",
-  PHRASE: "phrase",
-  PLAYER: "player",
-  
-  INSTRUCTION: "instruction",
-  MAGNET_PLAYER: "magnetPlayer",
-  MAGNET_PHRASE: "magnetPhrase",
-  
-  //Count Node
-  GAME_COUNT: "gameCount",
-  BOARD_COUNT: "boardCount",
-
-  //Path & Phrases
-  CW: "cw",
-  NWORDS: "nWords",
-  NBOARDS: "nBoards",
-  PATH_ID: "pathID",
-  END_TILE: "endTile",
-  START_TILE: "startTile",
-  WORD_COUNT: "wordCount",
-  
-  //Game
-  TURN: "turn",
-  ORDER: "order",
-  SCORE: "score",
-  ACTIVE: "active",
-  SOCKET: "socket",
-  MADNESS: "madness",
-  USERNAME: "username",
-  RESIGNED: "resigned",
-  GAME_OVER: "gameOver",
-  USERNAMES: "usernames",
-  TILE_COUNT: "tileCount",
-  PATH_COUNT: "pathCount",
-  ACTION_DONE: "actionDone",
-  PLAYER_COUNT: "playerCount",
-  PHRASE_COUNT: "phraseCount",
-  RESIGNED_COUNT: "resignedCount",
-
-  //Magnets & Tiles
-  X: "x",
-  Y: "y",
-  MULT: "mult",
-  OWNER: "owner",
-  ANGLE: "angle",
-  BONUS: "bonus",
-  POINTS: "points",
-  IS_RELATED: "isRelated",
-  CONNECTED_TO: "connectedTo",
-  REPRESENTED_WORD: "representedWord",
-  REPRESENTED_IMAGE: "representedImage",
-  REPRESENTED_INSTRUCTION: "representedInstruction",
-
-  //Instructions
-  SHORT_DESCRIPTION : "shortDescription",
-  LONG_DESCRIPTION : "longDescription",
-  INSPIRATIONAL: "inspirational",
-  CONDITION: "condition",
-
-  //Users
-  SALT: "salt",
-  EMAIL: "email",
-  BESOZ: "besoz",
-  SURNAME: "surname",
-  LANGUAGE: "language",
-  PASSWORD: "password",
   STARTING_BESOZ: 10
-
-  //End of Constants
 };
-
-
-// var limit = 100;
-// var time = 0;
-// 
-// for( var z = 0; z < limit; z++ ){
-//   var start = new Date().getTime();
-// 
-//   OP
-//   
-//   var end = new Date().getTime();
-//   time = time + (end - start);
-// }
-// console.log("op took: " + time/limit + "ms on average.");

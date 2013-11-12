@@ -608,7 +608,7 @@ module.exports = {
   },
   {
     "lemma": "and",
-    "classes": "conjunction",
+    "classes": "other, conjunction",
     "categories": ""
   },
   {
@@ -623,7 +623,7 @@ module.exports = {
   },
   {
     "lemma": "if",
-    "classes": "conjunction",
+    "classes": "other, conjunction",
     "categories": ""
   },
   {
@@ -1098,7 +1098,7 @@ module.exports = {
   },
   {
     "lemma": "oh",
-    "classes": "other",
+    "classes": "noun, interjection",
     "categories": ""
   },
   {
@@ -1108,7 +1108,7 @@ module.exports = {
   },
   {
     "lemma": "of",
-    "classes": "preposition",
+    "classes": "other, preposition",
     "categories": ""
   },
   {

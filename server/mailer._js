@@ -1,6 +1,7 @@
 var neo4j = require("neo4j"),
   mailer = require("nodemailer"),
 
+  props = require("./properties._js"),
   consts = require("./constants._js"),
   retriever = require("./retriever._js");
 
@@ -19,10 +20,10 @@ module.exports =
 
   recoverPassword: function( username, _ ){
     var player = retriever.getUser( username, _ );
-    var text = "Oh, you silly, here is your password: " + player.data[consts.PASSWORD] + ". Now don't go and lose it again.";
+    var text = "Oh, you silly, here is your password: " + player.data[props.USER.PASSWORD] + ". Now don't go and lose it again.";
     var options = {
       from: "Princess Ozma <ozmatheprincess@gmail.com>",
-      to: player.data[consts.EMAIL],
+      to: player.data[props.USER.EMAIL],
       subject: "Your marvelous password",
       text: text,
       html: "<b>" + text + "</b>"
