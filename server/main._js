@@ -373,30 +373,43 @@ function randomizeBoard( game, level, _ )
   var j = 0;
   var dist = 0;
   var nWords = 0;
+  var ret = false;
   
-  var tiles = [];
+  var tiles = {};
   var connections = [];
-
-  now = new Date().getTime(); time = now - start;
-  console.log("rb1: " + time ); start = new Date().getTime();
-
+  
   var boards = boardManager.getPublishedBoards( false, _ );
-  var board = boards[ boards.length === 1 ? 0 : randomizer.getRandomIntegerInRange( 0, boards.length - 1 ) ];
   
-  for( i = 0; i < board.tiles.length; i++ ){
-    tiles.push( tools.addTile( game, board.tiles[i].data.x, board.tiles[i].data.y, board.tiles[i].data.angle, _ ) );
+  if( boards.length !== 0 )
+  {
+    var board = boards[ boards.length === 1 ? 0 : randomizer.getRandomIntegerInRange( 0, boards.length - 1 ) ];
+    
+    for( i = 0; i < board.tiles.length; i++ ){
+      tiles[board.tiles[i].data.id] = tools.addTile( game, board.tiles[i].data.id, board.tiles[i].data.x, board.tiles[i].data.y, board.tiles[i].data.angle, _ );
+    }
+    
+    for( i = 0; i < board.paths.length; i++ ){
+      tools.addPath( game, i,
+        tiles[ board.paths[i].data[props.PATH.START_TILE] ],
+        tiles[ board.paths[i].data[props.PATH.END_TILE] ],
+        board.paths[i].data[props.PATH.NWORDS],
+        board.paths[i].data[props.PATH.CW], _ );
+    }
+    
+    game.data[props.GAME.PATH_COUNT] = board.paths.length;
+    game.save( _ );
+    
+    ret = true;
   }
-  
-  for( i = 0; i < board.paths.length; i++ ){
-    tools.addPath( game,
-                   tiles[ board.paths[i].data[props.PATH.START_TILE] ],
-                   tiles[ board.paths[i].data[props.PATH.END_TILE] ],
-                   board.paths[i].data[props.PATH.NWORDS],
-                   board.paths[i].data[props.PATH.CW], _ );
+  else
+  {
+    console.log( "No Game Boards Found" );
   }
   
   now = new Date().getTime(); time = now - start;
-  console.log("rb2: " + time );
+  console.log("rb1: " + time );
+  
+  return ret;
 }
 
 function broadcastGameObject( game, eventName, jsonObjs )

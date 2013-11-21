@@ -54,8 +54,6 @@ module.exports =
         board.paths = retriever.getBoardPaths( boards[i].id, pretty, _ );
         
         ret.push( board );
-        
-        console.log( board );
       }
     }
     
@@ -122,6 +120,7 @@ module.exports =
     var tempPaths;
     var tempTiles;
     var countNode;
+    var tileObjs = {};
     var responseData = { success:false };
     
     if( id === -1 ){
@@ -133,12 +132,8 @@ module.exports =
         draft: draft,
         lastMod: Date.parse( new Date() )
       }, _ );
-    
-    countNode = retriever.getCountNode( _ );
-    countNode.data[props.COUNT_NODE.BOARD_COUNT]++;
-    countNode.save(_);
-    
     boardNode.index( indexes.BOARD_INDEX, props.ID, id, _ );
+    
     }else{
       boardNode = retriever.getBoardByID( id, false, _ );
       
@@ -158,16 +153,31 @@ module.exports =
       }
     }
     
+    for( i = 0; i < tiles.length; i++ ){
+      tile =  tiles[i];
+      
+      tileNode = tools.createNode({
+        type: types.TILE,
+        id: i,
+        x: tile.x,
+        y: tile.y,
+        angle: tile.angle
+      }, _ );
+      
+      tileObjs[tile.id] = tileNode.data;
+      boardNode.createRelationshipTo( tileNode, rels.HAS_TILE, {}, _ );
+    }
+    
     for( i = 0; i < paths.length; i++ ){
       path = paths[i];
       
       pathNode = tools.createNode({
         type: types.PATH,
-        id: path.id,
+        id: i,
         cw: path.cw,
         nWords: path.nWords,
-        endTile: path.endTile,
-        startTile: path.startTile,
+        endTile: tileObjs[path.endTile].id,
+        startTile: tileObjs[path.startTile].id,
         minCurve: 0,
         maxCurve: 0
       }, _ );

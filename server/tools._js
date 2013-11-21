@@ -49,10 +49,8 @@ module.exports =
     return newBoardID;
   },
 
-  addPath: function( game, startTile, endTile, nWords, cw, _ )
-  {
-    var id = game.data[props.GAME.PATH_COUNT];
-    
+  addPath: function( game, id, startTile, endTile, nWords, cw, _ )
+  { 
     var path = this.createNode({
       type: types.PATH,
       id: id,
@@ -62,59 +60,52 @@ module.exports =
       nWords: nWords
     }, _ );
     
-    game.data[props.GAME.PATH_COUNT]++;
-    
     game.createRelationshipTo( path, rels.HAS_PATH, {}, _ );
     path.createRelationshipTo( endTile, rels.ENDS_WITH, {}, _ );
     path.createRelationshipTo( startTile, rels.STARTS_WITH, {}, _ );
-    
-    game.save(_);
   },
   
-  addTile: function( game, x, y, angle, _ )
+  addTile: function( game, id, x, y, angle, _ )
   {
     var tile;
     var i = 0;
     
-    if( game.data[props.GAME.TILE_COUNT] < consts.MAX_TILES ){
-      var image = randomizer.getRandomImage(_);
-      var images = retriever.getGameTileImages( game.id, _ );
-      var instruction = randomizer.getRandomInstruction(_);
-      var instructions = retriever.getGameTileInstructions( game.id, _ );
-      if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
-      if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
-      
-      for( i = 0; i < images.length; i++ ){
-        if( image.data.name == images[i].data.name ){
-          image = randomizer.getRandomImage(_);
-          i = -1;
-        }
+    var image = randomizer.getRandomImage(_);
+    var images = retriever.getGameTileImages( game.id, _ );
+    var instruction = randomizer.getRandomInstruction(_);
+    var instructions = retriever.getGameTileInstructions( game.id, _ );
+    if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
+    if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
+    
+    for( i = 0; i < images.length; i++ ){
+      if( image.data.name == images[i].data.name )
+      {
+        image = randomizer.getRandomImage(_);
+        i = -1;
       }
-      
-      for( i = 0; i < instructions.length; i++ ){
-        if( instruction.data.id == instructions[i].data.id ){
-          instruction = randomizer.getRandomInstruction(_);
-          i = -1;
-        }
-      }
-      
-      tile = this.createNode({
-        type: types.TILE,
-        id: game.data[props.GAME.TILE_COUNT],
-        representedImage: image.data.name,
-        representedInstruction: instruction.data.id,
-        angle: angle,
-        x: x,
-        y: y
-      }, _ );
-      
-      game.createRelationshipTo( tile, rels.HAS_TILE, { id: game.data[props.GAME.TILE_COUNT] }, _ );
-      tile.createRelationshipTo( image, rels.REPRESENTS_IMAGE, {}, _ );
-      tile.createRelationshipTo( instruction, rels.REPRESENTS_INSTRUCTION, {}, _ );
-      
-      game.data[props.GAME.TILE_COUNT]++;
-      game.save(_);
     }
+    
+    for( i = 0; i < instructions.length; i++ ){
+      if( instruction.data.id == instructions[i].data.id )
+      {
+        instruction = randomizer.getRandomInstruction(_);
+        i = -1;
+      }
+    }
+    
+    tile = this.createNode({
+      type: types.TILE,
+      id: id,
+      representedImage: image.data.name,
+      representedInstruction: instruction.data.id,
+      angle: angle,
+      x: x,
+      y: y
+    }, _ );
+    
+    game.createRelationshipTo( tile, rels.HAS_TILE, { id: game.data[props.GAME.TILE_COUNT] }, _ );
+    tile.createRelationshipTo( image, rels.REPRESENTS_IMAGE, {}, _ );
+    tile.createRelationshipTo( instruction, rels.REPRESENTS_INSTRUCTION, {}, _ );
     
     return tile;
   },
@@ -179,7 +170,7 @@ module.exports =
     var currentPhrase = -1;
     var currentPlayer = -1;
     
-    for( i = 0; i < game.data[props.GAME.PATH_COUNT]; i++ )
+    for( i = 0; i < gameInfo.path.length; i++ )
     {
       currentPath = gameInfo.path[i];
       
@@ -196,7 +187,7 @@ module.exports =
       currentPhrase = gameInfo.phrase[i];
       phraseMagnetInfo = getMagnetObject( gameInfo.magnetPhrase, gameInfo.word, currentPhrase[props.ID] );
       
-      for( j = 0; j < game.data[props.GAME.PATH_COUNT]; j++ ){
+      for( j = 0; j < pathObjs.length; j++ ){
         if( pathObjs[j].id == currentPhrase[props.PATH.PATH_ID] ){
           pathObjs[j].phrase = {
             id : currentPhrase[props.ID],
@@ -206,7 +197,7 @@ module.exports =
       }
     }
     
-    for( i = 0; i < game.data[props.GAME.TILE_COUNT]; i++ ){
+    for( i = 0; i < gameInfo.tile.length; i++ ){
       imageID = -1;
       instructionID = -1;
       currentTile = gameInfo.tile[i];
