@@ -29,8 +29,6 @@ module.exports =
         board.paths = retriever.getBoardPaths( boards[i].id, pretty, _ );
         
         ret.push( board );
-        
-        console.log( board );
       }
     }
     
