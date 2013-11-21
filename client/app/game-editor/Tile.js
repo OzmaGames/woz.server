@@ -1,13 +1,14 @@
 ﻿define(['api/datacontext', 'api/constants', 'api/model/Path'], function (ctx, consts, Path) {
 
-  var Tile = function (id) {
+  var Tile = function (id, x, y, angle) {
     this.id = id,
-    this.x = 0.5;
-    this.y = 0.5;
-    this.imageName = consts.images[id].imageName;
+    this.x = x || 0.5;
+    this.y = y || 0.5;
+    this.imageName = consts.bigImageURL('woz', id);
+    this.imageId = id;
     this.instruction = 'tile image';
-    this.angle = ko.observable(0);
-    this.info = this.id;
+    this.angle = ko.observable(angle || 0);
+    this.info = id;
 
     var base = this;
     this.rest = ko.computed(function () {
@@ -39,8 +40,6 @@
     startTile = t.x < this.x ? t : this,
     endTile = t.x > this.x ? t : this;
     nWords = nWords === undefined ? 3 : nWords;
-
-    console.log(p);
 
     var path = new Path(ctx, lastPathID++, nWords, startTile.id, endTile.id, cw, words);
 

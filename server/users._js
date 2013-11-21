@@ -17,7 +17,7 @@ module.exports =
 
   addUser: function( username, password, email, name, surname, language, besoz, _ )
   {
-    var ok = false;
+    var ret = false;
     
     try
     {
@@ -26,7 +26,7 @@ module.exports =
       password = salt + password;
       password = crypto.SHA3( password ).toString();
       
-      if( !retriever.getUser( username, _ )  )
+      if( !retriever.getUserByUsername( username, _ ) &&  !retriever.getUserByEmail( email, _ ) )
       {
         var user = tools.createNode({
           type: types.USER,
@@ -42,15 +42,16 @@ module.exports =
           nGames: 0
         }, _ );
         
-        user.index( indexes.USER_INDEX, props.USER.USERNAME, username, _ );
+        user.index( indexes.USER_USERNAME_INDEX, props.USER.USERNAME, username, _ );
+        user.index( indexes.USER_EMAIL_INDEX, props.USER.EMAIL, email, _ );
         
-        ok = true;
+        ret = true;
       }
     }catch( ex ){
       console.log( ex );
     }
     
-    return ok;
+    return ret;
   },
   
   login: function( username, password, _ )
@@ -58,19 +59,51 @@ module.exports =
     
     return true;
     
-    var authed = false;
+    var ret = false;
     
     try{
-      var user = retriever.getUser( username, _ );
+      var user = retriever.getUserByUsername( username, _ );
       if( user ){
         if( user.data[props.USER.PASSWORD] == crypto.SHA3( user.data[props.USER.SALT] + password ) ){
-          authed = user;
+          ret = user;
         }
       }
     }catch(ex){
       console.log(ex);
     }
     
-    return authed;
-  }
+    return ret;
+  },
+  
+  addFriend: function( username, friendUsername, _ )
+  { 
+    var ret = false;
+    
+    try{
+      var user = retriever.getUserByUsername( username, _ );
+      var friend = retriever.getUserByUsername( friendUsername, _ );
+      
+      user.createRelationship( friend, rels.IS_FRIEND, {}, _ );
+      ret = true;
+    }catch(ex){
+      console.log(ex);
+    }
+    
+    return ret;
+  },
+  
+  searchFriendOfFriend: function( username, friendUsername, _ )
+  {
+    var ret = false;
+    
+    try{
+      var user = retriever.getUserByUsername( username, _ );
+      
+      
+    }catch(ex){
+      console.log(ex);
+    }
+    
+    return ret;
+  },
 };

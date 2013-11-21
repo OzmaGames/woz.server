@@ -1,0 +1,621 @@
+@font-face {
+    font-family: 'CopseRegular';
+    src: url('../fonts/Copse-Regular-webfont.eot');
+    src: url('../fonts/Copse-Regular-webfont.eot?#iefix') format('embedded-opentype'), url('../fonts/Copse-Regular-webfont.woff') format('woff'), url('../fonts/Copse-Regular-webfont.ttf') format('truetype'), url('../fonts/Copse-Regular-webfont.svg#CopseRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'GreatVibesRegular';
+    src: url('../fonts/GreatVibes-Regular-webfont.eot');
+    src: url('../fonts/GreatVibes-Regular-webfont.eot?#iefix') format('embedded-opentype'), url('../fonts/GreatVibes-Regular-webfont.woff') format('woff'), url('../fonts/GreatVibes-Regular-webfont.ttf') format('truetype'), url('../fonts/GreatVibes-Regular-webfont.svg#GreatVibesRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    padding: 0;
+    margin: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: cambria !important;
+    font-weight: normal;
+    color: #986B31;
+    -webkit-text-shadow: 0px 0px 1px #986B31;
+    text-shadow: 0px 0px 1px #986B31;
+    cursor: default;
+}
+
+p {
+    cursor: default;
+}
+
+h1 {
+    font-size: 1.5em;
+}
+
+h2 {
+    font-size: 2em;
+}
+
+h3 {
+    font-size: .9em;
+}
+
+h4 {
+    font-size: .8em;
+}
+
+h5 {
+    font-size: .7em;
+}
+
+#app {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: url('../images/app/background.jpg') no-repeat;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    -webkit-background-size: cover;
+    background-size: cover;
+    -webkit-overflow-scrolling: touch;
+}
+
+#splash {
+    width: 300px;
+    margin: 0 auto;
+    padding-top: 100px;
+    text-align: center;
+    color: #713b00;
+}
+
+.loader {
+    color: #713b00;
+    margin: 6px 8px 4px 8px;
+    display: none;
+    position: relative;
+    z-index: 2;
+}
+
+    .loader.active {
+        display:block;
+        visibility: visible;
+    }
+
+.loadingIndicator {
+    position: absolute;
+    top: 0.1em;
+    left: 0.1em;
+    font: 0.8em Arial;
+    background-color: #229;
+    color: White;
+    padding: 0.2em 0.5em 0.2em 0.5em;
+    display: none;
+}
+
+.curly {
+    font-family: GreatVibesRegular !important;
+}
+
+.logo {
+    background: url('../images/app/logo.png') no-repeat;
+    -moz-background-size: 100% auto;
+    -o-background-size: 100% auto;
+    -webkit-background-size: 100% auto;
+    background-size: 100% auto;
+    background-position: center top;
+}
+
+    .logo.page {
+        position: absolute;
+        background-image: url('../images/app/logo-small.png');
+        top: 0;
+        width: 100%;
+        height: 80px;
+        margin-top: 10px;
+        z-index: 1;
+        -moz-background-size: auto 100%;
+        -o-background-size: auto 100%;
+        -webkit-background-size: auto 100%;
+        background-size: auto 100%;
+        -moz-transition: left 1s ease-in-out, height 1s ease-in-out;
+        -o-transition: left 1s ease-in-out, height 1s ease-in-out;
+        -webkit-transition: left 1s ease-in-out, height 1s ease-in-out;
+        transition: left 1s ease-in-out, height 1s ease-in-out;
+        -moz-backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+    }
+
+#login-page .background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 2em;
+}
+
+    #login-page .background.logo {
+        background-position: top center;
+    }
+
+    #login-page .background.footer {
+        background: url('../images/app/footer.png') no-repeat;
+        background-position: bottom center;
+        -moz-background-size: 100% auto;
+        -o-background-size: 100% auto;
+        -webkit-background-size: 100% auto;
+        background-size: 100% auto;
+    }
+
+.palette {
+    top: 100px;
+    position: fixed;
+    z-index: 99;
+    -moz-transition: top .3s ease-in-out;
+    -o-transition: top .3s ease-in-out;
+    -webkit-transition: top .3s ease-in-out;
+    transition: top .3s ease-in-out;
+}
+
+    .palette.left {
+        left: 20px;
+    }
+
+    .palette.right {
+        right: 20px;
+    }
+
+.ui-overlay {
+    background: #666;
+    opacity: .3;
+}
+
+    .ui-overlay.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+.block {
+    display: block;
+}
+
+.link {
+    cursor: pointer;
+}
+
+.space {
+    margin: 1em;
+}
+
+.agreement {
+    margin-top: 1em;
+    width: 18em;
+    margin: 0 auto;
+    font-size: .8em;
+    font-family: cambria;
+    padding-top: 1em;
+    line-height: 1.4em;
+}
+
+a.big {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+a.small {
+}
+
+
+
+
+/*#region Form - controls */
+
+
+.container.y, .container.x, .container.group {
+    padding: .5em;
+    margin-bottom: .5em;
+}
+
+.container.y {
+    max-height: 11.8em;
+    border: 2px solid #d7bea2;
+    border-radius: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 400px;
+    background-color: #F2EBE3;
+}
+
+    .container.y.compact {
+        padding: 0;
+    }
+
+.container.group {
+}
+
+    .container.y:last-of-type, .container.group:last-of-type {
+        margin-bottom: 0;
+    }
+
+.grid {
+    position: relative;
+    max-width: 850px;
+    width: 100%;
+    padding: 10px;
+    margin: 0 auto;
+}
+
+    .grid .col {
+        width: 400px;
+        padding-right: 40px;
+        float: left;
+        overflow: visible;
+    }
+
+        .grid .col.right {
+            float: right;
+            padding-right: 0;
+        }
+
+    .grid h1 {
+        padding-left: 10px;
+        text-transform: uppercase;
+    }
+
+    .grid label + ul {
+        max-height: 8em !important;
+    }
+
+    .grid ul {
+        list-style: none;
+    }
+
+        .grid ul li {
+            display: block;
+            width: 100%;
+            height: 1em;
+            padding: .8em;
+            font-family: Cambria;
+            font-weight: normal;
+            color: #986B31;
+            background-color: #F9F8F4;
+            border-bottom: 1px solid #d7bea2;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+            .grid ul li:last-child {
+                border-bottom: none;
+            }
+
+            .grid ul li.header {
+                color: white;
+                background-color: #cfa972;
+                padding: .4em;
+                text-transform: capitalize;
+                cursor: default;
+            }
+
+            .grid ul li:hover:not(.header) {
+                background-color: #f1ebe2;
+            }
+
+            .grid ul li:active, .grid ul li.active {
+                background-color: #d9cfc0 !important;
+                font-weight: bold;
+                cursor: default;
+            }
+
+    .grid input[type="text"] {
+        padding: .8em;
+        border: 1px solid #d7bea2;
+        background-color: #F9F8F4;
+        box-shadow: none;
+        width: 350px;
+    }
+
+        .grid input[type="text"] ~ span {
+            position: relative;
+            display: inline-block;
+            width: 1.8em;
+            height: 1.4em;
+            top: .3em;
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+            cursor: pointer;
+        }
+
+            .grid input[type="text"] ~ span.clear {
+                background-image: url('../images/game/add-friend.png');
+            }
+
+                .grid input[type="text"] ~ span.clear:hover, .grid input[type="text"] ~ span.clear:active {
+                    background-image: url('../images/game/add-friend-active.png');
+                }
+
+            .grid input[type="text"] ~ span.find {
+                width: 1.6em;
+                margin-left: -2em;
+                background-image: url('../images/game/find.png');
+            }
+
+                .grid input[type="text"] ~ span.find:hover, .grid input[type="text"] ~ span.find:active {
+                    background-image: url('../images/game/find-active.png');
+                }
+
+.scroll {
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .scroll::-webkit-scrollbar {
+        width: 12px;
+        background-color: rgba(192, 157, 108, .3);
+    }
+
+    .scroll::-webkit-scrollbar-thumb {
+        border-radius: 8px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.5);
+        box-shadow: inset 0 0 6px rgba(0,0,0,.5);
+        background-color: #c8b39b;
+        width: 5px;
+    }
+
+.pic.woz, .pic.starter {
+    background-image: url('../images/tiles/couple-woz.png');
+}
+
+.pic.nf {
+    background-image: url('../images/tiles/couple-nf.png');
+}
+
+.pic.loc {
+    background-image: url('../images/tiles/couple-loc.png');
+}
+
+.grid .table {
+    display: table;
+    border-collapse: separate;
+    border-spacing: 1em;
+}
+
+.game-item {
+    display: table-row;
+    font-family: cambria;
+    font-weight: normal;
+    font-size: .9em;
+    line-height: 1.5em;
+    color: #986B31;
+    -webkit-text-shadow: 0 0 1px rgba(152, 107, 49,.5);
+    text-shadow: 0 0 1px rgba(152, 107, 49,.5);
+}
+
+    .game-item .float.right {
+        float: right;
+    }
+
+    .game-item .cell {
+        position: relative;
+        display: table-cell;
+        padding: .5em;
+        margin-bottom: .5em;
+        border: 2px solid #d7bea2;
+        border-radius: 7px;
+        background: #f9f8f4;
+        width: 22em;
+        cursor: pointer;
+        -moz-transition: .4s box-shadow, .4s border-color, .4s background-color;
+        -o-transition: .4s box-shadow, .4s border-color, .4s background-color;
+        -webkit-transition: .4s box-shadow, .4s border-color, .4s background-color;
+        transition: .4s box-shadow, .4s border-color, .4s background-color;
+    }
+
+    .game-item:hover .cell {
+        background-color: rgb(255, 254, 250);
+    }
+
+    .game-item.active .cell {
+        background-color: white;
+        border-color: #986B31;
+        box-shadow: 0 0 10px 3px #986B31;
+        cursor: default;
+    }
+
+    .game-item .visibleOnActive, .game-item .visibleOnHover {
+        visibility: hidden;
+    }
+
+    .game-item.active .visibleOnActive, .game-item:hover .visibleOnHover {
+        visibility: visible;
+    }
+
+    .game-item .cell.left {
+        width: 60em;
+    }
+
+    .game-item .cell.right {
+        width: 15em;
+    }
+
+    .game-item .pic {
+        position: absolute;
+        top: -.75em;
+        height: 7em;
+        width: 8em;
+        -moz-background-size: auto 100%;
+        -o-background-size: auto 100%;
+        -webkit-background-size: auto 100%;
+        background-size: auto 100%;
+        background-repeat: no-repeat;
+    }
+
+        .game-item .pic + div {
+            margin-left: 9em;
+        }
+
+    .game-item .name {
+        font-weight: bold;
+    }
+
+    .game-item .collection {
+        font-style: italic;        
+    }
+
+    .game-item .date {
+        font-style: italic;
+    }
+
+    .game-item .phrase {
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+
+        .game-item .phrase:after, .game-item .phrase:before {
+            content: '"';
+        }
+
+    .game-item .point {
+        font-weight: bold;
+    }
+
+    .game-item .bold {
+        font-weight: bold;
+    }
+
+    .game-item .italic {
+        font-style: italic;
+    }
+
+    .game-item .icons {
+        position: relative;
+    }
+
+        .game-item .icons .time {
+            border: 1px solid #d7bea2;
+            border-radius: 3px;
+            box-shadow: 0 0 2px #d7bea2;
+            padding: 0 2px;
+            display: inline-block;
+            font-size:.9em;
+            margin-right:25px;
+        }
+
+        .game-item .icons .chat {
+            position: absolute;
+            top: -.25em;
+            display: inline-block;
+            width: 2.5em;
+            height: 2.5em;
+            padding-left: .5em;
+            background-image: url('../images/game/chat.png');
+            -moz-background-size: 100% 100%;
+            -o-background-size: 100% 100%;
+            -webkit-background-size: 100% 100%;
+            background-size: 100% 100%;
+        }
+
+            .game-item .icons .chat > div {
+                padding: .4em 0 0 .8em;
+                font-size: .8em;
+            }
+        
+    .game-item .players {
+        position: absolute;
+        bottom: .5em;
+        left: 0;
+        line-height: 1em;
+        width: 10.5em;
+    }
+
+        .game-item .players .player {
+            font-size: .8em;
+            float: left;
+            margin-left: 1em;
+            width: 8em;
+        }
+
+        .game-item .players .score {
+            float: right;
+            font-weight: bold;
+        }
+/*#endregion */
+
+
+
+.float.left {
+    float: left;
+}
+
+.clear {
+    clear: both;
+}
+
+.status-box {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    margin: .2em;
+    font-family: Cambria;
+    font-size: .7em;
+    z-index: 1;
+    cursor: default;
+}
+
+    .status-box .switch {
+        position: relative;
+        display: inline-block;
+        line-height: 1em;
+        overflow: hidden;
+        height: 1em;
+    }
+
+        .status-box .switch > span {
+            display: block;
+            margin-top: 0;
+            -moz-transition: margin-top .5s;
+            -o-transition: margin-top .5s;
+            -webkit-transition: margin-top .5s;
+            transition: margin-top .5s;
+            height: 1em;
+            opacity: .4;
+        }
+
+        .status-box .switch.b > span:first-child {
+            margin-top: -.97em;
+        }
+
+    .status-box .good {
+        color: green;
+    }
+
+    .status-box .bad {
+        color: rgb(190, 63, 63);
+    }

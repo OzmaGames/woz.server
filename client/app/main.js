@@ -16,14 +16,14 @@ requirejs.config({
 define('jquery', function () { return jQuery; });
 define('knockout', ko);
 
-define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'api/server/setup', 'api/datacontext', 'dialogs/_dialog',
+define(['durandal/system', 'durandal/app', 'durandal/plugins/router', 'durandal/viewLocator', 'api/server/setup', 'api/datacontext', 'dialogs/_builder',
   '../lib/jquery.transit', '../lib/jquery.touch-punch', '../lib/crypto.sha3', 'api/knockout'],
-  function (system, app, viewLocator, server, ctx, Dialog) {
+  function (system, app, router, viewLocator, server, ctx, Dialog) {
     //>>excludeStart("build", true);
     system.debug(true);
     //>>excludeEnd("build");    
-
-    app.title = 'Words Of Oz';
+    
+    app.title = 'Words of Oz';
 
     app.configurePlugins({
       router: true,
@@ -31,6 +31,7 @@ define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'api/server/s
       http: true
     });
 
+    app.inlineLoading = ko.observable(false);
     app._loading = ko.observable(false);
     app.loading = ko.computed({
       read: function () {
@@ -43,11 +44,16 @@ define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'api/server/s
     });
 
     app.scrollUp = function () {
-      $("body").animate({ scrollTop: 0 }, "slow", "swing");
+      console.log("scrollUP");
+      $('body').animate({ scrollTop: 0 }, "slow", "swing");
     };
 
     app.scrollDown = function () {
-      $("body").animate({ scrollTop: 1000 }, "slow", "swing");
+      console.log("scrollDown");
+      $('body').animate({ scrollTop: 1000 }, "slow", "swing");
+    }
+    app.navigate = function (hash) {
+      router.navigate(hash);
     }
 
     app.dialog = Dialog;

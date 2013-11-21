@@ -1,6 +1,7 @@
 var oz = oz || {};
 
-var consts = require("./constants._js");
+var consts = require("./constants._js"),
+    props = require("./properties._js");
 
 module.exports =
 {
@@ -11,7 +12,7 @@ module.exports =
     while( rule.indexOf("  ") != -1 ){
       rule = rule.replace( "  ", " " );
     }
-	
+    
     var matches = rule.split(" ");
     var expType = matches[0];
     var n = matches[1];
@@ -43,6 +44,7 @@ module.exports =
         ret = checkSyllables( n, words, _ );
       }
     }
+
     return ret;
   }
 };
@@ -54,10 +56,11 @@ function checkLetters( n, where, words, isBegin, _ ) //if not begin -> end
   var lettersCount = {};
   var isSame = where == "same" ? true : false;
   var isDiff = where == "diff" ? true : false;
-  
+
   for( var i = 0; i < words.length; i++ )
   {
     var currentWord = words[i];
+
     var currentLetter = currentWord.data[props.WORD.LEMMA].substr( isBegin ? 0 : currentWord.data[props.WORD.LEMMA].length - 1, 1);
     
     if( lettersCount.hasOwnProperty( currentLetter ) ){
@@ -67,7 +70,7 @@ function checkLetters( n, where, words, isBegin, _ ) //if not begin -> end
       lettersCount[currentLetter] = 1;
     }
   }
-
+  
   if( isSame ){
     for( var b = 0; b < letters.length; b++ ){
       if( lettersCount[ letters[b] ] == n )

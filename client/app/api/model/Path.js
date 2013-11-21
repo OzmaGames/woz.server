@@ -24,13 +24,13 @@
       if (complete && !base.silence) {
         app.dialog.show("confirm", { modal: true }).then(function (result) {
           model.activeWords(null);
+          paper.tool.remove();
           if (result == "cancel") {
             base.phrase._complete(false);
-            base.removeAll();
+            base.removeAll();            
           }
           else {
             app.loading(true);
-            $("body").animate({ scrollTop: 0 }, "slow");
             model.player.active(false);
             var data = {
               gameID: model.gameID,
@@ -39,7 +39,8 @@
               words: ko.utils.arrayMap(base.phrase.words(), function (word) { return word.word.id; })
             };
             app.trigger("server:game:place-phrase", data);
-          }          
+            app.scrollUp();
+          }
         });
       }
       ko.utils.arrayForEach(base.phrase.words(), function (word) {

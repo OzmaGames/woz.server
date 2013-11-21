@@ -111,7 +111,7 @@
   Box.prototype.drop = function () {
     if (this.active && !this.hasData && this.wordModel != null) {
       if (!this.pathModel.addWord(this.wordModel, this.index)) {
-        app.dialog.show('alert', "It's not your turn!");
+        app.dialog.show('alert', { content: "It's not your turn!" });
       }
     }
   };
@@ -237,7 +237,7 @@
     div.css({
       left: this.pathModel.canvas.cPoint.x - Box.pathOptions.container.left,
       top: this.pathModel.canvas.cPoint.y - Box.pathOptions.container.top,
-      zIndex: 2
+      zIndex: 0
     });
     div.appendTo('#tiles');
 

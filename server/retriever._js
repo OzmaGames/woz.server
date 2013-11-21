@@ -1,10 +1,10 @@
 var neo4j = require("neo4j"),
-  types = require("./types._js"),
-  indexes = require("./indexes._js"),
-  props = require("./properties._js"),
-  consts = require("./constants._js"),
-  rels = require("./relationships._js"),
-  environment = require("./environment._js");
+    types = require("./types._js"),
+    indexes = require("./indexes._js"),
+    props = require("./properties._js"),
+    consts = require("./constants._js"),
+    rels = require("./relationships._js"),
+    environment = require("./environment._js");
 
 var db = new neo4j.GraphDatabase(environment.DB_URL);
 
@@ -15,8 +15,15 @@ module.exports =
     return db.getNodeById( 1, _ );
   },
 
-  getUser: function( username, _ ){
-    var users = db.getIndexedNodes( indexes.USER_INDEX, props.USER.USERNAME, username, _ );
+  getUserByUsername: function( username, _ ){
+    var users = db.getIndexedNodes( indexes.USER_USERNAME_INDEX, props.USER.USERNAME, username, _ );
+    
+    return users[0];
+  },
+  
+  getUserByEmail: function( email, _ )
+  {
+    var users = db.getIndexedNodes( indexes.USER_EMAIL_INDEX, props.USER.EMAIL, email, _ );
     
     return users[0];
   },
@@ -103,6 +110,47 @@ module.exports =
     return words;
   },
 
+   //Gets the phrases for a given game
+  getGamePhrases: function( gameNodeID, _ ){
+    var phrases = [];
+    
+    var query =
+      "START m = node(" + gameNodeID + ") " +
+      "MATCH m -[:" + rels.HAS_PHRASE + "]-> phrase " +
+      "RETURN phrase;"
+      
+    
+    var resultsTemp = db.query(query, {}, _ );
+    
+    for( i = 0; i < resultsTemp.length; i++ ){
+      phrases.push( resultsTemp[i].phrase );
+    }
+    
+    return phrases;
+  },
+  
+  //Gets the last phrase
+  getGamePhraseByID: function( gameNodeID, phraseID, _ ){
+    var phrase;
+    
+    var query =
+      "START m = node(" + gameNodeID + ") " +
+      "MATCH m -[:" + rels.HAS_PHRASE + "]-> phrase " +
+      "WHERE phrase.id = " + phraseID + " " +
+      "RETURN phrase;"
+      
+    
+    var resultsTemp = db.query(query, {}, _ );
+    
+    if( resultsTemp.length == 0 ){
+      phrase = false;
+    }else{
+      phrase = resultsTemp[0].phrase;
+    }
+    
+    return phrase;
+  },
+  
   getImageFromIndex: function( id, _ ){
     return db.getIndexedNodes( indexes.IMAGE_INDEX, props.ID, id, _ )[0];
   },
@@ -111,12 +159,32 @@ module.exports =
     return db.getIndexedNodes( indexes.INSTRUCTION_INDEX, props.ID, id, _ )[0];
   },
   
-  //Gets the player instance of the player with the given username for a given game
-  getGamePlayerByID: function( gameNodeID, username, _ ){
+  //Gets the players of a given game
+  getGamePlayers: function( gameNodeID, _ ){
+    var players = [];
+    
     var query =
       "START m = node(" + gameNodeID + ") " +
       "MATCH m -[:" + rels.BEING_PLAYED_BY + "]-> player " +
-      "WHERE player." + rels.USERNAME + " = \'" + username + "\' " +
+      "RETURN player;";
+    
+    var resultsTemp = db.query(query, {}, _ );
+    
+    for( i = 0; i < resultsTemp.length; i++ ){
+      players.push( resultsTemp[i].player );
+    }
+    
+    return players;
+  },
+  
+  //Gets the player instance of the player with the given username for a given game
+  getGamePlayerByID: function( gameNodeID, username, _ )
+  {
+  
+    var query =
+      "START m = node(" + gameNodeID + ") " +
+      "MATCH m -[:" + rels.BEING_PLAYED_BY + "]-> player " +
+      "WHERE player." + props.PLAYER.USERNAME + " = \'" + username + "\' " +
       "RETURN player;";
     
     var player = db.query(query, {}, _ )[0].player;
@@ -284,18 +352,18 @@ module.exports =
     var i = 0;
     var images = [];
     var resultsTemp;
-
+    
     var query =
       "START game = node(" + gameNodeID + "), word = node(" + wordNodeID + ") " +
-      "MATCH game -[:hasTile]-> tile -[:" + indexes.REPRESENTS_IMAGE + "]-> image -[:" + indexes.RELATES_TO + "]-> word " +
+      "MATCH game -[:hasTile]-> tile -[:" + rels.REPRESENTS_IMAGE + "]-> image -[:" + rels.RELATES_TO + "]-> word " +
       "RETURN image;";
-
+    
     resultsTemp = db.query(query, {}, _ );
-
+    
     for( i = 0; i < resultsTemp.length; i++ ){
       images.push( resultsTemp[i].tile );
     }
-
+    
     return images;
   },
 
@@ -392,7 +460,8 @@ module.exports =
     return mw;
   },
   
-  getPlayerMagnetWordsByID: function( playerNodeID, magnetIDs, _ ){
+  getPlayerMagnetWordsByID: function( playerNodeID, magnetIDs, _ )
+  {
     var words = [];
     var i = 0;
     
@@ -418,7 +487,8 @@ module.exports =
     return words;
   },
   
-  getPhraseMagnetWordsByID: function( gameNodeID, magnetIDs, _ ){
+  getPhraseMagnetWordsByID: function( gameNodeID, magnetIDs, _ )
+  {
     var tiles = [];
     
     var query =
@@ -444,19 +514,42 @@ module.exports =
     return tiles;
   },
   
-  getTileImage: function( tileNodeID, _ ){
+  getTileImage: function( tileNodeID, _ )
+  {
     var image = getEndNodesByRelType( tileNodeID, rels.REPRESENTS_IMAGE, _ )[0];
     
     return image;
   },
   
-  getTileInstruction: function( tileNodeID, _ ){
+  getTileInstruction: function( tileNodeID, _ )
+  {
     var instruction = getEndNodesByRelType( tileNodeID, rels.REPRESENTS_INSTRUCTION, _ )[0];
     
     return instruction;
   },
   
-  getGameData: function( gameNodeID, _ ){
+  getFriendOfFriend: function( username, fofUsername, _ )
+  {
+    var fofs = [];
+    var user = this.getUserByUsername( username, _ );
+    
+    var query =
+      "START m = node(" + user.id + ") " +
+      "MATCH m -[:" + rels.IS_FRIEND + "]-> friend -[:" + rels.IS_FRIEND + "]-> fof " +
+      "WHERE fof.username =~ \"" + fofUsername + ".*\" " +
+      "RETURN fof;";
+    
+    var resultsTemp = db.query(query, {}, _ );
+    
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      fofs.push( resultsTemp[i].fof );
+    }
+    
+    return fofs;
+  },
+  
+  getGameData: function( gameNodeID, _ )
+  {
     var gameData = {
       player: [],
       phrase: [],
@@ -480,7 +573,7 @@ module.exports =
       try{
         var queryResult = queryResults.pop().result;
         gameData[ queryResult.data.type ].push( queryResult.data );
-      } catch( e ) {
+      }catch( e ){
         console.log( "Error Getting GameInfo:" );
         console.log( queryResult.data );
         console.log( e.stack );
@@ -542,73 +635,52 @@ module.exports =
     return words;
   },
 
-  getAllBoards: function( _ )
+  getAllBoards: function( pretty, _ )
   {
   var i = 0;
     var boards = [];
     var resultsTemp = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
     
     for( i = 0; i < resultsTemp.length; i++ ){
-      boards.push( resultsTemp[i] );
+      boards.push( pretty ? resultsTemp[i].data : resultsTemp[i] );
     }
     
     return boards;
   },
 
-  getBoard: function( id, _ )
+  getAllPublishedBoards: function( pretty, _ )
+  {
+  var i = 0;
+    var boards = [];
+    var resultsTemp = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
+    
+    for( i = 0; i < resultsTemp.length; i++ ){
+      if( resultsTemp[i].data.draft === false ){
+        boards.push( pretty ? resultsTemp[i].data : resultsTemp[i] );
+      }
+    }
+    
+    return boards;
+  },
+  
+  getBoardByID: function( id, pretty, _ )
   {
     var board;
     
     try{
       var results= db.getIndexedNodes( indexes.BOARD_INDEX, props.ID, id, _ );
       if( results && results.length > 0 ){
-        board = results[0];
+        board = pretty ? results[0].data : results[0];
       }
     }catch( ex ){
       console.log( "couldn't find board in " + indexes.BOARD_INDEX);
       console.log( ex.message );
     }
-
+    
     return board;
   },
-
-  getBoardPaths: function( boardNodeID, _ )
-  {
-    var paths = [];
-
-    var query =
-      "START m = node(" + boardNodeID + ") " +
-      "MATCH m -[:" + rels.HAS_PATH + "]-> path " +
-      "RETURN path;";
-
-    var resultsTemp = db.query(query, {}, _ );
-
-    for( var i = 0; i < resultsTemp.length; i++ ){
-      paths.push( resultsTemp[i].path);
-    }
-
-    return paths;
-  },
   
-  getBoardTiles: function( boardNodeID, _ )
-  {
-    var tiles = [];
-    
-    var query =
-      "START m = node(" + boardNodeID + ") " +
-      "MATCH m -[:" + rels.HAS_TILE + "]-> tile " +
-      "RETURN tile;";
-    
-    var resultsTemp = db.query(query, {}, _ );
-    
-    for( var i = 0; i < resultsTemp.length; i++ ){
-      tiles.push( resultsTemp[i].tile );
-    }
-    
-    return tiles;
-  },
-
-  getBoardPathsData: function( boardNodeID, _ )
+  getBoardPaths: function( boardNodeID, pretty, _ )
   {
     var paths = [];
 
@@ -620,27 +692,78 @@ module.exports =
     var resultsTemp = db.query(query, {}, _ );
 
     for( var i = 0; i < resultsTemp.length; i++ ){
-      paths.push( resultsTemp[i].path.data);
+      paths.push( pretty ? resultsTemp[i].path.data : resultsTemp[i].path );
     }
-
+    
     return paths;
   },
 
-  getBoardTilesData: function( boardNodeID, _ )
+  getBoardTiles: function( boardNodeID, pretty, _ )
   {
     var tiles = [];
-
+    
     var query =
       "START m = node(" + boardNodeID + ") " +
       "MATCH m -[:" + rels.HAS_TILE + "]-> tile " +
       "RETURN tile;";
-
+    
     var resultsTemp = db.query(query, {}, _ );
-
+    
     for( var i = 0; i < resultsTemp.length; i++ ){
-      tiles.push( resultsTemp[i].tile.data );
+      tiles.push( pretty ? resultsTemp[i].tile.data : resultsTemp[i].tile );
     }
-
+    
     return tiles;
   }
 };
+
+  function getEndNodesByRelType( nodeID, relationshipType, _ )
+  {
+    var results = [];
+    if( checkAlpha( nodeID ) && checkAlpha( relationshipType ) )
+    {
+      var query =
+      "START m = node(" + nodeID + ") " +
+      "MATCH m -[:" + relationshipType + "]-> result " +
+      "RETURN result;";
+      
+      var resultsTemp = db.query(query, {}, _ );
+      
+      var a = resultsTemp.length;
+      while( a-- )
+      {
+        results.push( resultsTemp[a].result );
+      }
+    }
+    
+    return results;
+  }
+
+  function checkAlpha( source )
+  {
+    var isAlpha = true;
+    
+    var lowerBoundNum = '0'.charCodeAt( 0 );
+    var upperBoundNum = '9'.charCodeAt( 0 );
+    var upperBoundLower = 'z'.charCodeAt( 0 );
+    var lowerBoundLower = 'a'.charCodeAt( 0 );
+    var upperBoundUpper = 'Z'.charCodeAt( 0 );
+    var lowerBoundUpper = 'A'.charCodeAt( 0 );
+    
+    var stringLength = source.length;
+    for ( var i = 0; i < stringLength; i++ )
+    {
+      var ch = source.charCodeAt(i);
+      
+      if ( ! (
+        ( ch <= upperBoundNum && ch >= lowerBoundNum ) ||
+        ( ch <= upperBoundUpper && ch >= lowerBoundUpper ) ||
+        ( ch <= upperBoundLower && ch >= lowerBoundLower ) ) )
+      {
+        isAlpha = false;
+        break;
+      }
+    }
+    
+    return isAlpha;
+  }

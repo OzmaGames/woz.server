@@ -12,7 +12,7 @@
         elTop = $el.data('top') || $el.offset().top - parseInt($el.css('margin-top'));
       if (top > elTop && !$el.data('top')) {
         var margin = top - elTop + topPadding, angle;
-        
+
         if (!$el.hasClass("fixed")) {
           $el
             .css({ position: "fixed", left: $el.offset().left, top: topPadding })
@@ -35,6 +35,7 @@
   }
 
   var animationQueue = [];
+  var RADIUS = 75;
 
   function showTiles() {
     for (var i = 0; i < animationQueue.length; i++) {
@@ -44,25 +45,48 @@
         left: tile.x * 100 + '%',
         top: tile.y * 100 + '%'
       });
-      var inst = $('.instruction', $el);
-      inst.transition({
-        rotate: ((tile.x-0.1) - 0.5) * 30,
-        marginLeft: (tile.x - 0.5) * 60
-      });
 
-      instructionDoms.push(inst);
+      tile.ruleOffset = { x: 0, y: 0 };
+
+      UpdateTileInstruction(tile, true);
     }
     animationQueue = [];
 
     $(window).scroll(scroll);
   }
 
+  function UpdateTileInstruction(tile, animate) {
+    var angle = tile.angle;
+
+    tile.ruleOffset.x = Math.sin(angle * (Math.PI / 180)) * RADIUS;
+    tile.ruleOffset.y = Math.cos(angle * (Math.PI / 180)) * RADIUS;
+
+    var diff = {
+      rotate: (angle > 90 || angle < -90) ? angle + 180 : angle,
+      marginLeft: tile.ruleOffset.x,
+      marginTop: RADIUS - tile.ruleOffset.y
+    };
+
+    if (animate)
+      tile.$inst.stop().transition(diff, 1000);
+    else
+      tile.$inst.stop().css(diff);
+
+  }
+
   return {
     tiles: ctx.tiles,
+    gameOver: ctx.gameOver,
+    collection: ctx.collection,
+    carryingWords: ko.computed(function () {
+      words = ctx.activeWords();
+      word = ctx.activeWord();
+      return words || word;
+    }),
 
     disabled: ko.computed(function () {
       var mode = ctx.mode();
-      return mode == 'swap' || mode == 'circle-words';
+      return mode == 'swapWords' || mode == 'circleWords';
     }),
 
     activate: function () { },
@@ -75,52 +99,37 @@
 
     },
 
-    toggleTile: function () {
-      this.active(this.active() ^ 1);
-      if (this.active()) {
-        var h = $('#tiles').height(),
-          w = $('#tiles').width();
-        this.$el.css({ width: h, left: w - h });
+    toggleTile: function (tile) {
+      var active = this.active();
+      if (!active) {
+        var h = $('#tiles').height();
+        tile.$el.css({ 'font-size': h });
       } else {
-        this.$el.css({ width: '', left: this.x * 100 + '%' });
+        tile.$el.css({ 'font-size': '' });
       }
+      tile.active(active ^ 1);
     },
 
     help: function (tile, e) {
-      e.preventDefault();
-      e.stopPropagation();
-
       var offset = tile.$inst.offset(),
         left = offset.left,
-        top = offset.top + 200 - $(window).scrollTop();      
+        top = offset.top + 200 - $(window).scrollTop();
 
       if (tile.$inst.hasClass("fixed")) {
         top -= 120;
       }
-      top= 150;
-      
+      top = 150;
+
       app.dialog.show("window", {
         heading: tile.instruction,
         content: tile.description,
         left: left, top: top
       });
-
-      return false;
     },
 
     afterRender: function (el, tile) {
       var $el = $(el).filter('.tile:first');
 
-      //$el.draggable({
-      //  withinEl: $el.parent(),
-      //  dragStart: function (e) { },
-      //  move: function (e) {
-      //    tile.x = $el.position().left / $el.parent().innerWidth();
-      //    tile.y = $el.position().top / $el.parent().innerHeight();
-
-      //    $(window).resize();
-      //  }
-      //});
       tile.$el = $el;
       tile.$inst = $el.find('.instruction');
 

@@ -3,7 +3,9 @@ var oz = oz || {};
 var neo4j = require( "neo4j" ),
   consts = require( "./constants._js" ),
   props = require( "./properties._js" ),
+  rels = require("./relationships._js"),
   retriever = require("./retriever._js"),
+  operations = require("./operations._js"),
   randomizer = require("./randomizer._js");
 
 module.exports =
@@ -16,13 +18,12 @@ module.exports =
     
     var mw; 
     var player;
-    var randomClass;
     var currentWord;
     var currentMagnet;
     var collectionName;
     
     if( game.data[props.GAME.ACTION_DONE] === false ){
-      this.setActionDone( game, true, _ );
+      operations.setActionDone( game, true, _ );
       
       player = retriever.getGamePlayerByID( game.id, username, _ );
       mw = retriever.getPlayerMagnetsAndWordsByID( player.id, magnetIDs, _ );
@@ -40,9 +41,7 @@ module.exports =
           collectionName = currentMagnet.data[props.MAGNET.COLLECTION];
           
           currentMagnet.outgoing( rels.REPRESENTS_WORD, _ )[0]["delete"](_);
-          randomClass = currentMagnet.data.class;
-          
-          currentWord = randomizer.getRandomWordByClass( collectionName, randomClass , _);
+          currentWord = randomizer.getRandomWordByClass( collectionName, currentMagnet.data[props.MAGNET.CLASS] , _);
           
           ret.push({
             id: currentMagnet.data.id,

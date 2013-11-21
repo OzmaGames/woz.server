@@ -55,7 +55,6 @@ module.exports =
         
         var collectionName = collectionNames[j];
         var collection = collections[ collectionName ];
-        console.log( "\n" + collectionName + ": " + collection.length );
         
         classCounts[collectionName] = {
           noun: 0,
@@ -85,13 +84,12 @@ module.exports =
             currentWordNode = tools.createNode({
               type: types.WORD,
               lemma: currentWord.lemma,
-              points: randomizer.getRandomIntegerInRange(0, 4),
+              points: randomizer.getRandomIntegerInRange(1, 5),
               collections: [collectionName],
               categories: [""],
               versionOf: ""
             }, _ );
             
-            console.log( indexes.WORD_LEMMA_INDEX + " " + currentWord.lemma );
             currentWordNode.index( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
             currentWordNode.index( collectionName + indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
             
@@ -124,11 +122,12 @@ module.exports =
       var currentImage = defaultImages[i];
       var currentImageNode = tools.createNode({
         type: types.IMAGE,
+        id:  currentImage.id,
         name: currentImage.name,
         collection: "starter",
         related: currentImage.related
       }, _ );
-      currentImageNode.index( indexes.IMAGE_INDEX, props.ID, i, _ );
+      currentImageNode.index( indexes.IMAGE_INDEX, props.ID, currentImage.id, _ );
       
       var relatedWordsIDs =[];
       var relatedWords = currentImage.related.split(', ');
@@ -179,7 +178,8 @@ module.exports =
       besoz: 0
     }, _ );
     
-    user.index( indexes.USER_INDEX, props.USER.USERNAME, "ozma", _ );
+    user.index( indexes.USER_USERNAME_INDEX, props.USER.USERNAME, "ozma", _ );
+    user.index( indexes.USER_EMAIL_INDEX, props.USER.EMAIL, "ozma@ozma.com", _ );
     
     
     console.log( classCounts );

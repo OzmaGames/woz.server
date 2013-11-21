@@ -27,9 +27,6 @@ module.exports =
   {
     collectionName = className === "related" ? "starter" : collectionName;
     
-    if( consts.CLASS_COUNTS[collectionName][className] == 0)
-      return retriever.getWord( "green", _ );
-    
     var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[collectionName][className] - 1 ) );
    
     var word = retriever.getWordFromClassIndex( collectionName, className, randomN, _ );

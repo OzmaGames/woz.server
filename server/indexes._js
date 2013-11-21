@@ -2,7 +2,8 @@ var oz = oz || {};
 
 module.exports =
 {
-  USER_INDEX : "userIndex",
+  USER_USERNAME_INDEX : "userIndex",
+  USER_EMAIL_INDEX: "userEmailIndex,",
   
   WORD_ID_INDEX : "wordIDIndex",
   WORD_LEMMA_INDEX : "wordLemmaIndex",

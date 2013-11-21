@@ -71,7 +71,7 @@ module.exports =
     game.save(_);
   },
   
-  addTile: function( game, x, y, _ )
+  addTile: function( game, x, y, angle, _ )
   {
     var tile;
     var i = 0;
@@ -103,7 +103,7 @@ module.exports =
         id: game.data[props.GAME.TILE_COUNT],
         representedImage: image.data.name,
         representedInstruction: instruction.data.id,
-        angle: 0,
+        angle: angle,
         x: x,
         y: y
       }, _ );
@@ -227,18 +227,20 @@ module.exports =
         id : currentTile[props.ID],
         x : currentTile[props.TILE.X],
         y : currentTile[props.TILE.Y],
+        angle : currentTile[props.TILE.ANGLE],
+        imageID : gameInfo.image[imageID][props.ID],
         imageName : gameInfo.image[imageID][props.IMAGE.NAME],
         instruction : gameInfo.instruction[instructionID][props.INSTRUCTION.SHORT_DESCRIPTION],
         description : gameInfo.instruction[instructionID][props.INSTRUCTION.LONG_DESCRIPTION],
         bonus : gameInfo.instruction[instructionID][props.INSTRUCTION.BONUS],
         mult : gameInfo.instruction[instructionID][props.INSTRUCTION.MULT]
       });
-      
     }
     
     for( i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
       playerObjs = [];
       scopeUsername = usernames[i];
+      
       for ( j = 0; j < game.data[props.GAME.PLAYER_COUNT]; j++ ) {
         playerMagnetInfo = [];
         currentPlayer = gameInfo[types.PLAYER][j];
@@ -252,6 +254,7 @@ module.exports =
       
       gameObjs[scopeUsername] = {
         id: game.data[props.ID],
+        collection: { name: "woz", size: 20 },
         players: playerObjs,
         gameOver: game.data[props.GAME.GAME_OVER],
         tiles: tileObjs,

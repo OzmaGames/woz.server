@@ -2,16 +2,19 @@
 
   var dfd = $.Deferred();
 
-//   socket = io.connect("http://wordstesting.herokuapp.com:80");
+//   socket = io.connect("http://wordsdevel.herokuapp.com:80");
+  //socket = io.connect("http://wordstesting.herokuapp.com:80");
   socket = io.connect("http://localhost:8080");
 
   socket.on('connect', function () {
     console.log("%c" + "connected", "background: green; color: white");
+    app.trigger("socket:status", "connect");
     dfd.resolve();
   });
 
   socket.on('disconnect', function () {
     console.log("%c" + "disconnected", "background: red; color: white");
+    app.trigger("socket:status", "disconnect");
     dfd.reject();
   });
 
@@ -19,11 +22,12 @@
     addEvent: addEvent,
     addEmission: function (event) {
       addEvent(event, function (data, callback, socket) {
-        socket.emit(event, data, callback);
+        socket.emit(event, data, callback);        
       });
-    }
+    },
+    connected: dfd.promise()
   }
-  
+
   function addEvent(event, func) {
     event = "server:" + event;
     app.on(event).then(function (data, callback) {

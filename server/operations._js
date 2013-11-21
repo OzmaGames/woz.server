@@ -30,8 +30,8 @@ module.exports =
 //     console.log("am1: " + time );
     start = new Date().getTime();
     
-    
     isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
+    
     if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
     if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
     var randomAngle = randomizer.getRandomInRange( consts.MIN_ANGLE, consts.MAX_ANGLE );

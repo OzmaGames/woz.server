@@ -1,28 +1,23 @@
-﻿define(['durandal/app', 'durandal/system', 'api/datacontext', 'const/DIALOGS'], function (app, system, ctx, DIALOGS) {
+﻿define(['durandal/app', 'durandal/system', 'api/datacontext', 'dialogs/_constants'], function (app, system, ctx, DIALOGS) {
 
-  var swapTicket = ko.observable(0);
+  ctx.canSwap = ko.observable(true);
 
   ctx.loading.subscribe(function (loading) {
     if (loading === true) {
       app.loading(false);
-    } else if (loading === false) {
-      swapTicket(ctx.player.tickets.swap);
+    } else if (loading === false) {      
+      //ctx.canSwap(ctx.player.active());
     }
-  });  
+  });
 
-  var subs = [];
-
-  var clearSubs = function () {
-    for (var i = 0; i < subs.length; i++) {
-      if (subs[i]) subs[i].dispose();
-    }
-    subs = [];
-  };
+  app.on("game:updated").then(function () {
+    ctx.canSwap(ctx.player.active());
+  });
 
   var cancel = function () {
-    clearSubs();
     app.dialog.close("confirm");
     app.dialog.close("slipper");
+    ctx.canSwap(true);
     ctx.mode('');
 
     var selectedWords = ctx.selectedWords();
@@ -30,12 +25,8 @@
       selectedWords[i].isSelected(false);
     }
 
-    ctx.player.tickets.swap++;
+    paper.tool.remove();
   }
-
-  var hasSwapTicket = ko.computed(function () {
-    return swapTicket() > 0;
-  });
 
   var isMenuActive = ko.computed(function () {
     return !ctx.gameOver();
@@ -51,70 +42,64 @@
     player: ctx.player,
 
     allowSwap: ko.computed(function () {
-      return isMenuActive() && isPlayerActive() && hasSwapTicket() && (ctx.mode() === '' || ctx.mode() === 'swap');
+      return isMenuActive() && isPlayerActive() && ctx.canSwap() && (ctx.mode() === '' || ctx.mode() === 'swapWords');
     }),
     allowResign: ko.computed(function () {
       return isMenuActive();
     }),
     allowCircle: ko.computed(function () {
-      return isMenuActive() && isPlayerActive() && (ctx.mode() === '' || ctx.mode() == 'circle-words');
+      return isMenuActive() && isPlayerActive() && (ctx.mode() === '' || ctx.mode() == 'circleWords');
     }),
 
     mode: ctx.mode,
 
-    swap: function () {
-      if (!ctx.player.active() || (ctx.mode() !== '' && ctx.mode() !== 'swap')) return;
-      if (ctx.mode() == 'swap') {
-        $('#swap-words').removeClass('cancel');
+    swapWords: function () {      
+      if (ctx.mode() == 'swapWords') {
         cancel();
       }
-      else if (ctx.player.tickets.swap-- > 0) {
+      else if (this.allowSwap()) {
         app.dialog.show("slipper", DIALOGS.SWAP_WORDS);
-        ctx.mode('swap');
-        $("body").animate({ scrollTop: 1000 }, "slow");
-        $('#swap-words').addClass('cancel');
-        var created = false;
-        var wordSub = ctx.selectedWords.subscribe(function (selectedWords) {
+        ctx.mode('swapWords');
+        app.scrollDown();
+        var created = false, base = this;
+        base._wordsSub = ctx.selectedWords.subscribe(function (selectedWords) {
           if (selectedWords.length > 0 && !created) {
             created = true;
             app.dialog.show("confirm").then(function (res) {
-              $('#swap-words').removeClass('cancel');
+              base._wordsSub.dispose();
+
               if (res == "cancel") {
                 cancel();
-              } else {
+              } else if (res == "done") {
+                app.dialog.close("slipper");
+                ctx.loadingStatus("Swapping words");
+                ctx.loading(true);
+
                 var data = {
                   username: ctx.player.username,
                   gameID: ctx.gameID,
                   words: ko.utils.arrayMap(ctx.selectedWords(), function (w) { return w.id })
                 };
-
-                ctx.loadingStatus("Swapping words");
-                ctx.loading(true);
-                app.trigger("slipper:close");
                 app.trigger("server:game:swap-words", data, function (res) {
                   if (!res.success) {
-                    ctx.player.tickets.swap++;
-                    swapTicket(ctx.player.tickets.swap);
+                    cancel();
                   } else {
-                    ctx.mode('');
-                    ctx.loading(false);
+                    ctx.canSwap(false);
                   }
+                  ctx.mode('');
+                  ctx.loading(false);
                 });
               }
-              wordSub.dispose();
             });
           } else if (selectedWords.length <= 0 && created) {
             created = false;
             app.dialog.close("confirm");
           }
         });
-        subs.push(wordSub);
       }
       else {
-        app.dialog.show("alert", { content: "You can only swap words once in each turn", delay: 3000 });
+        //app.dialog.show("alert", { content: "You can only swap words once in each turn", delay: 3000 });
       }
-
-      swapTicket(ctx.player.tickets.swap);
     },
 
 
@@ -122,6 +107,7 @@
       if (ctx.gameOver()) {
         return;
       }
+
       app.dialog.show("confirm", {
         content: "Are you sure you want to resign?", modal: true,
         doneText: 'YES', cancelText: 'NO'
@@ -135,17 +121,16 @@
       });
     },
 
-    circle: function () {
+    circleWords: function () {
       if (!this.allowCircle()) return;
 
       var module = {
         load: function () {
           app.dialog.show("slipper", DIALOGS.CIRCLE_WORDS);
           app.scrollDown();
-          
-          system.acquire("game/canvas/circle-words").then(function (m) {
-            this.circleWords = m;
-            this.circleWords.load().then(function (words) {
+
+          system.acquire("game/canvas/circleWords").then(function (m) {
+            m.load().then(function (words) {
               app.scrollUp();
               ctx.activeWords(words);
               module.unload();
@@ -155,19 +140,16 @@
         },
 
         unload: function () {
-          app.dialog.close("slipper");
-          if (this.circleWords) {
-            this.circleWords.unload();
-            delete this.circleWords;
-          }
+          app.dialog.close("slipper");          
           ctx.mode('');
+          paper.tool.remove();
         }
       };
 
-      if (ctx.mode() == 'circle-words') {
-        module.unload();        
+      if (ctx.mode() == 'circleWords') {
+        module.unload();
       } else {
-        ctx.mode('circle-words');
+        ctx.mode('circleWords');
         module.load();
       }
     }
@@ -189,16 +171,20 @@
       $('#menu').appendTo('body');
       var h = $(window).innerHeight();
 
-      $('#palette-right, #palette-left').each(function (i, el) {
+      $('.palette:not(.fixed)').each(function (i, el) {
         var $el = $(el);
-        $el.css('top', (h - $el.outerHeight()) / 2);
+        $el.css('top', (h - $el.outerHeight() - 100) / 2);
       });
-
-      if ($.support.touch)
-        $('#workspace').touchPunch();
     },
 
-    detached: function () {      
+    detached: function () {
+      var paths = ctx.paths();
+      for (var i = 0; i < paths.length; i++) {
+        paths[i].dispose();
+      }
+      ctx.paths.removeAll();
+      ctx.tiles.removeAll();
+
       $('#menu').remove();
       app.dialog.close("slipper");
       app.dialog.close("slipper-fixed");
@@ -207,5 +193,5 @@
       app.dialog.close("menu");
     }
   });
- 
+
 });

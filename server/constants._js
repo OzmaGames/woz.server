@@ -9,7 +9,7 @@ module.exports =
   
   //Total Counts
   WORD_TOTAL: 598,
-  IMAGE_TOTAL: 25,
+  IMAGE_TOTAL: 20,
   INSTRUCTION_TOTAL: 7,
   
   RELATED_ARRAY_INDEX: 7,
@@ -35,7 +35,7 @@ module.exports =
       adjective: 18,  //adjective
       preposition: 0,  //preposition
       conjunction: 0,  //conjunction
-      related: 183,  //related
+      related: 151,  //related
       other: 0  //other
     },
     nightfall:
@@ -94,18 +94,6 @@ module.exports =
   
   //Indexes
   COUNT_NODE_ID : 1,
-  BOARD_INDEX: "boardIndex",
-  WORD_ID_INDEX : "WordIDIndex",
-  WORD_LEMMA_INDEX : "WordLemmaIndex",
-  
-  GAME_INDEX : "gameIndex",
-  IMAGE_INDEX : "imageIndex",
-  INSTRUCTION_INDEX : "instructionIndex",
-  
-  USER_INDEX : "userIndex",
-
-  //Class Indexes
-  RELATED_CLASS_INDEX: "relatedClassIndex",
 
   //Game Constants
   //Max Values

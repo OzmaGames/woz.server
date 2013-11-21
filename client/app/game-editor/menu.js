@@ -1,24 +1,24 @@
 ﻿define(['plugins/router', 'durandal/app', 'api/datacontext', './_server'], function (router, app, ctx) {
- 
+
   var activeItem = ko.observable();
   var Groups = ko.observableArray();
-  var lastId = 0;
 
   return {
     activate: function () {
-      app.trigger("server:manager:getBoards", {}, function (data) {
-        var groups = Groups(), grpBy = 'level', items = data.boards;
-        for (var i = 0; i < items.length; i++) {
-          var obj = groups[items[i][grpBy]];
-          if (!obj) {
-            obj = groups[items[i][grpBy]] = {};
-            obj.key = items[i][grpBy];
-            obj.value = [];
-          }
-          obj.value.push(items[i]);
-          lastId = items[i].id + 1;
+      Groups([]);
+      app.trigger("server:manager:manageBoards", { command: 'getAll' }, function (data) {
+        var groups = Groups(), boards = data.boards;
+        for (var i = 0; i < boards.length; i++) {
+          var board = boards[i], level = board.level;
+          if (!groups.hasOwnProperty(level)) {
+            groups[level] = {
+              key: level,
+              value: ko.observableArray()
+            };            
+          }          
+          groups[level].value.push(board);
         }
-        activeItem(data[0]);
+        if(data.boards.length) activeItem(data.boards[0]);
         Groups.valueHasMutated();
       });
     },
@@ -30,7 +30,7 @@
     select: function (item, e) {
       activeItem(item);
     },
-    
+
     edit: function (gameObject) {
       router.navigate('game-editor/edit/' + gameObject.id);
     },
@@ -41,12 +41,20 @@
         doneText: 'YES', cancelText: 'NO'
       }).then(function (res) {
         if (res != "cancel") {
-          app.trigger("server:manager:setBoard", {
+          app.trigger("server:manager:manageBoards", {
             id: gameObject.id,
-            destroy: true
+            command: 'delete'
           });
+          var arr = Groups()[gameObject.level].value,
+            pos = arr.indexOf(gameObject);
+
+          arr.splice(pos, 1);
         }
       });
+    },
+
+    beingRemove: function (el) {
+      if(el.tagName == 'DIV') $(el).fadeOut(300);
     },
 
     createNew: function () {
@@ -58,7 +66,7 @@
     },
 
     deactivate: function () {
-      
+
     }
   }
 });

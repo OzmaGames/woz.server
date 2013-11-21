@@ -3,6 +3,7 @@ var oz = oz || {};
 module.exports =
 {
   ID: "id",
+  TYPE: "type",
 
   COUNT_NODE: {
     GAME_COUNT: "gameCount",
@@ -16,23 +17,31 @@ module.exports =
     START_TILE: "startTile"
   },
 
-  phrase: {
-    PATH_ID: "pathID"
+  PHRASE: {
+    SCORE: "score",
+    PATH_ID: "pathID",
+    USERNAME: "username",
+    WORD_COUNT: "wordCount",
+    PHRASE_STRING: "phraseString"
   },
 
   GAME: {
     ID: "id",
     TURN: "turn",
     LEVEL: "level",
+    LAST_MOD: "lastMod",
     GAME_OVER: "gameOver",
     USERNAMES: "usernames",
+    START_DATE: "startDate",
+    COLLECTION: "collection",
     ACTION_DONE: "actionDone",
     
     WORD_COUNT: "wordCount",
     TILE_COUNT: "tileCount",
     PATH_COUNT: "pathCount",
     PLAYER_COUNT: "playerCount",
-    PHRASE_COUNT: "phraseCount"
+    PHRASE_COUNT: "phraseCount",
+    RESIGNED_COUNT: "resignedCount"
   },
   
   PLAYER: {
@@ -41,7 +50,8 @@ module.exports =
     ACTIVE: "active",
     SOCKET: "socket",
     MADNESS: "madness",
-    USERNAME: "username"
+    USERNAME: "username",
+    RESIGNED: "resigned",
   },
     
   WORD: {
@@ -57,9 +67,12 @@ module.exports =
     X: "x",
     Y: "y",
     ID: "id",
+    TYPE: "type",
     ANGLE: "angle",
     OWNER: "owner",
+    CLASS: "class",
     IS_RELATED: "isRelated",
+    COLLECTION: "collection",
     REPRESENTED_WORD: "representedWord"
   },
   
