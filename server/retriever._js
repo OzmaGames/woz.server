@@ -1,10 +1,10 @@
 var neo4j = require("neo4j"),
-    types = require("./types._js"),
-    indexes = require("./indexes._js"),
-    props = require("./properties._js"),
-    consts = require("./constants._js"),
-    rels = require("./relationships._js"),
-    environment = require("./environment._js");
+  environment = require("./environment._js"),
+  
+  types = require( "./types._js" ),
+  rels = require("./relationships._js"),
+  props = require( "./properties._js" ),
+  consts = require( "./constants._js" );
 
 var db = new neo4j.GraphDatabase(environment.DB_URL);
 
@@ -32,13 +32,14 @@ module.exports =
     return db.getIndexedNodes( indexes.GAME_INDEX, props.GAME.ID, id, _ )[0];
   },
 
-  getUserGames: function( userNodeID, _ )
+  getUserGames: function( userNodeID, ongoing, _ )
   {
     var games = [];
     
     var query =
       "START m = node(" + userNodeID + ") " +
       "MATCH m -[:" + rels.PLAYS + "]-> game " +
+      "WHERE game." + props.GAME.GAME_OVER + " = " + !ongoing + " " +
       "RETURN game;";
     
     var resultsTemp = db.query(query, {}, _ );
@@ -306,7 +307,7 @@ module.exports =
     
     var query =
     "START m = node(" + gameNodeID + ") " +
-    "MATCH m -[:" + indexes.HAS_TILE + "]-> t -[:" + indexes.REPRESENTS_IMAGE + "]-> image " +
+    "MATCH m -[:" + rels.HAS_TILE + "]-> t -[:" + rels.REPRESENTS_IMAGE + "]-> image " +
     "RETURN image;";
     
     var resultsTemp = db.query(query, {}, _ );
@@ -325,7 +326,7 @@ module.exports =
     
     var query =
       "START m = node(" + gameNodeID + ") " +
-      "MATCH m -[:" + indexes.HAS_TILE + "]-> t -[:" + indexes.REPRESENTS_INSTRUCTION + "]-> instruction " +
+      "MATCH m -[:" + rels.HAS_TILE + "]-> t -[:" + rels.REPRESENTS_INSTRUCTION + "]-> instruction " +
       "RETURN instruction;";
     
     var resultsTemp = db.query(query, {}, _ );

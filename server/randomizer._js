@@ -1,8 +1,11 @@
-var neo4j = require("neo4j"),
+var
+  types = require( "./types._js" ),
+  rels = require("./relationships._js"),
+  props = require( "./properties._js" ),
+  consts = require( "./constants._js" ),
+  
   loader = require("./loader._js"),
-  consts = require("./constants._js"),
   retriever = require("./retriever._js");
-
 
 module.exports =
 {

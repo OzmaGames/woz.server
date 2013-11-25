@@ -1,16 +1,18 @@
 var oz = oz || {};
 
 var neo4j = require("neo4j"),
-  types = require("./types._js"),
-  tools = require("./tools._js"),
-  indexes = require("./indexes._js"),
-  props = require("./properties._js"),
-  consts = require("./constants._js"),
-  rels = require("./relationships._js"),
-  randomizer = require("./randomizer._js"),
   environment = require("./environment._js"),
   
+  types = require( "./types._js" ),
+  rels = require("./relationships._js"),
+  props = require( "./properties._js" ),
+  consts = require( "./constants._js" ),
+  
+  tools = require("./tools._js"),
+  randomizer = require("./randomizer._js")  ,
+  
   tiles = require("./sets/starterTiles.js"),
+  
   basic = require("./sets/basicWords.js");
   starter = require("./sets/starterWords.js");
   nightfall = require("./sets/nightfallWords.js");
@@ -19,14 +21,13 @@ var db = new neo4j.GraphDatabase(environment.DB_URL);
 
 var collections = {};
 var collectionNames = [ "basic", "starter", "nightfall" ];
-
 var defaultClasses = [ "noun", "verb", "adverb", "article", "pronoun", "adjective", "preposition", "conjunction" ];
+
+var defaultImages = tiles.tiles;
 
 collections.basic = basic.basic;
 collections.starter = starter.starter;
 collections.nightfall= nightfall.nightfall;
-
-var defaultImages = tiles.tiles;
 
 var defaultInstructions = [
   { shortDescription : "First letter: R * 2", longDescription : "The phrase must contain (at least) two words that begins with R", condition : "begin 2 r", bonus: 15, mult: 0, level: 1 },

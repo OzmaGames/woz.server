@@ -1,20 +1,19 @@
 var neo4j = require("neo4j"),
   crypto = require("crypto-js"),
+  environment = require("./environment._js"),
   
-    tools = require("./tools._js"),
-    types = require("./types._js"),  
-    indexes = require("./indexes._js"),
-    props = require("./properties._js"),
-    consts = require("./constants._js" ),
-    rels = require("./relationships._js"),
-    retriever = require("./retriever._js"),
-    environment = require("./environment._js");
+  types = require( "./types._js" ),
+  rels = require("./relationships._js"),
+  props = require( "./properties._js" ),
+  consts = require( "./constants._js" ),
+  
+  tools = require("./tools._js"),
+  retriever = require("./retriever._js");
 
 var db = new neo4j.GraphDatabase(environment.DB_URL);
   
 module.exports =
 {
-
   addUser: function( username, password, email, name, surname, language, besoz, _ )
   {
     var ret = false;

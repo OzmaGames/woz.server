@@ -1,9 +1,9 @@
-var neo4j = require("neo4j"),
-  consts = require("./constants._js"),
-  retriever = require("./retriever._js"),
-  environment = require("./environment._js");
-
-var db = new neo4j.GraphDatabase(environment.DB_URL);
+var types = require( "./types._js" ),
+  rels = require("./relationships._js"),
+  props = require( "./properties._js" ),
+  consts = require( "./constants._js" ),
+  
+  retriever = require("./retriever._js");
 
 var words = {};
 var images = {};
@@ -21,7 +21,9 @@ module.exports =
 
   loadWords: function( _ )
   {
-    return retriever.getAllWordsData( _ );
+    words = retriever.getAllWordsData( _ );
+    
+    return words;
   },
 
   loadImages: function( _ )

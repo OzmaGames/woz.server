@@ -6,22 +6,23 @@ var oz = oz || {};
 
 var neo4j = require("neo4j"),
     express = require("express.io"),
+    environment = require("./environment._js"),
     
+    types = require( "./types._js" ),
+    rels = require("./relationships._js"),
+    props = require( "./properties._js" ),
+    consts = require( "./constants._js" ),
+    
+    adder = require("./adder._js"),
     tools = require("./tools._js"),
     users = require("./users._js"),
-    types = require("./types._js"),
     loader = require("./loader._js"),
     mailer = require("./mailer._js"),
     actions = require("./actions._js"),
-    props = require("./properties._js"),
-    consts = require("./constants._js"),
-    indexes = require("./indexes._js"),
     inparser = require("./inparser._js"),
-    rels = require("./relationships._js"),
     retriever = require("./retriever._js"),
     randomizer = require("./randomizer._js"),
     operations = require("./operations._js"),
-    environment = require("./environment._js"),
     initializer = require("./initializer._js"),
     boardManager = require("./boardManager._js");
 
@@ -81,97 +82,7 @@ catch( exception )
   console.log( "done." );
 }
 
-var allWords;
-allWords = loader.loadWords( _ );
 
-function placePhrase( game, username, pathID, magnetIDs, _ )
-{
-  var i, j = 0;
-  var score = 0;
-  
-  var mw;
-  var phrase;
-  var endTileImage;
-  var startTileImage;
-  var endTileInstruction;
-  var startTileInstruction;
-  
-  var words = [];
-  var magnets = [];
-
-  var phraseString = "";
-  
-  var ret = { madness: -1, score: 0, words: [] };
-  var path = retriever.getGamePathByID( game.id, pathID, _);
-  
-  var wordCount = magnetIDs.length;
-  var tiles = retriever.getPathTiles( path.id, _ );
-  var player = retriever.getGamePlayerByID( game.id, username, _ );
-  
-  mw = retriever.getPlayerMagnetsAndWordsByID( player.id, magnetIDs, _ );
-  
-  for( j = 0; j < magnetIDs.length; j++ ){
-    if( phraseString.length > 0 ) phraseString += " ";
-    for( i = 0; i < mw.length; i ++ ){
-      if( mw[i].magnet.data.id == magnetIDs[j] ){
-        words.push( mw[i].word );
-        magnets.push( mw[i].magnet );
-        phraseString += mw[i].word.data[props.WORD.LEMMA];
-      }
-    }
-  }
-  
-  ret.madness = canIPlayWithMadness( words, wordCount, _ );
-  
-  if( ret.madness === 0 )
-  {
-    phrase = tools.createNode({
-      type: types.PHRASE,
-      id: game.data[props.GAME.PHRASE_COUNT],
-      wordCount: wordCount,
-      username: username,
-      phraseString: phraseString,
-    }, _ );
-    
-    player.createRelationshipTo( phrase, rels.WROTE, {}, _ );
-    game.createRelationshipTo( phrase, rels.HAS_PHRASE, {}, _ );
-    
-    for( i = 0; i < wordCount; i++ )  //disconnect from the player, connect to the phrase. replace with new magnets
-    {  
-      var currentWord = words[i];
-      var currentMagnet = magnets[i];
-      var rToPlayer = currentMagnet.incoming( rels.HAS_MAGNET, _ )[0];
-      rToPlayer["delete"](_);
-      
-      phrase.createRelationshipTo( currentMagnet, rels.HAS_MAGNET, { order : i }, _ );
-      currentMagnet.data[props.MAGNET.OWNER] = phrase.data[props.ID];
-      currentMagnet.data[props.MAGNET.TYPE] = types.MAGNET_PHRASE;
-      currentMagnet.save(_);
-      
-      ret.words.push( operations.addMagnet( game, player, currentWord.data.collections[0],currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], currentMagnet.data.x, currentMagnet.data.y, _ ) );  //replace it with a new magnet
-    }
-    
-    score = scoringTime( words, tiles, _ );
-    phrase.data[props.PHRASE.SCORE] = score;
-    player.data[props.PLAYER.SCORE] += score;
-    ret[props.PLAYER.SCORE] = player.data[props.PLAYER.SCORE];
-    
-    game.data[props.GAME.ACTION_DONE] = false;
-    game.data[props.GAME.PHRASE_COUNT]++;
-    
-    game.data[props.GAME.LAST_MOD] = Date.parse( new Date() );
-    game.data[props.GAME.GAME_OVER] = isTheGameOver( game, _ );
-    if( !game.data[props.GAME.GAME_OVER] ) game.data[props.GAME.TURN]++;
-    
-    phrase.save(_);
-    player.save(_);
-    game.save(_);
-  }
-  else
-    console.log( "Hold on mister, respect the rules!" );
-  
-  return ret;
-}
 
 function scoringTime( words, tiles, _ )
 {
@@ -336,7 +247,7 @@ function createGame( usernames, collectionName, level, _ )
           x = k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03;
           y = k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01);
           
-          operations.addMagnet( game, player, "basic", consts.CLASS_NAMES[i], x, y, _ );
+          adder.addMagnet( game, player, "basic", consts.CLASS_NAMES[i], x, y, _ );
           k++;
         }
       }
@@ -346,7 +257,7 @@ function createGame( usernames, collectionName, level, _ )
           x = k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03;
           y = k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01);
           
-          operations.addMagnet( game, player, collectionName, consts.CLASS_NAMES[i], x, y, _ );
+          adder.addMagnet( game, player, collectionName, consts.CLASS_NAMES[i], x, y, _ );
           k++;
         }
       }
@@ -385,11 +296,11 @@ function randomizeBoard( game, level, _ )
     var board = boards[ boards.length === 1 ? 0 : randomizer.getRandomIntegerInRange( 0, boards.length - 1 ) ];
     
     for( i = 0; i < board.tiles.length; i++ ){
-      tiles[board.tiles[i].data.id] = tools.addTile( game, board.tiles[i].data.id, board.tiles[i].data.x, board.tiles[i].data.y, board.tiles[i].data.angle, _ );
+      tiles[board.tiles[i].data.id] = adder.addTile( game, board.tiles[i].data.id, board.tiles[i].data.x, board.tiles[i].data.y, board.tiles[i].data.angle, _ );
     }
     
     for( i = 0; i < board.paths.length; i++ ){
-      tools.addPath( game, i,
+      adder.addPath( game, i,
         tiles[ board.paths[i].data[props.PATH.START_TILE] ],
         tiles[ board.paths[i].data[props.PATH.END_TILE] ],
         board.paths[i].data[props.PATH.NWORDS],
@@ -507,8 +418,7 @@ app.io.route( "recover:password", function( req, _ ){
 
 app.io.route( "game:lobby", function( req, _ )
 {
-  process.stdout.write("lobby ");
-  var start = new Date().getTime();
+  var start = new Date().getTime(); process.stdout.write("lobby "); 
   
   var i, j;
   var game;
@@ -520,7 +430,7 @@ app.io.route( "game:lobby", function( req, _ )
   var user = retriever.getUserByUsername( req.data.username, _ );
   
   try{
-    var games = retriever.getUserGames( user.id,_ );
+    var games = retriever.getUserGames( user.id, true, _ );
     
     for( i = 0; i < games.length; i++ ){
       game = games[i];
@@ -591,17 +501,14 @@ app.io.route( "game:queue", function( req, _ )
         broadcastGameObject( game, consts.START_GAME, jsonObjs );
       }
       
-      var end = new Date().getTime();
-      var time = end - start;
-      console.log( "took: " + time + "ms" );
+      var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
     }
   }
 });
 
 app.io.route( "game:place-phrase", function( req, _ )
 {
-  var start = new Date().getTime();
-  process.stdout.write("placing phrase ");
+  var start = new Date().getTime(); process.stdout.write("placing phrase ");
 
   var ret;
   var i = 0;
@@ -621,30 +528,24 @@ app.io.route( "game:place-phrase", function( req, _ )
   
   broadcast( game, "game:update", responseData );
   
-  var end = new Date().getTime();
-  var time = end - start;
-  console.log( "took: " + time + "ms" );
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "game:move-word", function( req, _ )
 {
-  var start = new Date().getTime();
-  process.stdout.write( "moving " );
+  var start = new Date().getTime(); process.stdout.write( "moving " );
   
   var game = retriever.getGame( req.data.gameID, _ );
   if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username ){
     operations.move( game.id, req.data.wordID, req.data.x, req.data.y, req.data.angle, _ );
   }
   
-  var end = new Date().getTime();
-  var time = end - start;
-  console.log( "took: " + time + "ms" );
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "game:swap-words", function( req, _ )
 {
-  var start = new Date().getTime();
-  process.stdout.write("swapping words ");
+  var start = new Date().getTime(); process.stdout.write("swapping words ");
 
   var responseData = { success: false, words: [] };
   var game = retriever.getGame( req.data.gameID, _ );
@@ -657,9 +558,7 @@ app.io.route( "game:swap-words", function( req, _ )
   }
   req.io.respond( responseData );
   
-  var end = new Date().getTime();
-  var time = end - start;
-  console.log( "took: " + time + "ms" );
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "end:turn", function( req, _ ) {
@@ -668,8 +567,7 @@ app.io.route( "end:turn", function( req, _ ) {
 
 app.io.route( "game:resign", function( req, _ )
 {
-  var start = new Date().getTime();
-  process.stdout.write("resigning ");
+  var start = new Date().getTime(); process.stdout.write("resigning ");
   
   var ret;
   var i = 0;
@@ -699,74 +597,41 @@ app.io.route( "game:resign", function( req, _ )
   
   broadcast( game, "game:update", responseData );
   
-  var end = new Date().getTime();
-  var time = end - start;
-  console.log( "took: " + time + "ms" );
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "manager:saveWord", function( req, _ )
 {
-  var start = new Date().getTime();
-  process.stdout.write("saving word ");
+  var start = new Date().getTime(); process.stdout.write("saving word ");
 
   tools.saveWord( req.data.lemma, req.data.classes, req.data.categories, req.data,collections, req.data.versionOf, _ );
   
-  var end = new Date().getTime();
-  var time = end - start;
-  console.log( "took: " + time + "ms" );
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "manager:getAllWords", function( req, _ )
 {
-  var start = new Date().getTime();
-  process.stdout.write("getting all words ");
+  var start = new Date().getTime(); process.stdout.write("getting all words ");
+  
   var responseData = { success:false, words: [] }
+  var words = wordManager.getAllWords( _ );
   
-  
-  var managerWords = [];
-  var versions = {};
-  var word;
-  var i = 0 ;
-  
-  for( i = 0; i < allWords.length; i++ ){
-    word = allWords[i];
-    
-    if( word[props.WORD.VERSION_OF].length === 0 ){
-      managerWords.push( word );
-    }else{
-      if( versions.hasOwnProperty( word.lemma ) ){
-        versions[ word.lemma ].push( word );
-      }else{
-        versions[ word.lemma ] = [ word ];
-      }
-    }
-    
-    for( i = 0; i < managerWords.length; i++ ){
-      word  = managerWords[i];
-      if( versions.hasOwnProperty( word.lemma ) ){
-        word.versions = versions[word.lemma];
-      }
-    }
-  }
-  
-  responseData.words = allWords;
+  responseData.words = words;
   responseData.success = true;
   req.io.respond( responseData );
   
-  var end = new Date().getTime();
-  var time = end - start;
-  console.log( "took: " + time + "ms" );
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "manager:manageBoards", function( req, _ )
 {
-  var start = new Date().getTime();
-  process.stdout.write( req.data.command + " " );
+  var start = new Date().getTime(); process.stdout.write( req.data.command + " " );
   
   var responseData = { success:false }
   
   if( req.data.command === "set" ){
-    responseData = boardManager.setBoard( req.data.id, req.data.level, req.data.draft, req.data.tiles, req.data.paths, _ );
+    responseData.id = boardManager.setBoard( req.data.id, req.data.level, req.data.draft, req.data.tiles, req.data.paths, _ );
+    responseData.success = true;
   }else if( req.data.command === "getAll" ){
     responseData.boards = boardManager.getBoards( true, _ );
     responseData.success = true;
@@ -779,9 +644,7 @@ app.io.route( "manager:manageBoards", function( req, _ )
 
   req.io.respond( responseData );
 
-  var end = new Date().getTime();
-  var time = end - start;
-  console.log( "took: " + time + "ms" );
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 console.log("server ready");

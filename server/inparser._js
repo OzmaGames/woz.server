@@ -1,7 +1,10 @@
 var oz = oz || {};
 
-var consts = require("./constants._js"),
-    props = require("./properties._js");
+var
+  types = require( "./types._js" ),
+  rels = require("./relationships._js"),
+  props = require( "./properties._js" ),
+  consts = require( "./constants._js" );
 
 module.exports =
 {

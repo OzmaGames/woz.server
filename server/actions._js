@@ -1,15 +1,107 @@
 var oz = oz || {};
 
-var neo4j = require( "neo4j" ),
-  consts = require( "./constants._js" ),
-  props = require( "./properties._js" ),
+var types = require( "./types._js" ),
   rels = require("./relationships._js"),
+  props = require( "./properties._js" ),
+  consts = require( "./constants._js" ),
+  
+  adder = require("./adder._js"),
   retriever = require("./retriever._js"),
   operations = require("./operations._js"),
   randomizer = require("./randomizer._js");
 
 module.exports =
 {
+
+  placePhrase: function( game, username, pathID, magnetIDs, _ )
+  {
+    var i, j;
+    var score = 0;
+    
+    var mw;
+    var phrase;
+    var endTileImage;
+    var startTileImage;
+    var endTileInstruction;
+    var startTileInstruction;
+    
+    var words = [];
+    var magnets = [];
+
+    var phraseString = "";
+    
+    var ret = { madness: -1, score: 0, words: [] };
+    var path = retriever.getGamePathByID( game.id, pathID, _);
+    
+    var wordCount = magnetIDs.length;
+    var tiles = retriever.getPathTiles( path.id, _ );
+    var player = retriever.getGamePlayerByID( game.id, username, _ );
+    
+    mw = retriever.getPlayerMagnetsAndWordsByID( player.id, magnetIDs, _ );
+    
+    for( j = 0; j < magnetIDs.length; j++ ){
+      if( phraseString.length > 0 ) phraseString += " ";
+      for( i = 0; i < mw.length; i ++ ){
+        if( mw[i].magnet.data.id == magnetIDs[j] ){
+          words.push( mw[i].word );
+          magnets.push( mw[i].magnet );
+          phraseString += mw[i].word.data[props.WORD.LEMMA];
+        }
+      }
+    }
+    
+    ret.madness = canIPlayWithMadness( words, wordCount, _ );
+    
+    if( ret.madness === 0 )
+    {
+      phrase = tools.createNode({
+        type: types.PHRASE,
+        id: game.data[props.GAME.PHRASE_COUNT],
+        wordCount: wordCount,
+        username: username,
+        phraseString: phraseString,
+      }, _ );
+      
+      player.createRelationshipTo( phrase, rels.WROTE, {}, _ );
+      game.createRelationshipTo( phrase, rels.HAS_PHRASE, {}, _ );
+      
+      for( i = 0; i < wordCount; i++ )  //disconnect from the player, connect to the phrase. replace with new magnets
+      {  
+        var currentWord = words[i];
+        var currentMagnet = magnets[i];
+        var rToPlayer = currentMagnet.incoming( rels.HAS_MAGNET, _ )[0];
+        rToPlayer["delete"](_);
+        
+        phrase.createRelationshipTo( currentMagnet, rels.HAS_MAGNET, { order : i }, _ );
+        currentMagnet.data[props.MAGNET.OWNER] = phrase.data[props.ID];
+        currentMagnet.data[props.MAGNET.TYPE] = types.MAGNET_PHRASE;
+        currentMagnet.save(_);
+        
+        ret.words.push( adder.addMagnet( game, player, currentWord.data.collections[0],currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], currentMagnet.data.x, currentMagnet.data.y, _ ) );  //replace it with a new magnet
+      }
+      
+      score = scoringTime( words, tiles, _ );
+      phrase.data[props.PHRASE.SCORE] = score;
+      player.data[props.PLAYER.SCORE] += score;
+      ret[props.PLAYER.SCORE] = player.data[props.PLAYER.SCORE];
+      
+      game.data[props.GAME.ACTION_DONE] = false;
+      game.data[props.GAME.PHRASE_COUNT]++;
+      
+      game.data[props.GAME.LAST_MOD] = Date.parse( new Date() );
+      game.data[props.GAME.GAME_OVER] = isTheGameOver( game, _ );
+      if( !game.data[props.GAME.GAME_OVER] ) game.data[props.GAME.TURN]++;
+      
+      phrase.save(_);
+      player.save(_);
+      game.save(_);
+    }
+    else
+      console.log( "Hold on mister, respect the rules!" );
+    
+    return ret;
+  },
+
  swapWords: function( game, username, magnetIDs, _ )
   { 
     var ret = [];

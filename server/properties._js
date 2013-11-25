@@ -55,7 +55,6 @@ module.exports =
   },
     
   WORD: {
-    TYPE: "type",
     LEMMA: "lemma",
     POINTS: "points",
     CLASSES: "classes",
@@ -66,8 +65,6 @@ module.exports =
   MAGNET: {
     X: "x",
     Y: "y",
-    ID: "id",
-    TYPE: "type",
     ANGLE: "angle",
     OWNER: "owner",
     CLASS: "class",

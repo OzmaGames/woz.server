@@ -1,12 +1,13 @@
 var oz = oz || {};
 
-var tools = require("./tools._js"),
-    types = require("./types._js"),
-    indexes = require("./indexes._js"),
-    consts = require("./constants._js"),
-    props = require("./properties._js"),
-    rels = require("./relationships._js"),
-    retriever = require("./retriever._js");
+var
+  types = require( "./types._js" ),
+  rels = require("./relationships._js"),
+  props = require( "./properties._js" ),
+  consts = require( "./constants._js" ),
+
+  tools = require("./tools._js"),
+  retriever = require("./retriever._js");
 
 module.exports =
 {
@@ -102,8 +103,6 @@ module.exports =
     boardNode.delete( _, true );
     
     countNode = retriever.getCountNode( _ );
-    countNode.data[props.COUNT_NODE.BOARD_COUNT]--;
-    countNode.save(_);
     
     responseData.success = true;
     return responseData;
@@ -121,7 +120,6 @@ module.exports =
     var tempTiles;
     var countNode;
     var tileObjs = {};
-    var responseData = { success:false };
     
     if( id === -1 ){
       id = tools.getNewBoardID( _ );
@@ -184,20 +182,6 @@ module.exports =
       boardNode.createRelationshipTo( pathNode, rels.HAS_PATH, {}, _ );
     }
     
-    for( i = 0; i < tiles.length; i++ ){
-      tile = tiles[i];
-      
-      tileNode = tools.createNode({
-        type: types.TILE,
-        id: tile.id,
-        x: tile.x,
-        y: tile.y,
-        angle: tile.angle
-      }, _ );
-      boardNode.createRelationshipTo( tileNode, rels.HAS_TILE, {}, _ );
-    }
-    
-    responseData.success = true;
-    return responseData;
+    return id;
   }
 }
