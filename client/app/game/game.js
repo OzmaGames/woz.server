@@ -1,17 +1,19 @@
 ﻿define(['durandal/app', 'durandal/system', 'api/datacontext', 'dialogs/_constants'], function (app, system, ctx, DIALOGS) {
 
-  ctx.canSwap = ko.observable(true);
+  ctx.canSwap = ko.observable(false);
 
   ctx.loading.subscribe(function (loading) {
     if (loading === true) {
       app.loading(false);
-    } else if (loading === false) {      
-      //ctx.canSwap(ctx.player.active());
     }
   });
 
   app.on("game:updated").then(function () {
     ctx.canSwap(ctx.player.active());
+  });
+
+  app.on("game:started").then(function () {
+     ctx.canSwap(ctx.player.active());
   });
 
   var cancel = function () {
@@ -159,7 +161,6 @@
     activate: function () {
       app.loading(true);
 
-      app.dialog.show("loading");
       ctx.load(ctx.playerCount);
     },
 
@@ -178,19 +179,19 @@
     },
 
     detached: function () {
+      ctx.unload();
+
+      app.dialog.close("all");
+
       var paths = ctx.paths();
       for (var i = 0; i < paths.length; i++) {
         paths[i].dispose();
       }
       ctx.paths.removeAll();
       ctx.tiles.removeAll();
-
-      $('#menu').remove();
-      app.dialog.close("slipper");
-      app.dialog.close("slipper-fixed");
-      app.dialog.close("window");
-      app.dialog.close("notice");
-      app.dialog.close("menu");
+      ctx.words.removeAll();
+      
+      $('#menu').remove();    
     }
   });
 

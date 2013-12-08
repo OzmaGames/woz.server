@@ -1,43 +1,23 @@
 var oz = oz || {};
 
 var neo4j = require("neo4j"),
-  environment = require("./environment._js"),
-  
-  types = require( "./types._js" ),
-  rels = require("./relationships._js"),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" ),
   
   tools = require("./tools._js"),
-  randomizer = require("./randomizer._js")  ,
+  randomizer = require("./randomizer._js"),
   
-  tiles = require("./sets/starterTiles.js"),
+  types = require( "./constants/types.js" ),
+  indexes = require( "./constants/indexes.js" ),
+  consts = require( "./constants/constants.js" ),
+  props = require( "./constants/properties.js" ),
+  rels = require("./constants/relationships.js"),
+  environment = require("./constants/environment.js"),
   
-  basic = require("./sets/basicWords.js");
-  starter = require("./sets/starterWords.js");
-  nightfall = require("./sets/nightfallWords.js");
+  words = require( "./resources/words.js" ).words,
+  nfImages = require("./resources/nfImages.js").images,
+  wozImages = require("./resources/wozImages.js").images,
+  instructions = require("./resources/instructions.js").instructions;
   
 var db = new neo4j.GraphDatabase(environment.DB_URL);
-
-var collections = {};
-var collectionNames = [ "basic", "starter", "nightfall" ];
-var defaultClasses = [ "noun", "verb", "adverb", "article", "pronoun", "adjective", "preposition", "conjunction" ];
-
-var defaultImages = tiles.tiles;
-
-collections.basic = basic.basic;
-collections.starter = starter.starter;
-collections.nightfall= nightfall.nightfall;
-
-var defaultInstructions = [
-  { shortDescription : "First letter: R * 2", longDescription : "The phrase must contain (at least) two words that begins with R", condition : "begin 2 r", bonus: 15, mult: 0, level: 1 },
-  { shortDescription : "First letter: S", longDescription : "The phrase must contain (at least) one word that begins with S", condition : "begin 1 s", bonus: 10, mult: 0, level: 1 },
-  { shortDescription : "Adjective", longDescription : "The phrase must contain (at least) one adjective", condition : "class 1 adjective", bonus: 10, mult: 0, level: 3 },
-  { shortDescription : "Two Verbs", longDescription : "The phrase must contain (at least) two verbs", condition : "class 2 verb", bonus: 15, mult: 0, level: 3 },
-  { shortDescription : "Feeling", longDescription : "The phrase must contain (at least) one word that represents a feeling", condition : "category 1 feeling", bonus: 40, mult: 0, level: 2 },
-  { shortDescription : "Animal", longDescription : "The phrase must contain (at least) one word that represents an animal", condition : "category 1 animal", bonus: 0, mult: 2, level: 2 },
-  { shortDescription : "Color", longDescription : "The phrase must contain (at least) one word that represents a color", condition : "category 1 color", bonus: 0, mult: 2, level: 2 }
-];
 
 var classCounts = {};
 
@@ -47,124 +27,147 @@ module.exports =
 {
   initDB : function( _ )
   {
-    var i, j, k;
-    var currentWordNode = false;
+    var a, b, c, d, e;
+    var wordNode = false;
     var countNode = tools.createNode( { gameCount : 0, boardCount: 0 }, _ );
+    var collectionImages = [ [], wozImages, nfImages ];
     
-    try{
-      for( j = 0; j < collectionNames.length; j++ ){
+    var word;
+    var classes;
+    var categories;
+    var collectionName;
+    
+    for( a = 0; a < consts.COLLECTIONS.length; a++ ){
+      classCounts[ consts.COLLECTIONS[a].shortName ] = {
+        noun: 0,
+        verb: 0,
+        adverb: 0,
+        pronoun: 0,
+        adjective: 0,
+        preposition: 0,
+        conjunction: 0,
+        related: 0,
+        other: 0
+      };
+      
+      try{
+      
+        if( print ) console.log( "adding collection: " + consts.COLLECTIONS[a].longName );
+        var collectionNode = tools.createNode({
+          type: types.COLLECTION,
+          longName: consts.COLLECTIONS[a].longName,
+          shortName: consts.COLLECTIONS[a].shortName
+        }, _ );
         
-        var collectionName = collectionNames[j];
-        var collection = collections[ collectionName ];
+        collectionNode.index( indexes.COLLECTION_INDEX, props.COLLECTION.SHORT_NAME, consts.COLLECTIONS[a].shortName, _ );
+      }catch( ex ){
+        console.log( "failed adding collection: " + consts.COLLECTIONS[a].longName );
+        console.log( ex );
+      }
+    }
+    
+    if( print ) console.log( "all collections added " );
+    
+    for( a = 0; a < words.length; a++ ){
+      word = words[a];
+      
+      try{
+        if( print ) console.log( "adding word: " + word.lemma );
+        wordNode = tools.createNode({
+          type: types.WORD,
+          lemma: word.lemma,
+          points: word.points,
+          classes: word.classes,
+          categories: word.categories,
+          collections: words.collections,
+        }, _ );
         
-        classCounts[collectionName] = {
-          noun: 0,
-          verb: 0,
-          adverb: 0,
-          pronoun: 0,
-          adjective: 0,
-          preposition: 0,
-          conjunction: 0,
-          related: 0,
-          other: 0
-        };
+        wordNode.index( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, word.lemma, _ );
         
-        for( i = 0; i < collection.length; i++ ){
-          currentWordNode = false;
-          
-          var currentWord = collection[i];
-          
-          if( j !== 0 ){
-            currentWordNode = db.getIndexedNodes( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ )[0];
+        for( b = 0; b < word.collections.length; b++ ){
+          wordNode.index( word.collections[b] + indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, word.lemma, _ );
+          for( c = 0; c < word.classes.length; c++ ){
+            wordNode.index( word.collections[b] + word.classes[c] + "ClassIndex", props.ID, classCounts[word.collections[b]][word.classes[c]]++, _ );
           }
+        }
+      }catch( ex ){
+        console.log( "failed adding word: " + word.lemma );
+        console.log( ex );
+      }
+    }
+    
+    if( print ) console.log( "all words added " );
+    
+    for( a = 0; a < collectionImages.length; a++ ){
+      var collectionName = consts.COLLECTIONS[a][props.COLLECTION.SHORT_NAME];
+      
+      for( b = 0; b < collectionImages[a].length; b++ ){
+        var image = collectionImages[a][b];
+        
+        try
+        {
+          if( print ) console.log( "adding image: " + image.name );
+          var imageNode = tools.createNode({
+            type: types.IMAGE,
+            id:  image.id,
+            name: image.name,
+            related: image.related,
+            collection: collectionName
+          }, _ );
           
-          if( currentWordNode ){
-            if( print ) console.log( "word " + currentWordNode.data.lemma + " already exists");
-            currentWordNode.data.collections.push( collectionName );
-          }else{
-            currentWordNode = tools.createNode({
-              type: types.WORD,
-              lemma: currentWord.lemma,
-              points: randomizer.getRandomIntegerInRange(1, 5),
-              collections: [collectionName],
-              categories: [""],
-              versionOf: ""
-            }, _ );
+          imageNode.index( indexes.IMAGE_INDEX, props.IMAGE.NAME, image.name, _ );
+          imageNode.index( collectionName + indexes.IMAGE_INDEX, props.ID, image.id, _ );
+        }
+        catch( ex )
+        {
+          console.log( "failed adding image: " + image.name );
+          console.log( ex );
+        }
+        
+        for( c = 0; c < image.related.length; c++ ){
+          try
+          {
+            var relatedWordNode = db.getIndexedNodes( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, image.related[c], _ )[0];
+            relatedWordNode.data.classes.push( "related" );
+            relatedWordNode.save(_);
             
-            currentWordNode.index( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
-            currentWordNode.index( collectionName + indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
+            imageNode.createRelationshipTo( relatedWordNode, rels.RELATES_TO, {}, _ );
             
-            var categories = currentWord.categories.split(', ');
-            if( categories.length > 0 && categories[0] !== "" ){
-              currentWordNode.data.categories = categories;
-              currentWordNode.save(_);
-            }
-            
-            var classes = currentWord.classes.split(', ');
-            
-            for( k = 0; k < classes.length; k++ ){
-              currentWordNode.index( collectionName + classes[k] + "ClassIndex", props.ID, classCounts[collectionName][classes[k]]++, _ );
-            }
-            currentWordNode.data.classes = classes;
-            currentWordNode.save(_);
-            
-            if( print ) console.log( "added word: " + currentWord.lemma );
+            relatedWordNode.index( collectionName + "relatedClassIndex", props.ID, classCounts[collectionName].related++, _ );
+          }
+          catch( ex )
+          {
+            console.log( "failed relating " + image.related[c] + " to " + image.name );
+            console.log( ex );
           }
         }
       }
     }
-    catch( ex )
-    {
-      console.log( "ooops" );
-      console.log( ex.message );
-    }
     
-    for( i = 0; i < defaultImages.length; i++ ){
-      var currentImage = defaultImages[i];
-      var currentImageNode = tools.createNode({
-        type: types.IMAGE,
-        id:  currentImage.id,
-        name: currentImage.name,
-        collection: "starter",
-        related: currentImage.related
-      }, _ );
-      currentImageNode.index( indexes.IMAGE_INDEX, props.ID, currentImage.id, _ );
+    if( print ) console.log( "all images added " );
+    
+    for( a = 0; a < instructions.length; a++ ){
+      var instruction = instructions[a];
       
-      var relatedWordsIDs =[];
-      var relatedWords = currentImage.related.split(', ');
-      for( j = 0; j < relatedWords.length; j++ ){
-        try{
-          var relatedWordNode = db.getIndexedNodes( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, relatedWords[j], _ )[0];
-          relatedWordNode.data.classes.push( "related" );
-          relatedWordNode.save(_);
-          
-          currentImageNode.createRelationshipTo( relatedWordNode, rels.RELATES_TO, {}, _ );
-          relatedWordNode.index( "relatedClassIndex", props.ID, classCounts.starter.related++, _ );
-        }catch( ex ){
-          console.log( "didnt work for " + relatedWords[j] );
-        }
+      try{
+        if( print ) console.log( "adding instruction: " + instruction.condition );
+        var instructionNode = tools.createNode({
+          type: types.INSTRUCTION,
+          id: a,
+          mult: instruction.mult,
+          bonus: instruction.bonus,
+          condition: instruction.condition,
+          shortDescription: instruction.shortDescription,
+          longDescription: instruction.longDescription
+        }, _ );
+        instructionNode.index( indexes.INSTRUCTION_INDEX, props.ID, a, _ );
+      }catch( ex ){
+        console.log( "failed adding " + instruction.shortDescription );
+        console.log( ex );
       }
-      
-      currentImageNode.save(_);
-      
-      if( print ) console.log( "added image: " + currentImage.name );
     }
     
-    for( i = 0; i < defaultInstructions.length; i++ ){
-      var currentInstruction = defaultInstructions[i];
-      var currentInstructionNode = tools.createNode({
-        type: types.INSTRUCTION,
-        id: i,
-        mult: currentInstruction.mult,
-        bonus: currentInstruction.bonus,
-        condition: currentInstruction.condition,
-        shortDescription: currentInstruction.shortDescription,
-        longDescription: currentInstruction.longDescription
-      }, _ );
-      currentInstructionNode.index( indexes.INSTRUCTION_INDEX, props.ID, i, _ );
-      
-      if( print ) console.log( "added instruction: " + currentInstruction.condition );
-    }
+    if( print ) console.log( "all instructions added " );
     
     var user = tools.createNode({
       type: types.USER,
@@ -182,13 +185,11 @@ module.exports =
     user.index( indexes.USER_USERNAME_INDEX, props.USER.USERNAME, "ozma", _ );
     user.index( indexes.USER_EMAIL_INDEX, props.USER.EMAIL, "ozma@ozma.com", _ );
     
-    
     console.log( classCounts );
-//     for( j = 0; j < collectionNames.length; j++ ){
-//       countNode.data[collectionNames[j] + "classCounts" ] = classCounts[ collectionNames[j] ];
-//     }
-//     console.log( defaultWords.length );
-    
-//     countNode.save(_);
+//   for( j = 0; j < collectionNames.length; j++ ){
+//     countNode.data[collectionNames[j] + "classCounts" ] = classCounts[ collectionNames[j] ];
+//   }
+//   console.log( defaultWords.length );
+//   countNode.save(_);
   }
 };

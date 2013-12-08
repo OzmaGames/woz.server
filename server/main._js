@@ -6,26 +6,33 @@ var oz = oz || {};
 
 var neo4j = require("neo4j"),
     express = require("express.io"),
-    environment = require("./environment._js"),
-    
-    types = require( "./types._js" ),
-    rels = require("./relationships._js"),
-    props = require( "./properties._js" ),
-    consts = require( "./constants._js" ),
     
     adder = require("./adder._js"),
     tools = require("./tools._js"),
     users = require("./users._js"),
     loader = require("./loader._js"),
     mailer = require("./mailer._js"),
+    friends = require("./friends._js"),
     actions = require("./actions._js"),
     inparser = require("./inparser._js"),
-    retriever = require("./retriever._js"),
     randomizer = require("./randomizer._js"),
     operations = require("./operations._js"),
     initializer = require("./initializer._js"),
-    boardManager = require("./boardManager._js");
-
+    
+    wordManager = require("./managers/wordManager._js"),
+    boardManager = require("./managers/boardManager._js"),
+    instructionManager = require("./managers/instructionManager._js"),
+    
+    types = require( "./constants/types.js" ),
+    indexes = require( "./constants/indexes.js" ),
+    consts = require( "./constants/constants.js" ),
+    props = require( "./constants/properties.js" ),
+    rels = require("./constants/relationships.js"),
+    environment = require("./constants/environment.js"),
+    
+    retriever = require("./retrievers/retriever._js"),
+    userRetriever = require("./retrievers/userRetriever._js");
+    
 var db = new neo4j.GraphDatabase(environment.DB_URL);  
 var app = express();
 
@@ -40,8 +47,9 @@ app.use( express.cookieParser() );
 
 app.http();
 
+// both players get the new words for the player that placed the phrase
+// placed phrase in the object only sends ids, needs words
 // fix swap words concurrency (and some other things as well i guess)
-// fix getWordfromClassIndex
 
 var io = app.io();
 
@@ -49,6 +57,8 @@ var active = {};
 var sockets = {};
 var queue =  [ [], [] ];
 var countNode;
+
+var print = false;
 
 io.set("log level", 1);
 
@@ -70,7 +80,7 @@ try
 //   for( var i = 0; i < consts.COLLECTION_NAMES.length; i++ ){
 //     consts.CLASS_COUNTS[ consts.COLLECTION_NAMES[i] ] = countNode.data[ consts.COLLECTION_NAMES + "ClassCounts" ];
 //   }
-  console.log( consts.CLASS_COUNTS );
+//   console.log( consts.CLASS_COUNTS );
 }
 catch( exception )
 {
@@ -82,89 +92,12 @@ catch( exception )
   console.log( "done." );
 }
 
-
-
-function scoringTime( words, tiles, _ )
-{
-  var i, j;
-  var mult = 0;
-  var score = consts.BASE_POINTS;
-  
-  var firstTileImage = retriever.getTileImage( tiles[0].id, _ );
-  var secondTileImage = retriever.getTileImage( tiles[1].id, _ );
-  var firstTileInstruction = retriever.getTileInstruction( tiles[0].id, _ );
-  var secondTileInstruction = retriever.getTileInstruction( tiles[1].id, _ );
-  var satisfiedFirstInstruction = inparser.checkInstruction( firstTileInstruction.data[props.INSTRUCTION.CONDITION], words, _ );
-  var satisfiedSecondInstruction = inparser.checkInstruction( secondTileInstruction.data[props.INSTRUCTION.CONDITION], words, _ );
-
-  for( i = 0; i < words.length; i++ ){
-    var currentWord = words[i];
-    score += currentWord.data[props.WORD.POINTS];
-    
-    for( j = 0; j < firstTileImage.data.related.length; j++ ){
-      if( firstTileImage.data.related[j] == currentWord.data[props.ID] ){
-        score += consts.RELATED_WORD_BONUS;
-      }
-    }
-    
-    for( j = 0; j < secondTileImage.data.related.length; j++ ){
-      if( secondTileImage.data.related[j] == currentWord.data[props.ID] ){
-        score += consts.RELATED_WORD_BONUS;
-      }
-    }
-  }
-  
-  if( satisfiedFirstInstruction ){
-    score += firstTileInstruction.data[props.INSTRUCTION.BONUS];
-  }
-  
-  if( satisfiedSecondInstruction ){
-    score += secondTileInstruction.data[props.INSTRUCTION.BONUS];
-  }
-  
-  if( satisfiedFirstInstruction ){
-    mult += firstTileInstruction.data[props.INSTRUCTION.MULT];
-  }
-  
-  if( satisfiedSecondInstruction ){
-    mult += secondTileInstruction.data[props.INSTRUCTION.MULT];
-  }
-  
-  if( mult !== 0 ){
-    score = score * mult;
-  }
-  
-  return score;
-}
-
-function isTheGameOver( game, _ )
-{
-  var over = false;
-  
-  if( game.data[props.GAME.PHRASE_COUNT] == game.data[props.GAME.PATH_COUNT] ){
-    over = true;
-  }
-  
-  return over;
-}
-
-function canIPlayWithMadness( words, wordCount, _ ){
-  var madness = 0;
-  
-  if( words.length === 0 ){
-    madness = 1;
-  }else if( words.length != wordCount ){
-    madness = 2;
-  }
-  
-  if( madness !== 0 ) console.log( "madness? " + madness );
-  
-  return madness;
-}
+friends.addFriend( "ali", "ali2", _ );
+// friends.deleteFriend( "ali", "ali2", _ );
 
 function createGame( usernames, collectionName, level, _ )
 {
-  collectionName = "starter";
+  collectionName = "woz";
   
   var now, time = 0, start = new Date().getTime();
 
@@ -178,7 +111,7 @@ function createGame( usernames, collectionName, level, _ )
   
   now = new Date().getTime();
   time = now - start;
-  console.log("cg1: " + time );
+  if( print ) console.log("cg1: " + time );
   start = new Date().getTime();
   
   var game = tools.createNode({
@@ -203,27 +136,19 @@ function createGame( usernames, collectionName, level, _ )
   game.index( indexes.GAME_INDEX, props.ID, gameID, _ );
   
   now = new Date().getTime(); time = now - start;
-  console.log("cg2: " + time ); start = new Date().getTime();
+  if( print )  console.log("cg2: " + time ); start = new Date().getTime();
   
   try
   {
-    randomizeBoard( game, level, _ );
+    randomizeBoard( game, collectionName, level, _ );
     
     now = new Date().getTime(); time = now - start;
-    console.log("cg3: " + time ); start = new Date().getTime();
+    if( print ) console.log("cg3: " + time ); start = new Date().getTime();
     
     for( a = 0; a < playerCount; a++ )  //creates a player instance for each player
     {
       var username = usernames[a];
-      var user = retriever.getUserByUsername( username, _ ); 
-      
-      if( user ){
-        if( !user.data.hasOwnProperty( props.USER.NGAMES ) ){
-          user.data[props.USER.NGAMES] = 0;
-        }
-        user.data[props.USER.NGAMES]++;
-        user.save( _ );
-      }
+      var user = userRetriever.getUserByUsername( username, _ );
       
       player = tools.createNode({
         type: types.PLAYER,
@@ -276,7 +201,7 @@ function createGame( usernames, collectionName, level, _ )
   return game;
 }
 
-function randomizeBoard( game, level, _ )
+function randomizeBoard( game, collectionName, level, _ )
 {
   var now, time, start = new Date().getTime();
   
@@ -289,14 +214,15 @@ function randomizeBoard( game, level, _ )
   var tiles = {};
   var connections = [];
   
-  var boards = boardManager.getPublishedBoards( false, _ );
+  var boards = boardManager.getPublishedBoardsByLevel( level, false, _ );
   
   if( boards.length !== 0 )
   {
-    var board = boards[ boards.length === 1 ? 0 : randomizer.getRandomIntegerInRange( 0, boards.length - 1 ) ];
+    var randomBoardID = randomizer.getRandomIntegerInRange( 0, boards.length - 1 );    
+    var board = boards[ boards.length === 1 ? 0 : randomBoardID ];
     
     for( i = 0; i < board.tiles.length; i++ ){
-      tiles[board.tiles[i].data.id] = adder.addTile( game, board.tiles[i].data.id, board.tiles[i].data.x, board.tiles[i].data.y, board.tiles[i].data.angle, _ );
+      tiles[board.tiles[i].data.id] = adder.addTile( game, collectionName, board.tiles[i].data.id, board.tiles[i].data.x, board.tiles[i].data.y, board.tiles[i].data.angle, _ );
     }
     
     for( i = 0; i < board.paths.length; i++ ){
@@ -379,10 +305,10 @@ app.io.route( "account:sign-up", function( req, _ ){
   var start = new Date().getTime();
   process.stdout.write("signing up ");
   
-  var success = users.addUser( req.data.username, req.data.password, req.data.email, "pedrils", "karbob", "eng", consts.STARTING_BESOZ, _ );
+  var success = users.addUser( req.data.username, req.data.password, req.data.email, "miss", "mister", "eng", consts.STARTING_BESOZ, _ );
   req.io.respond( { success: success } );
   if( !success ){
-    console.log( "dei erro" );
+    console.log( "Error Signing Up" );
     responseData.message = "Username/Email already in use";
   }
   
@@ -427,7 +353,7 @@ app.io.route( "game:lobby", function( req, _ )
   var phrases = [];
   var players = [];
   var responseData = { success: false, games: [] }
-  var user = retriever.getUserByUsername( req.data.username, _ );
+  var user = userRetriever.getUserByUsername( req.data.username, _ );
   
   try{
     var games = retriever.getUserGames( user.id, true, _ );
@@ -491,7 +417,7 @@ app.io.route( "game:queue", function( req, _ )
       }
       
       var start2 = new Date().getTime();
-      game = createGame( usernames, "starter", 0, _ );
+      game = createGame( usernames, "woz", 0, _ );
       var now2 = new Date().getTime();
       console.log("q: " + ( now2 - start2 ) );
       
@@ -506,6 +432,21 @@ app.io.route( "game:queue", function( req, _ )
   }
 });
 
+app.io.route( "game:resume", function( req, _ )
+{
+  var start = new Date().getTime(); process.stdout.write("resuming game ");
+  
+  var game = retriever.getGameByID( req.data.id, _ );
+  
+  if( game )
+  {
+    var jsonObjs = tools.getGameObject( game, game.data[props.GAME.USERNAMES], _ );
+    broadcastGameObject( game, consts.START_GAME, jsonObjs );
+  }
+  
+  var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
+});
+
 app.io.route( "game:place-phrase", function( req, _ )
 {
   var start = new Date().getTime(); process.stdout.write("placing phrase ");
@@ -513,12 +454,12 @@ app.io.route( "game:place-phrase", function( req, _ )
   var ret;
   var i = 0;
   
-  var game = retriever.getGame( req.data.gameID, _ );
+  var game = retriever.getGameByID( req.data.gameID, _ );
   var responseData = { success: false, playerInfo: [] };
   
   if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === req.data.username )
   {
-    ret = placePhrase( game, req.data.username, req.data.pathID, req.data.words, _ );
+    ret = actions.placePhrase( game, req.data.username, req.data.pathID, req.data.words, _ );
     responseData = fillGameUpdateData( game, responseData, _ );
     
     responseData.words = ret.words;
@@ -535,7 +476,7 @@ app.io.route( "game:move-word", function( req, _ )
 {
   var start = new Date().getTime(); process.stdout.write( "moving " );
   
-  var game = retriever.getGame( req.data.gameID, _ );
+  var game = retriever.getGameByID( req.data.gameID, _ );
   if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username ){
     operations.move( game.id, req.data.wordID, req.data.x, req.data.y, req.data.angle, _ );
   }
@@ -548,7 +489,7 @@ app.io.route( "game:swap-words", function( req, _ )
   var start = new Date().getTime(); process.stdout.write("swapping words ");
 
   var responseData = { success: false, words: [] };
-  var game = retriever.getGame( req.data.gameID, _ );
+  var game = retriever.getGameByID( req.data.gameID, _ );
   
   if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
   {
@@ -573,7 +514,7 @@ app.io.route( "game:resign", function( req, _ )
   var i = 0;
   var player;
   
-  var game = retriever.getGame( req.data.gameID, _ );
+  var game = retriever.getGameByID( req.data.gameID, _ );
   var responseData = { success: false, playerInfo: [] };
   
   if( game.data[props.GAME.GAME_OVER] === false )
@@ -600,32 +541,9 @@ app.io.route( "game:resign", function( req, _ )
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "manager:saveWord", function( req, _ )
+app.io.route( "manager:boards", function( req, _ )
 {
-  var start = new Date().getTime(); process.stdout.write("saving word ");
-
-  tools.saveWord( req.data.lemma, req.data.classes, req.data.categories, req.data,collections, req.data.versionOf, _ );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
-});
-
-app.io.route( "manager:getAllWords", function( req, _ )
-{
-  var start = new Date().getTime(); process.stdout.write("getting all words ");
-  
-  var responseData = { success:false, words: [] }
-  var words = wordManager.getAllWords( _ );
-  
-  responseData.words = words;
-  responseData.success = true;
-  req.io.respond( responseData );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
-});
-
-app.io.route( "manager:manageBoards", function( req, _ )
-{
-  var start = new Date().getTime(); process.stdout.write( req.data.command + " " );
+  var start = new Date().getTime(); process.stdout.write( "boardManager:" + req.data.command + " " );
   
   var responseData = { success:false }
   
@@ -633,7 +551,7 @@ app.io.route( "manager:manageBoards", function( req, _ )
     responseData.id = boardManager.setBoard( req.data.id, req.data.level, req.data.draft, req.data.tiles, req.data.paths, _ );
     responseData.success = true;
   }else if( req.data.command === "getAll" ){
-    responseData.boards = boardManager.getBoards( true, _ );
+    responseData.boards = boardManager.getBoards( _ );
     responseData.success = true;
   }else if( req.data.command === "get" ){
     responseData.board = boardManager.getBoard( req.data.id, true, _ );
@@ -641,9 +559,111 @@ app.io.route( "manager:manageBoards", function( req, _ )
   }else if( req.data.command === "delete" ){
     responseData = boardManager.deleteBoard( req.data.id, _ );
   }
-
+  
   req.io.respond( responseData );
 
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "manager:instructions", function( req, _ )
+{
+  var start = new Date().getTime(); process.stdout.write( "instructionManager:" + req.data.command + " " );
+  
+  var responseData = { success:false }
+  
+  if( req.data.command === "set" ){
+    instructionManager.setInstruction( req.data.condition, req.data.shortDescription, req.data.longDescription, req.data.collections, req.data.bonus, req.data.mult, req.data.level, _ );
+    responseData.success = true;
+  }else if( req.data.command === "getAll" ){
+    responseData.instructions = instructionManager.getAllInstructions( _ );
+    responseData.success = true;
+  }else if( req.data.command === "get" ){
+    responseData.instruction = instructionManager.getInstruction( req.data.id, _ );
+    responseData.success = true;
+  }else if( req.data.command === "delete" ){
+    
+  }
+  
+  req.io.respond( responseData );
+  
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "manager:images", function( req, _ )
+{
+  var start = new Date().getTime(); process.stdout.write( "imageManager:" + req.data.command + " " );
+  
+  var responseData = { success:false }
+  
+  if( req.data.command === "set" ){
+    imageManager.setImage( req.data.name, req.data.id, req.data.related, _ );
+    responseData.success = true;
+  }else if( req.data.command === "getAll" ){
+    responseData.images = imageManager.getAllImages( _ );
+    responseData.success = true;
+  }else if( req.data.command === "get" ){
+    responseData.image = imageManager.getImage( req.data.name, _ );
+    responseData.success = true;
+  }else if( req.data.command === "delete" ){
+    
+  }
+  
+  req.io.respond( responseData );
+  
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "manager:words", function( req, _ )
+{
+  var start = new Date().getTime(); process.stdout.write( "wordManager:" + req.data.command + " " );
+  
+  var responseData = { success:false }
+  
+  if( req.data.command === "set" ){
+    wordManager.setWord( req.data.lemma, req.data.classes, req.data.categories, req.data,collections, req.data.versionOf, _ );
+    responseData.success = true;
+  }else if( req.data.command === "getAll" ){
+    responseData.words = wordManager.getAllWords( _ );
+    responseData.success = true;
+  }else if( req.data.command === "get" ){
+    
+  }else if( req.data.command === "delete" ){
+    
+  }
+  
+  req.io.respond( responseData );
+  
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "friends", function( req, _ )
+{
+  var start = new Date().getTime(); process.stdout.write( "friends:" + req.data.command + " " );
+  
+  var responseData = { success:false };
+  
+  try{
+    if( req.data.command === "add" ){
+      friends.addFriend( req.data.username, req.data.friend, _ );
+      responseData.success = true;
+    }else if( req.data.command === "getAll" ){
+      responseData.friends = friends.getFriends( req.data.username, _ );
+      responseData.success = true;
+    }else if( req.data.command === "get" ){
+      responseData.success = true;
+    }else if( req.data.command === "delete" ){
+      responseData.success = friends.deleteFriend( req.data.username, req.data.friendUsername, _ );
+    }else if( req.data.command === "search" ){
+      responseData.users = friends.search( req.data.username, req.data.friendUsername, _ );
+      responseData.success = true;
+    }
+  }
+  catch( ex ){
+    console.log( ex );
+  }
+  
+  req.io.respond( responseData );
+  
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 

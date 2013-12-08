@@ -1,14 +1,19 @@
 var oz = oz || {};
-
-var types = require( "./types._js" ),
-  rels = require("./relationships._js"),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" ),
   
-  adder = require("./adder._js"),
-  retriever = require("./retriever._js"),
+var adder = require("./adder._js"),
+  tools = require( "./tools._js" ),
+  sup = require( "./supporter._js" ),
   operations = require("./operations._js"),
-  randomizer = require("./randomizer._js");
+  randomizer = require("./randomizer._js"),
+  
+  retriever = require("./retrievers/retriever._js"),
+  
+  types = require( "./constants/types.js" ),
+  rels = require("./constants/relationships.js"),
+  props = require( "./constants/properties.js" ),
+  consts = require( "./constants/constants.js" );
+  
+  
 
 module.exports =
 {
@@ -27,7 +32,7 @@ module.exports =
     
     var words = [];
     var magnets = [];
-
+    
     var phraseString = "";
     
     var ret = { madness: -1, score: 0, words: [] };
@@ -50,7 +55,7 @@ module.exports =
       }
     }
     
-    ret.madness = canIPlayWithMadness( words, wordCount, _ );
+    ret.madness = sup.canIPlayWithMadness( words, wordCount, _ );
     
     if( ret.madness === 0 )
     {
@@ -77,19 +82,26 @@ module.exports =
         currentMagnet.data[props.MAGNET.TYPE] = types.MAGNET_PHRASE;
         currentMagnet.save(_);
         
-        ret.words.push( adder.addMagnet( game, player, currentWord.data.collections[0],currentWord.data.classes[ Math.floor( randomizer.getRandomInRange( 0, currentWord.data.classes.length ) ) ], currentMagnet.data.x, currentMagnet.data.y, _ ) );  //replace it with a new magnet
+        ret.words.push( adder.addMagnet(
+          game,
+          player,
+          currentMagnet.data[props.MAGNET.COLLECTION],
+          currentMagnet.data[props.MAGNET.CLASS],
+          currentMagnet.data[props.MAGNET.X],
+          currentMagnet.data[props.MAGNET.Y],
+        _ ) );
       }
       
-      score = scoringTime( words, tiles, _ );
+      score = sup.scoringTime( words, tiles, _ );
+      
       phrase.data[props.PHRASE.SCORE] = score;
       player.data[props.PLAYER.SCORE] += score;
       ret[props.PLAYER.SCORE] = player.data[props.PLAYER.SCORE];
       
-      game.data[props.GAME.ACTION_DONE] = false;
       game.data[props.GAME.PHRASE_COUNT]++;
-      
+      game.data[props.GAME.ACTION_DONE] = false;
       game.data[props.GAME.LAST_MOD] = Date.parse( new Date() );
-      game.data[props.GAME.GAME_OVER] = isTheGameOver( game, _ );
+      game.data[props.GAME.GAME_OVER] = sup.isTheGameOver( game, _ );
       if( !game.data[props.GAME.GAME_OVER] ) game.data[props.GAME.TURN]++;
       
       phrase.save(_);
@@ -97,7 +109,9 @@ module.exports =
       game.save(_);
     }
     else
+    {
       console.log( "Hold on mister, respect the rules!" );
+    }
     
     return ret;
   },
@@ -115,7 +129,7 @@ module.exports =
     var collectionName;
     
     if( game.data[props.GAME.ACTION_DONE] === false ){
-      operations.setActionDone( game, true, _ );
+      sup.setActionDone( game, true, _ );
       
       player = retriever.getGamePlayerByID( game.id, username, _ );
       mw = retriever.getPlayerMagnetsAndWordsByID( player.id, magnetIDs, _ );

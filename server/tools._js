@@ -1,14 +1,14 @@
 var neo4j = require("neo4j"),
-  environment = require("./environment._js"),
-
-  types = require( "./types._js" ),
-  rels = require("./relationships._js"),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" ),
-
-  retriever = require("./retriever._js"),
-  randomizer = require("./randomizer._js");
-
+  randomizer = require("./randomizer._js"),
+  
+  types = require( "./constants/types.js" ),
+  rels = require("./constants/relationships.js"),
+  props = require( "./constants/properties.js" ),
+  consts = require( "./constants/constants.js" ),
+  environment = require("./constants/environment.js"),
+  
+  retriever = require("./retrievers/retriever._js");
+  
 var db = new neo4j.GraphDatabase(environment.DB_URL);
 
 module.exports =
@@ -47,6 +47,16 @@ module.exports =
     countNode.save(_);
     
     return newBoardID;
+  },
+  
+  getNewInstructionID: function ( _ )
+  {
+    var countNode = retriever.getCountNode( _ );
+    var newInstructionID = countNode.data[props.COUNT_NODE.INSTRUCTION_COUNT]++;
+    
+    countNode.save(_);
+    
+    return newInstructionID;
   },
   
   getGameObject: function( game, usernames, _ )

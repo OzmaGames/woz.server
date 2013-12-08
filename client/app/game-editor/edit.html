@@ -4,9 +4,6 @@
       <div class="logo page"></div>
       <!--ko compose: 'game-editor/tiles'--><!--/ko-->
       <hr />
-      <div style="position:relative; z-index:9;">
-
-      </div>
       <!--ko compose: 'game/words'--><!--/ko-->
    </div>
    <div id="game-players" data-bind="compose: 'game/players'"></div>
@@ -23,7 +20,7 @@
                <input type="checkbox" data-bind="checked: draft" /> <span></span>
             </label>
             <i class="command green" data-bind="click: addTile"><span>add tile</span></i>
-            <i class="command pink" data-bind="click: save"><span>save</span></i>
+            <i class="command pink" data-bind="click: save, css: {disabled: loading}"><span>save</span></i>
             <i class="action" data-bind="click: debug, css: { cancel: debugMode }"><span>debug</span></i>
          </div>
       </div>

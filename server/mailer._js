@@ -1,12 +1,13 @@
 var neo4j = require("neo4j"),
   mailer = require("nodemailer"),
   
-  types = require( "./types._js" ),
-  rels = require("./relationships._js"),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" ),
+  types = require( "./constants/types.js" ),
+  rels = require("./constants/relationships.js"),
+  props = require( "./constants/properties.js" ),
+  consts = require( "./constants/constants.js" ),
   
-  retriever = require("./retriever._js");
+  retriever = require("./retrievers/retriever._js"),
+  userRetriever = require("./retrievers/userRetriever._js");
 
 var smtp = mailer.createTransport( "SMTP",{
   service: "gmail",
@@ -20,7 +21,7 @@ module.exports =
 {
   recoverPassword: function( username, _ )
   {
-    var player = retriever.getUserByUsername( username, _ );
+    var player = userRetriever.getUserByUsername( username, _ );
     var text = "Oh, you silly, here is your password: " + player.data[props.USER.PASSWORD] + ". Now don't go and lose it again.";
     var options = {
       from: "Princess Ozma <ozmatheprincess@gmail.com>",

@@ -1,17 +1,16 @@
 var oz = oz || {};
 
-var
-  types = require( "./types._js" ),
-  rels = require("./relationships._js"),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" );
+var types = require( "./constants/types.js" ),
+  rels = require("./constants/relationships.js"),
+  props = require( "./constants/properties.js" ),
+  consts = require( "./constants/constants.js" );
 
 module.exports =
 {
   checkInstruction: function( rule, words, _ )
   {
     var ret = false;
-
+    
     while( rule.indexOf("  ") != -1 ){
       rule = rule.replace( "  ", " " );
     }
@@ -20,7 +19,7 @@ module.exports =
     var expType = matches[0];
     var n = matches[1];
     var where = matches[2];
-
+    
     if( n == "all" ){
       n = words.length;
     }
@@ -47,7 +46,7 @@ module.exports =
         ret = checkSyllables( n, words, _ );
       }
     }
-
+    
     return ret;
   }
 };

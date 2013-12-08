@@ -1,22 +1,26 @@
 var oz = oz || {};
 
 var neo4j = require( "neo4j" ),
-  tools = require( "./tools._js" ),
-  types = require( "./types._js" ),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" ),
-  retriever = require("./retriever._js"),
-  rels = require( "./relationships._js" ),
-  randomizer = require("./randomizer._js");
 
+  tools = require( "./tools._js" ),
+  randomizer = require("./randomizer._js"),
+  
+  types = require( "./constants/types.js" ),
+  indexes = require( "./constants/indexes.js" ),
+  consts = require( "./constants/constants.js" ),
+  props = require( "./constants/properties.js" ),
+  rels = require("./constants/relationships.js"),
+  
+  retriever = require("./retrievers/retriever._js");
+
+var print = false;
+  
 module.exports =
 {
 
   addMagnet: function( game, player, collectionName, className, x, y, _ )
   {
-    var start = new Date().getTime();
-    var now;
-    var time;
+    var start = new Date().getTime(); var now; var time;
     
     var ret;
     var i = 0;
@@ -25,10 +29,8 @@ module.exports =
     
     var word = randomizer.getRandomWordByClass( collectionName, className, _);
     
-    now = new Date().getTime();
-    time = now - start;
-//     console.log("am1: " + time );
-    start = new Date().getTime();
+    now = new Date().getTime(); time = now - start;
+    if( print ) console.log("am1: " + time ); start = new Date().getTime();
     
     isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
     
@@ -36,10 +38,8 @@ module.exports =
     if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
     var randomAngle = randomizer.getRandomInRange( consts.MIN_ANGLE, consts.MAX_ANGLE );
     
-    now = new Date().getTime();
-    time = now - start;
-//     console.log("am2: " + time );
-    start = new Date().getTime();
+    now = new Date().getTime(); time = now - start;
+    if( print ) console.log("am2: " + time ); start = new Date().getTime();
     
     var magnet = tools.createNode({
       type: types.MAGNET_PLAYER,
@@ -54,10 +54,8 @@ module.exports =
       collection: collectionName
     }, _ );
     
-    now = new Date().getTime();
-    time = now - start;
-//     console.log("am3: " + time );
-    start = new Date().getTime();
+    now = new Date().getTime(); time = now - start;
+    if( print ) console.log("am3: " + time ); start = new Date().getTime();
     
     player.createRelationshipTo( magnet, rels.HAS_MAGNET, { id: game.data[props.GAME.WORD_COUNT] }, _ );
     magnet.createRelationshipTo( word, rels.REPRESENTS_WORD, {}, _ );
@@ -75,19 +73,18 @@ module.exports =
     game.data[props.GAME.WORD_COUNT]++;
     game.save(_);
     
-    now = new Date().getTime();
-    time = now - start;
-//     console.log("am4: " + time );
+    now = new Date().getTime(); time = now - start;
+    if( print ) console.log("am4: " + time );
     
     return ret;
   },
   
-  addTile: function( game, id, x, y, angle, _ )
+  addTile: function( game, collectionName, id, x, y, angle, _ )
   {
     var tile;
     var i = 0;
     
-    var image = randomizer.getRandomImage(_);
+    var image = randomizer.getRandomImage( collectionName, _ );
     var images = retriever.getGameTileImages( game.id, _ );
     var instruction = randomizer.getRandomInstruction(_);
     var instructions = retriever.getGameTileInstructions( game.id, _ );
@@ -97,7 +94,7 @@ module.exports =
     for( i = 0; i < images.length; i++ ){  
       if( image.data.name == images[i].data.name )
       {
-        image = randomizer.getRandomImage(_);
+        image = randomizer.getRandomImage( collectionName, _ );
         i = -1;
       }
     }
@@ -110,7 +107,7 @@ module.exports =
       }
     }
     
-    tile = this.createNode({
+    tile = tools.createNode({
       type: types.TILE,
       id: id,
       representedImage: image.data.name,
@@ -129,7 +126,7 @@ module.exports =
   
   addPath: function( game, id, startTile, endTile, nWords, cw, _ )
   { 
-    var path = this.createNode({
+    var path = tools.createNode({
       type: types.PATH,
       id: id,
       cw: cw,
@@ -141,38 +138,5 @@ module.exports =
     game.createRelationshipTo( path, rels.HAS_PATH, {}, _ );
     path.createRelationshipTo( endTile, rels.ENDS_WITH, {}, _ );
     path.createRelationshipTo( startTile, rels.STARTS_WITH, {}, _ );
-  },
-
-  saveWord: function( lemma, classes, categories, collections, versionOf, _ )
-  {
-    var i, j;
-    var word = retriever.getWord( lemma, _ );
-
-    if( word )
-    {
-      word.data[props.WORD.CLASSES] = classes;
-      word.data[props.WORD.CATEGORIES] = categories;
-      word.data[props.WORD.COLLECTIONS] = collections;
-      word.data[props.WORD.VERSION_OF] = versionOf;
-    }
-    else
-    {
-      currentWordNode = tools.createNode({
-        type: types.WORD,
-        lemma: lemma,
-        points: randomizer.getRandomIntegerInRange(0, 4),
-        collections: collections,
-        versionOf: versionOf
-      }, _ );
-      
-      currentWordNode.index( collectionName + indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
-      
-      for( i = 0; i < classes.length; i++ ){
-        for( j = 0; j < collections.length; j++ ){
-          currentWordNode.index( collections[j] + indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
-          currentWordNode.index( collections[j] + classes[i] + "ClassIndex", props.ID, lassCounts[collections[j]][classes[i]]++, _ );
-        }
-      }
-    }
   }
 };

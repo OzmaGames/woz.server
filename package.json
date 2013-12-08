@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "dependencies":{
     "npm": "1.1.65",
-    "neo4j": "0.2.19",
-    "streamline": "0.4.0",
+    "neo4j": "1.x",
+    "streamline": "0.x",
     "express.io": "1.1.11",
     "nodemailer": "0.4.4",
     "crypto-js": "3.1.2"

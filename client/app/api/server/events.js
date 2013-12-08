@@ -26,7 +26,8 @@
       /// res = {success: true|false, errorMessage: ''}
       "game:skip-turn",
       "game:resign",
-      "game:lobby"
+      "game:lobby",
+      "friends"
     ],
     custom: {
       /// data = {gameId: #, username: '', words: [#, #, #, ..]}
@@ -41,6 +42,9 @@
       /// data = {username: ''}
       /// res = {success: true|false, errorMessage: ''}
       "game:queue": function (data, callback, socket) {
+
+        socket.removeAllListeners("game:update");
+
         /// res = {players: [{id: #, score: #},..], phrases: [{id: #, words:[]},..]}
         socket.on("game:update", function (data) {
           console.log('%cgame:update', 'background: #222; color: #bada55', data);
@@ -48,7 +52,7 @@
         });
 
         /// res = game object, the big bad ass object
-        socket.on("game:start", function (data) {
+        socket.once("game:start", function (data) {
           console.log('%cgame:start', 'background: #222; color: #bada55', data);          
           app.trigger("game:start", data);
         });

@@ -1,14 +1,17 @@
 var neo4j = require("neo4j"),
   crypto = require("crypto-js"),
-  environment = require("./environment._js"),
-  
-  types = require( "./types._js" ),
-  rels = require("./relationships._js"),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" ),
   
   tools = require("./tools._js"),
-  retriever = require("./retriever._js");
+  
+  types = require( "./constants/types.js" ),
+  indexes = require( "./constants/indexes.js" ),
+  consts = require( "./constants/constants.js" ),
+  props = require( "./constants/properties.js" ),
+  rels = require("./constants/relationships.js"),
+  environment = require("./constants/environment.js"),
+  
+  retriever = require("./retrievers/retriever._js"),
+  userRetriever = require("./retrievers/userRetriever._js");
 
 var db = new neo4j.GraphDatabase(environment.DB_URL);
   
@@ -25,7 +28,7 @@ module.exports =
       password = salt + password;
       password = crypto.SHA3( password ).toString();
       
-      if( !retriever.getUserByUsername( username, _ ) &&  !retriever.getUserByEmail( email, _ ) )
+      if( !userRetriever.getUserByUsername( username, _ ) &&  !retriever.getUserByEmail( email, _ ) )
       {
         var user = tools.createNode({
           type: types.USER,
@@ -38,7 +41,6 @@ module.exports =
           language: language,
           gamesPlayed: 0,
           besoz: besoz,
-          nGames: 0
         }, _ );
         
         user.index( indexes.USER_USERNAME_INDEX, props.USER.USERNAME, username, _ );
@@ -61,7 +63,7 @@ module.exports =
     var ret = false;
     
     try{
-      var user = retriever.getUserByUsername( username, _ );
+      var user = userRetriever.getUserByUsername( username, _ );
       if( user ){
         if( user.data[props.USER.PASSWORD] == crypto.SHA3( user.data[props.USER.SALT] + password ) ){
           ret = user;
@@ -72,37 +74,5 @@ module.exports =
     }
     
     return ret;
-  },
-  
-  addFriend: function( username, friendUsername, _ )
-  { 
-    var ret = false;
-    
-    try{
-      var user = retriever.getUserByUsername( username, _ );
-      var friend = retriever.getUserByUsername( friendUsername, _ );
-      
-      user.createRelationship( friend, rels.IS_FRIEND, {}, _ );
-      ret = true;
-    }catch(ex){
-      console.log(ex);
-    }
-    
-    return ret;
-  },
-  
-  searchFriendOfFriend: function( username, friendUsername, _ )
-  {
-    var ret = false;
-    
-    try{
-      var user = retriever.getUserByUsername( username, _ );
-      
-      
-    }catch(ex){
-      console.log(ex);
-    }
-    
-    return ret;
-  },
+  }
 };

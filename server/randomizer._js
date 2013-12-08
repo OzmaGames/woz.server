@@ -1,11 +1,11 @@
-var
-  types = require( "./types._js" ),
-  rels = require("./relationships._js"),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" ),
+var loader = require("./loader._js"),
+
+  types = require( "./constants/types.js" ),
+  rels = require("./constants/relationships.js"),
+  props = require( "./constants/properties.js" ),
+  consts = require( "./constants/constants.js" ),  
   
-  loader = require("./loader._js"),
-  retriever = require("./retriever._js");
+  retriever = require("./retrievers/retriever._js");
 
 module.exports =
 {
@@ -27,11 +27,8 @@ module.exports =
   },
 
   getRandomWordByClass : function( collectionName, className, _ )
-  {
-    collectionName = className === "related" ? "starter" : collectionName;
-    
+  { 
     var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[collectionName][className] - 1 ) );
-   
     var word = retriever.getWordFromClassIndex( collectionName, className, randomN, _ );
     
     return word;
@@ -45,18 +42,18 @@ module.exports =
     return word;
   },
   
-  getRandomImage : function( _ )
+  getRandomImage : function( collectionName, _ )
   {
-    var randomN = Math.floor( Math.random() *  getTotalImageCount() );
-    var image = retriever.getImageFromIndex( randomN, _ );
+    var randomN = Math.floor( Math.random() *  20 );
+    var image = retriever.getImageByCollectionAndID( collectionName, randomN, _ );
     
     return image;
   },
   
   getRandomInstruction : function( _ )
   {
-    var randomN = Math.floor( Math.random() *  getTotalInstructionCount() );
-    var instruction = retriever.getInstructionFromIndex( randomN, _ );
+    var randomN = Math.floor( Math.random() *  consts.INSTRUCTION_TOTAL );
+    var instruction = retriever.getInstructionByID( randomN, false, _ );
     
     return instruction;
   },
@@ -100,22 +97,5 @@ module.exports =
     }
     
     return ret;
-  }
-  
+  }  
 };
-
-function getTotalWordCount()
-{
-  return consts.WORD_TOTAL;
-}
-
-function getTotalImageCount()
-{
-  return consts.IMAGE_TOTAL;
-}
-
-function getTotalInstructionCount()
-{
-  return consts.INSTRUCTION_TOTAL;
-}
-

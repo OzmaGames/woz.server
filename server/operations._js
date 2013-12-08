@@ -1,13 +1,13 @@
 var oz = oz || {};
   
-var
-  types = require( "./types._js" ),
-  rels = require("./relationships._js"),
-  props = require( "./properties._js" ),
-  consts = require( "./constants._js" ),
+var sup = require("./supporter._js"),
+
+  types = require( "./constants/types.js" ),
+  rels = require("./constants/relationships.js"),
+  props = require( "./constants/properties.js" ),
+  consts = require( "./constants/constants.js" ),  
   
-  sup = require("./supporter._js"),
-  retriever = require("./retriever._js");  
+  retriever = require("./retrievers/retriever._js");  
 
 module.exports =
 {

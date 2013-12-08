@@ -1,72 +1,74 @@
 ﻿define(['plugins/router', 'durandal/app', 'api/datacontext', './_server'], function (router, app, ctx) {
 
-  var activeItem = ko.observable();
-  var Groups = ko.observableArray();
+   var Groups = ko.observableArray();
 
-  return {
-    activate: function () {
-      Groups([]);
-      app.trigger("server:manager:manageBoards", { command: 'getAll' }, function (data) {
-        var groups = Groups(), boards = data.boards;
-        for (var i = 0; i < boards.length; i++) {
-          var board = boards[i], level = board.level;
-          if (!groups.hasOwnProperty(level)) {
-            groups[level] = {
-              key: level,
-              value: ko.observableArray()
-            };            
-          }          
-          groups[level].value.push(board);
-        }
-        if(data.boards.length) activeItem(data.boards[0]);
-        Groups.valueHasMutated();
-      });
-    },
+   return {
+      height: ko.observable(100),
+      activate: function () {
+         Groups([]);
+         app.trigger("server:manager:boards", { command: 'getAll' }, function (data) {
+            var groups = Groups(), boards = data.boards;
+            for (var i = 0; i < boards.length; i++) {               
+               var board = boards[i], level = board.level;
+               if (!groups.hasOwnProperty(level)) {
+                  groups[level] = {
+                     key: level,
+                     value: ko.observableArray()
+                  };
+               }
+               groups[level].value.push(board);
+            }
+            Groups.valueHasMutated();
+         });
+      },
 
-    groups: Groups,
+      groups: Groups,
 
-    activeItem: activeItem,
+      edit: function (gameObject) {
+         router.navigate('game-editor/edit/' + gameObject.id);
+      },
 
-    select: function (item, e) {
-      activeItem(item);
-    },
+      remove: function (gameObject) {
+         app.dialog.show("confirm", {
+            content: "Are you sure you want to remove this game board?", modal: true,
+            doneText: 'YES', cancelText: 'NO'
+         }).then(function (res) {
+            if (res != "cancel") {
+               app.trigger("server:manager:boards", {
+                  id: gameObject.id,
+                  command: 'delete'
+               });
+               var arr = Groups()[gameObject.level].value,
+                 pos = arr.indexOf(gameObject);
 
-    edit: function (gameObject) {
-      router.navigate('game-editor/edit/' + gameObject.id);
-    },
+               arr.splice(pos, 1);
+            }
+         });
+      },
 
-    remove: function (gameObject) {
-      app.dialog.show("confirm", {
-        content: "Are you sure you want to remove this game board?", modal: true,
-        doneText: 'YES', cancelText: 'NO'
-      }).then(function (res) {
-        if (res != "cancel") {
-          app.trigger("server:manager:manageBoards", {
-            id: gameObject.id,
-            command: 'delete'
-          });
-          var arr = Groups()[gameObject.level].value,
-            pos = arr.indexOf(gameObject);
+      beingRemove: function (el) {
+         if (el.tagName == 'DIV') $(el).fadeOut(300);
+      },
 
-          arr.splice(pos, 1);
-        }
-      });
-    },
+      createNew: function () {
+         router.navigate('game-editor/edit/new');
+      },
 
-    beingRemove: function (el) {
-      if(el.tagName == 'DIV') $(el).fadeOut(300);
-    },
+      binding: function () {
+         return { cacheViews: false };
+      },
 
-    createNew: function () {
-      router.navigate('game-editor/edit/new');
-    },
+      compositionComplete: function () {
+         $(window).bind("resize", this, this.resize);
+         this.resize({ data: this });
+      },
 
-    binding: function () {
-      return { cacheViews: false };
-    },
+      resize: function (e) {
+         e.data.height($(window).innerHeight() - 120);
+      },
 
-    deactivate: function () {
-
-    }
-  }
+      deactivate: function () {
+         $(window).unbind("resize", this.resize);
+      }
+   }
 });
