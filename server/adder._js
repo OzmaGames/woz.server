@@ -90,7 +90,6 @@ module.exports =
     var instructions = retriever.getGameTileInstructions( game.id, _ );
     if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
     if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
-    
     for( i = 0; i < images.length; i++ ){  
       if( image.data.name == images[i].data.name )
       {

@@ -63,7 +63,7 @@ module.exports =
   {
     var i = 0;
     var friends = [];
-    var friendNodes = retriever.getFriends( username, _ );
+    var friendNodes = friendRetriever.getFriends( username, _ );
     
     for( i = 0; i < friendNodes.length; i++ ){
       friends.push({

@@ -104,5 +104,13 @@ module.exports =
     this.setActionDone( game, false, _ );
     game.data[props.GAME.TURN]++;
     game.save(_);
+  },
+  
+  logError: function( err )
+  {
+    if(err)
+    {
+      console.error( err );
+    }
   }
 };

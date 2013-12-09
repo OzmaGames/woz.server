@@ -1,23 +1,22 @@
 var oz = oz || {};
 
-var tools = require("../tools._js"),
+var tools = require("../tools._js");
   
-  retriever = require("../retrievers/retriever._js"),
-  
-  types = require( "../constants/types.js" ),
-  rels = require("../constants/relationships.js"),
-  props = require( "../constants/properties.js" ),
-  indexes = require( "../constants/indexes.js" ),
-  consts = require( "../constants/constants.js" );
-  
+var retriever = require("../retrievers/retriever._js");
+var instructionRetriever = require( "../retrievers/instructionRetriever._js" );  
 
+var types = require( "../constants/types.js" );
+var rels = require("../constants/relationships.js");
+var props = require( "../constants/properties.js" );
+var indexes = require( "../constants/indexes.js" );
+var consts = require( "../constants/constants.js" );
 
 module.exports =
 {
 
   getInstruction: function ( id, _ )
   {
-    var instruction = retriever.getInstructionByID( id, true, _ );
+    var instruction = instructionRetriever.getInstructionByID( id, true, _ );
     
     return instruction;
   },

@@ -4,35 +4,37 @@
 
 var oz = oz || {};
 
-var neo4j = require("neo4j"),
-    express = require("express.io"),
+var neo4j = require("neo4j");
+var express = require("express.io");
+
+var adder = require("./adder._js");
+var tools = require("./tools._js");
+var users = require("./users._js");
+var helper = require("./helper.js");
+var loader = require("./loader._js");
+var mailer = require("./mailer._js");
+var friends = require("./friends._js");
+var actions = require("./actions._js");
+var inparser = require("./inparser._js");
     
-    adder = require("./adder._js"),
-    tools = require("./tools._js"),
-    users = require("./users._js"),
-    loader = require("./loader._js"),
-    mailer = require("./mailer._js"),
-    friends = require("./friends._js"),
-    actions = require("./actions._js"),
-    inparser = require("./inparser._js"),
-    randomizer = require("./randomizer._js"),
-    operations = require("./operations._js"),
-    initializer = require("./initializer._js"),
-    
-    wordManager = require("./managers/wordManager._js"),
-    boardManager = require("./managers/boardManager._js"),
-    instructionManager = require("./managers/instructionManager._js"),
-    
-    types = require( "./constants/types.js" ),
-    indexes = require( "./constants/indexes.js" ),
-    consts = require( "./constants/constants.js" ),
-    props = require( "./constants/properties.js" ),
-    rels = require("./constants/relationships.js"),
-    environment = require("./constants/environment.js"),
-    
-    retriever = require("./retrievers/retriever._js"),
-    userRetriever = require("./retrievers/userRetriever._js");
-    
+var randomizer = require("./randomizer._js");
+var operations = require("./operations._js");
+var initializer = require("./initializer._js");
+
+var wordManager = require("./managers/wordManager._js");
+var boardManager = require("./managers/boardManager._js");
+var instructionManager = require("./managers/instructionManager._js");
+
+var types = require( "./constants/types.js" );
+var indexes = require( "./constants/indexes.js" );
+var consts = require( "./constants/constants.js" );
+var props = require( "./constants/properties.js" );
+var rels = require("./constants/relationships.js");
+var environment = require("./constants/environment.js");
+
+var retriever = require("./retrievers/retriever._js");
+var userRetriever = require("./retrievers/userRetriever._js");
+
 var db = new neo4j.GraphDatabase(environment.DB_URL);  
 var app = express();
 
@@ -91,9 +93,6 @@ catch( exception )
   countNode = retriever.getCountNode(_);
   console.log( "done." );
 }
-
-friends.addFriend( "ali", "ali2", _ );
-// friends.deleteFriend( "ali", "ali2", _ );
 
 function createGame( usernames, collectionName, level, _ )
 {
@@ -301,368 +300,431 @@ function shuffleArray( array )
 //   res.sendfile( "index.html", { root: "../client/" } );
 // });
 
-app.io.route( "account:sign-up", function( req, _ ){
-  var start = new Date().getTime();
-  process.stdout.write("signing up ");
+app.io.route( "account:sign-up", function( req )
+{
+  var start = new Date().getTime(); process.stdout.write("signing up ");
   
-  var success = users.addUser( req.data.username, req.data.password, req.data.email, "miss", "mister", "eng", consts.STARTING_BESOZ, _ );
-  req.io.respond( { success: success } );
-  if( !success ){
-    console.log( "Error Signing Up" );
-    responseData.message = "Username/Email already in use";
-  }
+  (function(_)
+  {
+    var responseData = { success : false }
+    var success = false;
+    
+    success = users.addUser( req.data.username, req.data.password, req.data.email, "miss", "mister", "eng", consts.STARTING_BESOZ, _ );
+    if( !success )
+    {
+      responseData.message = "Username/Email already in use";
+    }
+    
+    responseData.success = success;
+    req.io.respond( responseData );
+  })( helper.logError );
+  
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+} );
+
+app.io.route( "account:login", function( req )
+{
+  var start = new Date().getTime(); process.stdout.write("logging in "); 
+  
+  (function(_)
+  {
+    var responseData = { success: false };
+    var user = users.login( req.data.username, req.data.password, _ );
+    
+    if( user !== false ){
+      active[ req.data.username ] = { socket: req.io, active: true, lastActive: new Date() };
+      responseData = { success: true };
+    }else{
+      responseData.message = "Sorry, that user or password was not recognized. Please try again.";
+    }
+    
+    req.io.respond( responseData );
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "account:login", function( req, _ )
-{  
-  var responseData = { success: false };
-  var user = users.login( req.data.username, req.data.password, _ );
-  
-  if( user !== false ){
-    active[ req.data.username ] = { socket: req.io, active: true, lastActive: new Date() };
-    responseData = { success: true };
-  }else{
-    responseData.message = "Sorry, that user or password was not recognized. Please try again.";
-  }
-  
-  req.io.respond( responseData );
-});
-
-app.io.route( "logout", function( req, _ ){
+app.io.route( "logout", function( req )
+{
   active[ req.data.username ] = { socket: false, active: false, lastActive: new Date() };
   
-  req.io.respond( true );
+  req.io.respond({ success: true });
 });
 
-app.io.route( "recover:password", function( req, _ ){
-  mailer.recoverPassword(  req.data.username, _ );
+app.io.route( "recover:password", function( req )
+{
+  var start = new Date().getTime(); process.stdout.write("recovering password "); 
   
-  req.io.respond( true );
+  (function(_)
+  {
+    mailer.recoverPassword(  req.data.username, _ );
+    req.io.respond( true );
+  })( helper.logError );
+  
+  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "game:lobby", function( req, _ )
+app.io.route( "game:lobby", function( req )
 {
   var start = new Date().getTime(); process.stdout.write("lobby "); 
   
-  var i, j;
-  var game;
-  var lastPhrase;
-  var games = [];
-  var phrases = [];
-  var players = [];
-  var responseData = { success: false, games: [] }
-  var user = userRetriever.getUserByUsername( req.data.username, _ );
-  
-  try{
-    var games = retriever.getUserGames( user.id, true, _ );
+  (function(_)
+  {
+    var i, j;
+    var game;
+    var lastPhrase;
+    var games = [];
+    var phrases = [];
+    var players = [];
+    var responseData = { success: false, games: [] }
+    var user = userRetriever.getUserByUsername( req.data.username, _ );
     
-    for( i = 0; i < games.length; i++ ){
-      game = games[i];
+    try{
+      var games = retriever.getUserGames( user.id, true, _ );
       
-      responseData.games[i] = {};
-      responseData.games[i].lastMod = game.data[props.GAME.LAST_MOD];
-      responseData.games[i].startDate = game.data[props.GAME.START_DATE];
-      responseData.games[i].collection = game.data[props.GAME.COLLECTION];
-      
-      lastPhrase = retriever.getGamePhraseByID( game.id, game.data[props.GAME.PHRASE_COUNT] - 1, _ );
-      
-      responseData.games[i].lastPhrase = lastPhrase ? { phrase: lastPhrase.data[props.PHRASE.PHRASE_STRING], username: lastPhrase.data[props.PHRASE.USERNAME], score: lastPhrase.data[props.PHRASE.SCORE]} : {};
-      
-      players = retriever.getGamePlayers( game.id, _ );
-      for( j = 0; j < players.length; j++ ){
-        responseData.games[i].players = [];
-        responseData.games[i].players.push({
-          username: players[j].data[props.PLAYER.USERNAME],
-          score: players[j].data[props.PLAYER.SCORE],
-          active: game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === players[j].data[props.PLAYER.USERNAME]
-        });
+      for( i = 0; i < games.length; i++ ){
+        game = games[i];
+        
+        responseData.games[i] = {};
+        responseData.games[i].lastMod = game.data[props.GAME.LAST_MOD];
+        responseData.games[i].startDate = game.data[props.GAME.START_DATE];
+        responseData.games[i].collection = game.data[props.GAME.COLLECTION];
+        
+        lastPhrase = retriever.getGamePhraseByID( game.id, game.data[props.GAME.PHRASE_COUNT] - 1, _ );
+        
+        responseData.games[i].lastPhrase = lastPhrase ? { phrase: lastPhrase.data[props.PHRASE.PHRASE_STRING], username: lastPhrase.data[props.PHRASE.USERNAME], score: lastPhrase.data[props.PHRASE.SCORE]} : {};
+        
+        players = retriever.getGamePlayers( game.id, _ );
+        for( j = 0; j < players.length; j++ ){
+          responseData.games[i].players = [];
+          responseData.games[i].players.push({
+            username: players[j].data[props.PLAYER.USERNAME],
+            score: players[j].data[props.PLAYER.SCORE],
+            active: game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === players[j].data[props.PLAYER.USERNAME]
+          });
+        }
+        
+        responseData.success = true;
       }
-      
-      responseData.success = true;
+    }catch( ex ){
+      console.log( ex.message );
     }
-  }catch( ex ){
-    console.log( ex.message );
-  }
-  
-  req.io.respond( responseData );
-  
+    
+    req.io.respond( responseData );
+  })( helper.logError );
+    
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "game:queue", function( req, _ )
-{
-  var playerCount = req.data.playerCount;
-  var queueType = playerCount -1;
-  
-  if( users.login( req.data.username, req.data.password, _ ) ){
-    queue[queueType].push({ username: req.data.username, socket: req.io });
-    req.io.respond({ success: true });
+app.io.route( "game:queue", function( req )
+{ 
+  (function(_)
+  { 
+    var playerCount = req.data.playerCount;
+    var queueType = playerCount -1;
     
-    if( queue[queueType].length >= playerCount )
+    if( users.login( req.data.username, req.data.password, _ ) )
     {
-      var i, j = 0;
-      var game;
-      var jsonObjs;
-      var usernames = [];
-      var tempSockets = {};
-      var start = new Date().getTime();
-      process.stdout.write( "creating new game " );
+      queue[queueType].push({ username: req.data.username, socket: req.io });
+      req.io.respond({ success: true });
       
-      for( i = 0; i < playerCount; i++ ){
-        var user = queue[queueType].pop();
-        usernames.push( user[props.USER.USERNAME] );
-        tempSockets[user[props.USER.USERNAME]] = user[props.PLAYER.SOCKET];
-      }
-      
-      var start2 = new Date().getTime();
-      game = createGame( usernames, "woz", 0, _ );
-      var now2 = new Date().getTime();
-      console.log("q: " + ( now2 - start2 ) );
-      
-      if( game ){
-        sockets[ "game" + game.data[props.ID] ] = tempSockets;
-        jsonObjs = tools.getGameObject( game, usernames, _ );
-        broadcastGameObject( game, consts.START_GAME, jsonObjs );
-      }
-      
+      if( queue[queueType].length >= playerCount )
+      {
+        var i, j = 0;
+        var game;
+        var jsonObjs;
+        var usernames = [];
+        var tempSockets = {};
+        var start = new Date().getTime();
+        process.stdout.write( "creating new game " );
+        
+        for( i = 0; i < playerCount; i++ ){
+          var user = queue[queueType].pop();
+          usernames.push( user[props.USER.USERNAME] );
+          tempSockets[user[props.USER.USERNAME]] = user[props.PLAYER.SOCKET];
+        }
+        
+        var start2 = new Date().getTime();
+        game = createGame( usernames, "woz", 0, _ );
+        var now2 = new Date().getTime();
+        console.log("q: " + ( now2 - start2 ) );
+        
+        if( game ){
+          sockets[ "game" + game.data[props.ID] ] = tempSockets;
+          jsonObjs = tools.getGameObject( game, usernames, _ );
+          broadcastGameObject( game, consts.START_GAME, jsonObjs );
+        }
       var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
     }
   }
+  })( helper.logError );
 });
 
-app.io.route( "game:resume", function( req, _ )
+app.io.route( "game:resume", function( req )
 {
   var start = new Date().getTime(); process.stdout.write("resuming game ");
   
-  var game = retriever.getGameByID( req.data.id, _ );
-  
-  if( game )
+  (function(_)
   {
-    var jsonObjs = tools.getGameObject( game, game.data[props.GAME.USERNAMES], _ );
-    broadcastGameObject( game, consts.START_GAME, jsonObjs );
-  }
-  
+    var game = retriever.getGameByID( req.data.id, _ );
+    
+    if( game )
+    {
+      var jsonObjs = tools.getGameObject( game, game.data[props.GAME.USERNAMES], _ );
+      broadcastGameObject( game, consts.START_GAME, jsonObjs );
+    }
+  })( helper.logError );
   var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "game:place-phrase", function( req, _ )
+app.io.route( "game:place-phrase", function( req )
 {
   var start = new Date().getTime(); process.stdout.write("placing phrase ");
 
   var ret;
   var i = 0;
   
-  var game = retriever.getGameByID( req.data.gameID, _ );
-  var responseData = { success: false, playerInfo: [] };
-  
-  if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === req.data.username )
+  (function(_)
   {
-    ret = actions.placePhrase( game, req.data.username, req.data.pathID, req.data.words, _ );
-    responseData = fillGameUpdateData( game, responseData, _ );
+    var game = retriever.getGameByID( req.data.gameID, _ );
+    var responseData = { success: false, playerInfo: [] };
     
-    responseData.words = ret.words;
-    responseData.success = ret.madness === 0;
-    responseData.placedPhrase = responseData.success ? req.data.words : [];
-  }
-  
-  broadcast( game, "game:update", responseData );
+    if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === req.data.username )
+    {
+      ret = actions.placePhrase( game, req.data.username, req.data.pathID, req.data.words, _ );
+      responseData = fillGameUpdateData( game, responseData, _ );
+      
+      responseData.words = ret.words;
+      responseData.success = ret.madness === 0;
+      responseData.placedPhrase = responseData.success ? req.data.words : [];
+    }
+    
+    broadcast( game, "game:update", responseData );
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "game:move-word", function( req, _ )
+app.io.route( "game:move-word", function( req )
 {
   var start = new Date().getTime(); process.stdout.write( "moving " );
   
-  var game = retriever.getGameByID( req.data.gameID, _ );
-  if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username ){
-    operations.move( game.id, req.data.wordID, req.data.x, req.data.y, req.data.angle, _ );
-  }
+  (function(_)
+  {
+    var game = retriever.getGameByID( req.data.gameID, _ );
+    if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username ){
+      operations.move( game.id, req.data.wordID, req.data.x, req.data.y, req.data.angle, _ );
+    }
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "game:swap-words", function( req, _ )
+app.io.route( "game:swap-words", function( req )
 {
   var start = new Date().getTime(); process.stdout.write("swapping words ");
 
-  var responseData = { success: false, words: [] };
-  var game = retriever.getGameByID( req.data.gameID, _ );
-  
-  if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
+  (function(_)
   {
-    responseData.words = actions.swapWords( game, req.data.username, req.data.words, _ );
+    var responseData = { success: false, words: [] };
+    var game = retriever.getGameByID( req.data.gameID, _ );
     
-    responseData.success = true;
-  }
-  req.io.respond( responseData );
+    if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
+    {
+      responseData.words = actions.swapWords( game, req.data.username, req.data.words, _ );
+      
+      responseData.success = true;
+    }
+    req.io.respond( responseData );
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "end:turn", function( req, _ ) {
-  operations.endTurn( req.data.game, _ );
+app.io.route( "end:turn", function( req )
+{
+  (function(_)
+  {
+    operations.endTurn( req.data.game, _ );
+  })( helper.logError );
 });
 
-app.io.route( "game:resign", function( req, _ )
+app.io.route( "game:resign", function( req )
 {
   var start = new Date().getTime(); process.stdout.write("resigning ");
   
-  var ret;
-  var i = 0;
-  var player;
-  
-  var game = retriever.getGameByID( req.data.gameID, _ );
-  var responseData = { success: false, playerInfo: [] };
-  
-  if( game.data[props.GAME.GAME_OVER] === false )
+  (function(_)
   {
+  
+    var ret;
+    var i = 0;
+    var player;
     
-    player = retriever.getGamePlayerByID( game.id, game.data[props.GAME.USERNAMES][i], _ );
+    var game = retriever.getGameByID( req.data.gameID, _ );
+    var responseData = { success: false, playerInfo: [] };
     
-    player.data[props.PLAYER.RESIGNED] = true;
-    game.data[props.GAME.RESIGNED_COUNT]++;
-    
-    if( game.data[props.GAME.RESIGNED_COUNT] + 1 >= game.data[props.GAME.PLAYER_COUNT] ){
-      game.data[props.GAME.GAME_OVER] = true;
+    if( game.data[props.GAME.GAME_OVER] === false )
+    {
+      
+      player = retriever.getGamePlayerByID( game.id, game.data[props.GAME.USERNAMES][i], _ );
+      
+      player.data[props.PLAYER.RESIGNED] = true;
+      game.data[props.GAME.RESIGNED_COUNT]++;
+      
+      if( game.data[props.GAME.RESIGNED_COUNT] + 1 >= game.data[props.GAME.PLAYER_COUNT] ){
+        game.data[props.GAME.GAME_OVER] = true;
+      }
+      
+      game.save(_);
+      player.save(_);
+      
+      responseData =  fillGameUpdateData( game, responseData, _ );
+      responseData.success = true;
     }
     
-    game.save(_);
-    player.save(_);
-    
-    responseData =  fillGameUpdateData( game, responseData, _ );
-    responseData.success = true;
-  }
-  
-  broadcast( game, "game:update", responseData );
+    broadcast( game, "game:update", responseData );
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "manager:boards", function( req, _ )
+app.io.route( "manager:boards", function( req )
 {
   var start = new Date().getTime(); process.stdout.write( "boardManager:" + req.data.command + " " );
   
-  var responseData = { success:false }
+  (function(_)
+  {
+    var responseData = { success:false }
+    
+    if( req.data.command === "set" ){
+      responseData.id = boardManager.setBoard( req.data.id, req.data.level, req.data.draft, req.data.tiles, req.data.paths, _ );
+      responseData.success = true;
+    }else if( req.data.command === "getAll" ){
+      responseData.boards = boardManager.getBoards( _ );
+      responseData.success = true;
+    }else if( req.data.command === "get" ){
+      responseData.board = boardManager.getBoard( req.data.id, true, _ );
+      responseData.success = true;
+    }else if( req.data.command === "delete" ){
+      responseData = boardManager.deleteBoard( req.data.id, _ );
+    }
+    
+    req.io.respond( responseData );
+  })( helper.logError );
   
-  if( req.data.command === "set" ){
-    responseData.id = boardManager.setBoard( req.data.id, req.data.level, req.data.draft, req.data.tiles, req.data.paths, _ );
-    responseData.success = true;
-  }else if( req.data.command === "getAll" ){
-    responseData.boards = boardManager.getBoards( _ );
-    responseData.success = true;
-  }else if( req.data.command === "get" ){
-    responseData.board = boardManager.getBoard( req.data.id, true, _ );
-    responseData.success = true;
-  }else if( req.data.command === "delete" ){
-    responseData = boardManager.deleteBoard( req.data.id, _ );
-  }
-  
-  req.io.respond( responseData );
-
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "manager:instructions", function( req, _ )
+app.io.route( "manager:instructions", function( req )
 {
   var start = new Date().getTime(); process.stdout.write( "instructionManager:" + req.data.command + " " );
   
-  var responseData = { success:false }
-  
-  if( req.data.command === "set" ){
-    instructionManager.setInstruction( req.data.condition, req.data.shortDescription, req.data.longDescription, req.data.collections, req.data.bonus, req.data.mult, req.data.level, _ );
-    responseData.success = true;
-  }else if( req.data.command === "getAll" ){
-    responseData.instructions = instructionManager.getAllInstructions( _ );
-    responseData.success = true;
-  }else if( req.data.command === "get" ){
-    responseData.instruction = instructionManager.getInstruction( req.data.id, _ );
-    responseData.success = true;
-  }else if( req.data.command === "delete" ){
+  (function(_)
+  {
+    var responseData = { success:false }
     
-  }
-  
-  req.io.respond( responseData );
+    if( req.data.command === "set" ){
+      instructionManager.setInstruction( req.data.condition, req.data.shortDescription, req.data.longDescription, req.data.collections, req.data.bonus, req.data.mult, req.data.level, _ );
+      responseData.success = true;
+    }else if( req.data.command === "getAll" ){
+      responseData.instructions = instructionManager.getAllInstructions( _ );
+      responseData.success = true;
+    }else if( req.data.command === "get" ){
+      responseData.instruction = instructionManager.getInstruction( req.data.id, _ );
+      responseData.success = true;
+    }else if( req.data.command === "delete" ){
+      
+    }
+    
+    req.io.respond( responseData );
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "manager:images", function( req, _ )
+app.io.route( "manager:images", function( req )
 {
   var start = new Date().getTime(); process.stdout.write( "imageManager:" + req.data.command + " " );
   
-  var responseData = { success:false }
-  
-  if( req.data.command === "set" ){
-    imageManager.setImage( req.data.name, req.data.id, req.data.related, _ );
-    responseData.success = true;
-  }else if( req.data.command === "getAll" ){
-    responseData.images = imageManager.getAllImages( _ );
-    responseData.success = true;
-  }else if( req.data.command === "get" ){
-    responseData.image = imageManager.getImage( req.data.name, _ );
-    responseData.success = true;
-  }else if( req.data.command === "delete" ){
+  (function(_)
+  {
+    var responseData = { success:false }
     
-  }
-  
-  req.io.respond( responseData );
+    if( req.data.command === "set" ){
+      imageManager.setImage( req.data.name, req.data.id, req.data.related, _ );
+      responseData.success = true;
+    }else if( req.data.command === "getAll" ){
+      responseData.images = imageManager.getAllImages( _ );
+      responseData.success = true;
+    }else if( req.data.command === "get" ){
+      responseData.image = imageManager.getImage( req.data.name, _ );
+      responseData.success = true;
+    }else if( req.data.command === "delete" ){
+      
+    }
+    
+    req.io.respond( responseData );
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "manager:words", function( req, _ )
+app.io.route( "manager:words", function( req )
 {
   var start = new Date().getTime(); process.stdout.write( "wordManager:" + req.data.command + " " );
   
-  var responseData = { success:false }
-  
-  if( req.data.command === "set" ){
-    wordManager.setWord( req.data.lemma, req.data.classes, req.data.categories, req.data,collections, req.data.versionOf, _ );
-    responseData.success = true;
-  }else if( req.data.command === "getAll" ){
-    responseData.words = wordManager.getAllWords( _ );
-    responseData.success = true;
-  }else if( req.data.command === "get" ){
+  (function(_)
+  {
+    var responseData = { success:false }
     
-  }else if( req.data.command === "delete" ){
+    if( req.data.command === "set" ){
+      wordManager.setWord( req.data.lemma, req.data.classes, req.data.categories, req.data,collections, req.data.versionOf, _ );
+      responseData.success = true;
+    }else if( req.data.command === "getAll" ){
+      responseData.words = wordManager.getAllWords( _ );
+      responseData.success = true;
+    }else if( req.data.command === "get" ){
+      
+    }else if( req.data.command === "delete" ){
+      
+    }
     
-  }
-  
-  req.io.respond( responseData );
+    req.io.respond( responseData );
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
-app.io.route( "friends", function( req, _ )
+app.io.route( "friends", function( req )
 {
   var start = new Date().getTime(); process.stdout.write( "friends:" + req.data.command + " " );
   
-  var responseData = { success:false };
-  
-  try{
-    if( req.data.command === "add" ){
-      friends.addFriend( req.data.username, req.data.friend, _ );
-      responseData.success = true;
-    }else if( req.data.command === "getAll" ){
-      responseData.friends = friends.getFriends( req.data.username, _ );
-      responseData.success = true;
-    }else if( req.data.command === "get" ){
-      responseData.success = true;
-    }else if( req.data.command === "delete" ){
-      responseData.success = friends.deleteFriend( req.data.username, req.data.friendUsername, _ );
-    }else if( req.data.command === "search" ){
-      responseData.users = friends.search( req.data.username, req.data.friendUsername, _ );
-      responseData.success = true;
+  (function(_)
+  {
+    var responseData = { success:false };
+    
+    try{
+      if( req.data.command === "add" ){
+        friends.addFriend( req.data.username, req.data.friend, _ );
+        responseData.success = true;
+      }else if( req.data.command === "getAll" ){
+        responseData.friends = friends.getFriends( req.data.username, _ );
+        responseData.success = true;
+      }else if( req.data.command === "get" ){
+        responseData.success = true;
+      }else if( req.data.command === "delete" ){
+        responseData.success = friends.deleteFriend( req.data.username, req.data.friendUsername, _ );
+      }else if( req.data.command === "search" ){
+        responseData.users = friends.search( req.data.username, req.data.friendUsername, _ );
+        responseData.success = true;
+      }
     }
-  }
-  catch( ex ){
-    console.log( ex );
-  }
-  
-  req.io.respond( responseData );
+    catch( ex ){
+      console.log( ex );
+    }
+    
+    req.io.respond( responseData );
+  })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });

@@ -499,25 +499,6 @@ module.exports =
     return instruction;
   },
   
-  getFriends: function( username, _ )
-  {
-    var friends = [];
-    var user = this.getUserByUsername( username, _ );
-    
-    var query =
-      "START m = node(" + user.id + ") " +
-      "MATCH m -[:" + rels.IS_FRIEND_OF + "]-> friend " +
-      "RETURN friend;";
-    
-    var resultsTemp = db.query(query, {}, _ );
-    
-    for( var i = 0; i < resultsTemp.length; i++ ){
-      friends.push( resultsTemp[i].friend );
-    }
-    
-    return friends;
-  },
-  
   getGameData: function( gameNodeID, _ )
   {
     var gameData = {

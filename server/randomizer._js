@@ -1,11 +1,13 @@
-var loader = require("./loader._js"),
+var loader = require("./loader._js");
 
-  types = require( "./constants/types.js" ),
-  rels = require("./constants/relationships.js"),
-  props = require( "./constants/properties.js" ),
-  consts = require( "./constants/constants.js" ),  
-  
-  retriever = require("./retrievers/retriever._js");
+var types = require( "./constants/types.js" );
+var rels = require("./constants/relationships.js");
+var props = require( "./constants/properties.js" );
+var consts = require( "./constants/constants.js" );
+
+var retriever = require("./retrievers/retriever._js");
+var imageRetriever = require("./retrievers/imageRetriever._js");
+var instructionRetriever = require("./retrievers/instructionRetriever._js");
 
 module.exports =
 {
@@ -45,7 +47,7 @@ module.exports =
   getRandomImage : function( collectionName, _ )
   {
     var randomN = Math.floor( Math.random() *  20 );
-    var image = retriever.getImageByCollectionAndID( collectionName, randomN, _ );
+    var image = imageRetriever.getImageByCollectionAndID( collectionName, randomN, false, _ );
     
     return image;
   },
@@ -53,7 +55,7 @@ module.exports =
   getRandomInstruction : function( _ )
   {
     var randomN = Math.floor( Math.random() *  consts.INSTRUCTION_TOTAL );
-    var instruction = retriever.getInstructionByID( randomN, false, _ );
+    var instruction = instructionRetriever.getInstructionByID( randomN, false, _ );
     
     return instruction;
   },
