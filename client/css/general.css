@@ -27,11 +27,10 @@ html {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
 }
 
-body {
+html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -75,11 +74,13 @@ h5 {
     width: 100%;
     height: 100%;
     background: url('../images/app/background.jpg') no-repeat;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-    -webkit-background-size: cover;
-    background-size: cover;
+    -moz-background-size: 100% 100%;
+    -o-background-size: 100% 100%;
+    -webkit-background-size: 100% 100%;
+    background-size: 100% 100%;
     -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 #splash {
@@ -92,20 +93,26 @@ h5 {
 
 .loader {
     color: #713b00;
-    margin: 6px 8px 4px 8px;
-    display: none;
+    margin: 6px 8px 4px 8px;    
+    opacity: 0;
+    display:none;
     position: relative;
     z-index: 2;
+    -moz-transition: opacity .2s;
+    -o-transition: opacity .2s;
+    -webkit-transition: opacity .2s;
+    transition: opacity .2s;
 }
 
     .loader.active {
-        display: block;
-        visibility: visible;
+        display:block;
+        opacity: 1;
     }
 
-    .loader.page{
-        position:absolute;
-        top:0;right:0;
+    .loader.page {
+        position: fixed;
+        top: 0;
+        right: 0;
     }
 
 .loadingIndicator {
@@ -136,8 +143,8 @@ h5 {
         position: absolute;
         background-image: url('../images/app/logo-small.png');
         top: 0;
-        left:0;
-        right:0;
+        left: 0;
+        right: 0;
         height: 80px;
         margin-top: 10px;
         z-index: 1;
@@ -154,36 +161,54 @@ h5 {
         backface-visibility: hidden;
     }
 
-#login-page .background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: 2em;
+    .logo.loading {
+        top: 100px;
+        height: 200px;
+    }
+
+#login-page {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 900px;
 }
 
-    #login-page .background.logo {
-        background-position: top center;
+    #login-page .background {
+        height: 100%;
+        width: 100%;
+        max-width: 900px;
+        position: fixed;
+        margin: 2em;
+        margin-left: 0;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
     }
 
-    #login-page .background.footer {
-        background: url('../images/app/footer.png') no-repeat;
-        background-position: bottom center;
-        -moz-background-size: 100% auto;
-        -o-background-size: 100% auto;
-        -webkit-background-size: 100% auto;
-        background-size: 100% auto;
-    }
+        #login-page .background.logo {
+            background-position: top center;
+        }
+
+        #login-page .background.footer {
+            background: url('../images/app/footer.png') no-repeat;
+            background-position: bottom center;
+            -moz-background-size: 100% auto;
+            -o-background-size: 100% auto;
+            -webkit-background-size: 100% auto;
+            background-size: 100% auto;
+        }
 
 .palette {
-    top: 100px;
     position: fixed;
     z-index: 99;
-    -moz-transition: top .3s ease-in-out;
-    -o-transition: top .3s ease-in-out;
-    -webkit-transition: top .3s ease-in-out;
-    transition: top .3s ease-in-out;
+    -moz-transition: -moz-transform .3s ease-in-out;
+    -o-transition: -o-transform .3s ease-in-out;
+    -webkit-transition: -webkit-transform .3s ease-in-out;
+    transition: transform .3s ease-in-out;
+    -moz-transform: translateY(100px);
+    -ms-transform: translateY(100px);
+    -o-transform: translateY(100px);
+    -webkit-transform: translateY(100px);
+    transform: translateY(100px);
 }
 
     .palette.left {
@@ -250,7 +275,7 @@ a.small {
 .container.y {
     max-height: 11.8em;
     border: 2px solid #d7bea2;
-    border-radius: 10px;
+    border-radius: 7px;
     overflow-x: hidden;
     overflow-y: auto;
     width: 100%;
@@ -283,6 +308,7 @@ a.small {
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     padding-right: 50px;
+    padding-left: 50px;
 }
 
     .grid.page {
@@ -290,7 +316,7 @@ a.small {
     }
 
     .grid > .container {
-        position:relative;
+        position: relative;
         min-width: 700px;
         width: 100%;
         -moz-box-sizing: border-box;
@@ -305,10 +331,10 @@ a.small {
         -webkit-box-sizing: border-box;
         box-sizing: border-box;
         padding: 10px;
-        vertical-align:top;
+        vertical-align: top;
     }
-    
-    .grid aside + aside{
+
+    .grid aside + aside {
         /*position:absolute;*/
     }
 
@@ -327,9 +353,11 @@ a.small {
 
     .grid ul {
         list-style: none;
+        overflow:hidden;
+        border-radius:5px;
     }
 
-        .grid ul li {
+        .grid li {
             display: block;
             width: 100%;
             height: 1em;
@@ -343,11 +371,12 @@ a.small {
             overflow: hidden;
         }
 
-            .grid ul li:last-child {
+            .grid li:last-child {
                 border-bottom: none;
+                
             }
 
-            .grid ul li.header {
+            .grid li.header {
                 color: white;
                 background-color: #cfa972;
                 padding: .4em;
@@ -355,30 +384,43 @@ a.small {
                 cursor: default;
             }
 
-            .grid ul li:hover:not(.header) {
+            .grid li:hover:not(.header) {
                 background-color: #f1ebe2;
             }
 
-            .grid ul li:active:not(.header), .grid ul li.active:not(.header) {
+            .grid li:active:not(.header), .grid li.active:not(.header) {
                 background-color: #d9cfc0 !important;
                 font-weight: bold;
                 cursor: default;
             }
 
-    .grid input[type="text"] {
+    .grid li.inst {
+        color: gray;
+        height: auto;
+        text-align: center;
+        padding: .3em;
+    }
+
+    .grid .input-box {
+        position: relative;
+    }
+
+    .grid input[type="search"] {
         border: 1px solid #d7bea2;
         background-color: #F9F8F4;
         box-shadow: none;
-        width: 80%;
-        margin-right: 2em !important;
+        width: 100%;
+        padding-right: 2em;
+        -webkit-appearance:none;
+        outline:none;
     }
 
-        .grid input[type="text"] ~ span {
-            position: relative;
-            display: inline-block;
-            width: 1.8em;
-            height: 1.4em;
+        .grid input[type="search"] ~ i {
+            position: absolute;
+            font-size: 1.5em;
+            display: block;
             top: .3em;
+            right: .3em;
             -moz-background-size: 100% 100%;
             -o-background-size: 100% 100%;
             -webkit-background-size: 100% 100%;
@@ -386,26 +428,32 @@ a.small {
             cursor: pointer;
         }
 
-            .grid input[type="text"] ~ span.clear {
-                background-image: url('../images/game/add-friend.png');
-            }
+        .grid input[type="search"] + i + i {
+            right: -1em;
+            font-size: 1em;
+            line-height: 1.5em;
+            z-index: 1;
+            color: #986B31;
+        }
 
-                .grid input[type="text"] ~ span.clear:hover, .grid input[type="text"] ~ span.clear:active {
-                    background-image: url('../images/game/add-friend-active.png');
-                }
+    .grid i.hidden {
+        visibility: hidden;
+        -moz-animation: none;
+        -o-animation: none;
+        -webkit-animation: none;
+        animation: none;
+    }
 
-            .grid input[type="text"] ~ span.find {
-                width: 1.6em;
-                margin-left: -4em;
-                background-image: url('../images/game/find.png');
-            }
-
-                .grid input[type="text"] ~ span.find:hover, .grid input[type="text"] ~ span.find:active {
-                    background-image: url('../images/game/find-active.png');
-                }
+    .grid .message {
+        font-family: Cambria;
+        color: #986B31;
+        font-size: 18px;
+        margin-left: 1em;
+        font-style: italic;
+    }
 
 .scroll {
-    position: relative;
+    /*position: relative;*/
     -webkit-overflow-scrolling: touch;
 }
 
@@ -420,6 +468,15 @@ a.small {
         box-shadow: inset 0 0 6px rgba(0,0,0,.5);
         background-color: #c8b39b;
         width: 5px;
+    }
+
+    .scroll.sm::-webkit-scrollbar {
+        width: 5px;
+        background-color: rgba(192, 157, 108, .1);
+    }
+
+    .scroll.sm::-webkit-scrollbar-thumb {
+        width: 3px;
     }
 
 .pic.woz, .pic.starter {
@@ -437,7 +494,8 @@ a.small {
 .grid .table {
     display: table;
     border-collapse: separate;
-    border-spacing: 1em;
+    border-spacing: .8em;
+    min-width:700px;    
 }
 
     .grid .table.compact {
@@ -469,6 +527,7 @@ a.small {
         background: #f9f8f4;
         width: 22em;
         cursor: pointer;
+        vertical-align:top;
         -moz-transition: .4s box-shadow, .4s border-color, .4s background-color;
         -o-transition: .4s box-shadow, .4s border-color, .4s background-color;
         -webkit-transition: .4s box-shadow, .4s border-color, .4s background-color;
@@ -494,18 +553,33 @@ a.small {
         visibility: visible;
     }
 
+    .game-item .cell .wrapper{
+        position:relative;
+        width:100%;
+    }
+    .game-item .cell .subCell{
+        position:relative;
+        display:inline-block;
+        vertical-align:middle;
+    }
+
     .game-item .cell.left {
         width: 60em;
+        min-width: 400px;
+        vertical-align:middle;
     }
 
     .game-item .cell.right {
-        width: 15em;
+        /*width: 15em;*/
+        width: 160px;
+        min-width: 160px;        
     }
 
     .game-item .pic {
         position: absolute;
-        top: -.75em;
+        top: 0;
         height: 7em;
+        margin-top: -3.5em;
         width: 8em;
         -moz-background-size: auto 100%;
         -o-background-size: auto 100%;
@@ -514,8 +588,9 @@ a.small {
         background-repeat: no-repeat;
     }
 
-        .game-item .pic + div {
+        .game-item .flow {
             margin-left: 9em;
+            /*float:left;*/
         }
 
     .game-item .name {
@@ -551,11 +626,11 @@ a.small {
         font-style: italic;
     }
 
-    .game-item .icons {
+    .game-item .box {
         position: relative;
     }
 
-        .game-item .icons .time {
+        .game-item .box .time {
             border: 1px solid #d7bea2;
             border-radius: 3px;
             box-shadow: 0 0 2px #d7bea2;
@@ -565,7 +640,7 @@ a.small {
             margin-right: 25px;
         }
 
-        .game-item .icons .chat {
+        .game-item .box .chat {
             position: absolute;
             top: -.25em;
             display: inline-block;
@@ -579,17 +654,17 @@ a.small {
             background-size: 100% 100%;
         }
 
-            .game-item .icons .chat > div {
+            .game-item .box .chat > div {
                 padding: .4em 0 0 .8em;
                 font-size: .8em;
             }
 
     .game-item .players {
-        position: absolute;
-        bottom: .5em;
-        left: 0;
+        position:absolute;
+        top:2.5em;
+        left:-.5em;
         line-height: 1em;
-        width: 10.5em;
+        width: 11.5em;        
     }
 
         .game-item .players .player {
@@ -597,6 +672,10 @@ a.small {
             float: left;
             margin-left: 1em;
             width: 8em;
+        }
+
+        .game-item .players > div:only-child{
+            margin-top: 1em;
         }
 
         .game-item .players .score {
@@ -622,7 +701,7 @@ a.small {
     margin: .2em;
     font-family: Cambria;
     font-size: .7em;
-    z-index: 1;
+    z-index: 0;
     cursor: default;
 }
 
@@ -656,3 +735,137 @@ a.small {
     .status-box .bad {
         color: rgb(190, 63, 63);
     }
+
+
+.loader-bar {
+    font-size: 10px;
+    display: inline-block;
+    position: relative;
+    width: 5em;
+    height: 1em;
+    overflow: visible;
+    margin-left: 10em;
+}
+
+    .loader-bar.center {
+        margin: 0 auto;
+    }
+
+    .loader-bar i {
+        display: block;
+        position: absolute;
+        height: 1em;
+        width: 1em;
+        background-color: #986B31;
+        border-radius: 50%;
+        left: -5em;
+        opacity: 0;
+        -moz-animation: 2s slidein infinite linear;
+        -o-animation: 2s slidein infinite linear;
+        -webkit-animation: 2s slidein infinite linear;
+        animation: 2s slidein infinite linear;
+    }
+
+        .loader-bar i:nth-child(2), .loader-bar i.second  {
+            -moz-animation-delay: .3s !important;
+            -o-animation-delay: .3s !important;
+            -webkit-animation-delay: .3s !important;
+            animation-delay: .3s !important;
+        }
+
+        .loader-bar i:nth-child(3), .loader-bar i.third {
+            -moz-animation-delay: .6s !important;
+            -o-animation-delay: .6s !important;
+            -webkit-animation-delay: .6s !important;
+            animation-delay: .6s !important;
+        }
+
+@-webkit-keyframes slidein {
+    from {
+        left: -5em;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 0;
+    }
+
+    35% {
+        opacity: 1;
+        left: 1.5em;
+    }
+
+    65% {
+        opacity: 1;
+        left: 3.5em;
+    }
+
+    90% {
+        opacity: 0;
+    }
+
+    to {
+        left: 10em;
+        opacity: 0;
+    }
+}
+
+@-moz-keyframes slidein {
+    from {
+        left: -5em;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 0;
+    }
+
+    35% {
+        opacity: 1;
+        left: 1.5em;
+    }
+
+    65% {
+        opacity: 1;
+        left: 3.5em;
+    }
+
+    90% {
+        opacity: 0;
+    }
+
+    to {
+        left: 10em;
+        opacity: 0;
+    }
+}
+
+@keyframes slidein {
+    from {
+        left: -5em;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 0;
+    }
+
+    35% {
+        opacity: 1;
+        left: 1.5em;
+    }
+
+    65% {
+        opacity: 1;
+        left: 3.5em;
+    }
+
+    90% {
+        opacity: 0;
+    }
+
+    to {
+        left: 10em;
+        opacity: 0;
+    }
+}

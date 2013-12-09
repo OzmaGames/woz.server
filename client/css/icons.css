@@ -4,6 +4,10 @@
     border-radius: 8px;
 }
 
+    .actions:empty {
+        padding: 0;
+    }
+
     .actions i {
         display: block;
         margin-bottom: 5px;
@@ -13,26 +17,35 @@
             margin-bottom: 0;
         }
 
+    .actions .btn {
+        display: block;
+        border-radius: 3px;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        text-align: center;
+    }
+
 i.action, i.command {
     display: block;
     border-radius: 3px;
     font-size: 40px;
     width: 1em;
     height: 1em;
-    background: url('../images/app/icons.png') no-repeat;
+    background-image: url('../images/app/icons.png');
     cursor: pointer;
-    -moz-background-size: 5em auto;
     -o-background-size: 5em auto;
     -webkit-background-size: 5em auto;
-    background-size: 5em auto;
+    -moz-background-size: 5em auto;
+    background-size: 5em auto; /*firefox shit! need 200px*/
 }
 
 i.action {
     background-color: #faf5ef;
-    -moz-transition: all .5s ease, background-position-x 0, background-position 0;
-    -o-transition: all .5s ease, background-position-x 0, background-position 0;
-    -webkit-transition: all .5s ease, background-position-x 0, background-position 0;
-    transition: all .5s ease, background-position-x 0, background-position 0;
+    -moz-transition: -moz-transform .5s ease;
+    -o-transition: -o-transform .5s ease;
+    -webkit-transition: -webkit-transform .5s ease;
+    transition: transform .5s ease;
 }
 
     i.action:hover:not(.still),
@@ -170,6 +183,19 @@ i.command.close {
         right: 0;
     }
 
+i.command.delete {
+    background-image: url('../images/game/Close_Btn.png');
+    background-position: 0 0 !important;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    -webkit-background-size: cover;
+    background-size: cover;
+}
+
+    i.command.delete:active, i.command.delete:hover {
+        background-position: 0 !important;
+    }
+
 i.sm {
     font-size: 25px;
 }
@@ -178,16 +204,29 @@ i.xsm {
     font-size: 16px;
 }
 
+i.xxsm {
+    font-size: 12px;
+}
+
 i.command.addFriend {
     background-image: url('../images/game/add-friend.png');
     background-position: 0 0 !important;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-    -webkit-background-size: cover;
-    background-size: cover;
+    -moz-background-size: 2em auto;
+    -o-background-size: 2em auto;
+    -webkit-background-size: 2em auto;
+    background-size: 2em auto;
 }
 
     i.command.addFriend:active, i.command.addFriend:hover {
-        background-image: url('../images/game/add-friend-active.png');
+        background-position: -1em 0 !important;
+    }
+
+i.command.find {
+    background-image: url('../images/game/find.png');
+    background-position: 0 0 !important;
+}
+
+    i.command.find:active, i.command.find:hover {
+        background-image: url('../images/game/find-active.png');
         background-position: 0 0 !important;
     }

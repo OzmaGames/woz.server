@@ -35,7 +35,7 @@ module.exports =
     
     var phraseString = "";
     
-    var ret = { madness: -1, score: 0, words: [] };
+    var ret = { madness: -1, score: 0, words: [], path: { id: -1, phrase: [] } };
     var path = retriever.getGamePathByID( game.id, pathID, _);
     
     var wordCount = magnetIDs.length;
@@ -51,6 +51,15 @@ module.exports =
           words.push( mw[i].word );
           magnets.push( mw[i].magnet );
           phraseString += mw[i].word.data[props.WORD.LEMMA];
+          ret.path.phrase.push({
+          id: magnetIDs[j],
+          lemma: mw[i].word.data[props.WORD.LEMMA],
+          points: mw[i].word.data[props.WORD.POINTS],
+          isRelated: mw[i].magnet.data[props.MAGNET.IS_RELATED],
+          x: mw[i].magnet.data[props.MAGNET.X],
+          y: mw[i].magnet.data[props.MAGNET.Y],
+          angle: mw[i].magnet.data[props.MAGNET.ANGLE],
+          });
         }
       }
     }
@@ -64,9 +73,11 @@ module.exports =
         id: game.data[props.GAME.PHRASE_COUNT],
         wordCount: wordCount,
         username: username,
+        pathID: pathID,
         phraseString: phraseString,
       }, _ );
       
+      ret.path.id = phrase.data[props.ID];
       player.createRelationshipTo( phrase, rels.WROTE, {}, _ );
       game.createRelationshipTo( phrase, rels.HAS_PHRASE, {}, _ );
       
@@ -79,7 +90,7 @@ module.exports =
         
         phrase.createRelationshipTo( currentMagnet, rels.HAS_MAGNET, { order : i }, _ );
         currentMagnet.data[props.MAGNET.OWNER] = phrase.data[props.ID];
-        currentMagnet.data[props.MAGNET.TYPE] = types.MAGNET_PHRASE;
+        currentMagnet.data[props.TYPE] = types.MAGNET_PHRASE;
         currentMagnet.save(_);
         
         ret.words.push( adder.addMagnet(

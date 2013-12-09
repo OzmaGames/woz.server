@@ -11,7 +11,7 @@
         var base = this;
 
         base.id = id;
-        base.level = ko.observable(1);
+        base.level = ko.observable(0);
         base.draft = ko.observable(true);
 
         lastID = 0;
@@ -104,6 +104,7 @@
               if (data.success) {
                  var board = data.board;
                  ko.utils.arrayForEach(board.tiles, function (t) {
+                    if (t.id > lastID) lastID = t.id + 1;
                     ctx.tiles.push(new Tile(t.id, t.x * 1, t.y * 1, t.angle));
                  });
 
@@ -125,16 +126,7 @@
         },
 
         compositionComplete: function (view) {
-           $('#menu').appendTo('body');
-           var h = $(window).innerHeight();
 
-           $('.palette:not(.fixed)').each(function (i, el) {
-              var $el = $(el);
-              $el.css('top', (h - $el.outerHeight()) / 2);
-           });
-
-           if ($.support.touch)
-              $('#workspace').touchPunch();
         },
 
         loading: app.loading,
@@ -147,6 +139,7 @@
            ctx.paths.removeAll();
            ctx.tiles.removeAll();
            ctx.words.removeAll();
+
            $('#menu').remove();
         }
      });

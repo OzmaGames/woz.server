@@ -16,14 +16,18 @@ module.exports =
 
   createNode : function( properties, _ )
   {
-  var node;
-  var savedNode;
+    var node;
+    var savedNode;
 
-  try{
-    node = db.createNode( properties );
-    savedNode = node.save(_);
-    }catch( exc ){
-      console.log( exc.message );
+    try
+    {
+      node = db.createNode( properties );
+      savedNode = node.save(_);
+    }
+    catch( ex )
+    {
+      console.log( "error creating node" );
+      console.log( ex.message );
     }
     
     return savedNode;
@@ -93,10 +97,12 @@ module.exports =
     
     for( i = 0; i < game.data[props.GAME.PHRASE_COUNT]; i++ ){
       currentPhrase = gameInfo.phrase[i];
+      
       phraseMagnetInfo = getMagnetObject( gameInfo.magnetPhrase, gameInfo.word, currentPhrase[props.ID] );
       
       for( j = 0; j < pathObjs.length; j++ ){
-        if( pathObjs[j].id == currentPhrase[props.PATH.PATH_ID] ){
+        if( pathObjs[j].id == currentPhrase[props.PHRASE.PATH_ID] )
+        {
           pathObjs[j].phrase = {
             id : currentPhrase[props.ID],
             words : phraseMagnetInfo
@@ -174,10 +180,12 @@ function getMagnetObject( magnets, words, owner ){
   var magnetsLength = magnets.length;
   
   for ( var m = 0; m < magnetsLength; m++ ){
-    if( magnets[m][props.MAGNET.OWNER] == owner ){
+    if( magnets[m][props.MAGNET.OWNER] == owner )
+    {
       var currentMagnet = magnets[m];
       for( var w = 0; w < wordsLength; w++ ){
-        if( words[w][props.WORD.LEMMA] == currentMagnet[props.MAGNET.REPRESENTED_WORD] ){
+        if( words[w][props.WORD.LEMMA] == currentMagnet[props.MAGNET.REPRESENTED_WORD] )
+        {
           magnetInfo.push({
             id: currentMagnet[props.ID],
             angle: currentMagnet[props.MAGNET.ANGLE],

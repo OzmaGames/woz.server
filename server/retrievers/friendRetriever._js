@@ -32,6 +32,26 @@ module.exports =
     return friends;
   },
 
+  searchFriendOfFriend: function( username, fofUsername, _ )
+  {
+    var fofs = [];
+    var user = userRetriever.getUserByUsername( username, _ );
+    
+    var query =
+      "START m = node(" + user.id + ") " +
+      "MATCH m -[:" + rels.IS_FRIEND_OF + "]-> friend -[:" + rels.IS_FRIEND_OF + "]-> fof " +
+      "WHERE fof.username =~ \"" + fofUsername + ".*\" " +
+      "RETURN fof;";
+    
+    var resultsTemp = db.query(query, {}, _ );
+    
+    for( var i = 0; i < resultsTemp.length; i++ ){
+      fofs.push( resultsTemp[i].fof );
+    }
+    
+    return fofs;
+  },
+  
   getRelBetweenFriends: function( username, friendUsername, _ )
   {
     var rel = false;

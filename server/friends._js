@@ -103,7 +103,7 @@ module.exports =
   {
     var i = 0;
     var users = [];
-    var userNodes = retriever.searchUser( targetUsername, _ );
+    var userNodes = userRetriever.searchUser( targetUsername, _ );
     
     for( i = 0; i < userNodes.length; i++ ){
       if( userNodes[i].data.username !== username )
@@ -123,7 +123,7 @@ module.exports =
   {
     var i = 0;
     var fofs = [];
-    var fofNodes = retriever.searchFriendOfFriend( username, targetUsername, _ );
+    var fofNodes = friendRetriever.searchFriendOfFriend( username, targetUsername, _ );
     
     for( i = 0; i < fofNodes.length; i++ ){
       fofs.push({

@@ -1,12 +1,13 @@
 ﻿#game-main {
-    position: relative;
+    position: absolute;
     background-image: url('../images/app/background.jpg');
-    background-position: center center;
     background-repeat: no-repeat;
     -moz-background-size: 100% 100%;
     -o-background-size: 100% 100%;
     -webkit-background-size: 100% 100%;
     background-size: 100% 100%;
+    min-height: 100%;
+    width: 100%;
 }
 
     #game-main canvas {
@@ -15,33 +16,34 @@
         height: 100%;
         margin: 0px;
         top: 0px;
-        z-index: 2;
+        z-index: 1;
     }
 
-    #game-main .logo.loading {
-        top: 100px;
-        height: 200px;
-    }
+hr {
+    margin: 5px;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 15px 2px rgba(152,107,49,.3);
+    background-color: rgba(152,107,49,.3);
+    height: 2px;
+}
 
-    #game-main hr {
+/*#game-main hr {
         border: 0;
         height: 5px;
         position: relative;
-        margin: 5px 0; /* Keep other elements away from pseudo elements*/
+        margin: 5px 0;
     }
 
         #game-main hr:before {
-            top: -0.5em;
-            /*height: 1em;*/
+            top: -0.5em;            
         }
 
         #game-main hr:after {
-            content: '';
-            /*height: 0.5em;*/
             top: 1px;
         }
 
-        #game-main hr:before, hr:after {
+        #game-main hr:before, #game-main hr:after {
             content: '';
             position: absolute;
             width: 100%;
@@ -53,7 +55,7 @@
             background: -o-radial-gradient(center, ellipse cover, rgba(152, 107, 49,0.3) 0%,rgba(152, 107, 49,0) 75%);
             background: -ms-radial-gradient(center, ellipse cover, rgba(152, 107, 49,0.3) 0%,rgba(152, 107, 49,0) 75%);
             background: radial-gradient(ellipse at center, rgba(152, 107, 49,0.3) 0%,rgba(152, 107, 49,0) 75%);
-        }
+        }*/
 
 #players {
     position: absolute;
@@ -105,7 +107,7 @@
         left: 0;
         bottom: 0;
         right: 0;
-        z-index: 99;
+        z-index: 98;
         box-shadow: 5px 5px 10px 0 #976b2c;
         display: none;
     }
@@ -150,11 +152,9 @@
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: 8;
 }
 
 .carry #tiles {
-    z-index: 1;
 }
 
 #tiles .container {
@@ -165,7 +165,7 @@
 
 .tile {
     position: absolute;
-    z-index: 8;
+    z-index: 3;
     font-size: 160px;
     width: 1em;
     height: 1em;
@@ -192,13 +192,17 @@
         top: 50% !important;
         left: 50% !important;
         /*font-size: 320px;*/
-        z-index: 9;
+        z-index: 4;
     }
 
         .tile.active .instruction, .carry .instruction:hover {
-            left: 100px;
-            top: 10px;
+            /*left: 100px;*/
+            /*top: 50%;*/
             opacity: 0;
+            -moz-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .2s ease-in-out;
+            -o-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .2s ease-in-out;
+            -webkit-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .2s ease-in-out;
+            transition: left .5s ease-in-out, top .5s ease-in-out, opacity .2s ease-in-out;
         }
 
         .tile.active .mask {
@@ -214,7 +218,6 @@
 
     .tile .mask {
         position: relative;
-        z-index: 5;
         border-radius: 50%;
         box-shadow: 5px 5px 10px 0 #333;
         border: 5px solid #fff;
@@ -249,99 +252,103 @@
             border-radius: 100%;
         }
 
-    .tile .instruction {
-        font-size: 1em;
-        -moz-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .5s ease-in-out;
-        -o-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .5s ease-in-out;
-        -webkit-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .5s ease-in-out;
-        transition: left .5s ease-in-out, top .5s ease-in-out, opacity .5s ease-in-out;
-    }
+body .instruction {
+    z-index: 3;
+}
 
-        .tile .instruction .help, .instruction .help {
-            position: absolute;
-            top: 12px;
-            right: 0px;
-        }
+.tile .instruction {
+    z-index: 1;
+    font-size: 1em;
+    -moz-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .2s .3s ease-in-out;
+    -o-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .2s .3s ease-in-out;
+    -webkit-transition: left .5s ease-in-out, top .5s ease-in-out, opacity .2s .3s ease-in-out;
+    transition: left .5s ease-in-out, top .5s ease-in-out, opacity .2s .3s ease-in-out;
+}
 
-    .tile .instruction, body .instruction {
-        z-index: 9;
+    .tile .instruction .help, .instruction .help {
         position: absolute;
-        top: -30px;
-        left: 10px;
-        width: 80px;
-        height: 50px;
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 10px 20px 0 20px;
-        border-radius: 50%;
-        box-shadow: 0 0 5px 5px rgba(255, 255, 255, 1);
-        text-align: center;
-        line-height: 100%;
-        font-family: CopseRegular;
-        font-size: medium;
-        color: #296e8b;
-        -webkit-backface-visibility: hidden;
-        -moz-backface-visibility: hidden;
-        backface-visibility: hidden;
-        -webkit-text-shadow: 0px 0px 1px #bad7e4;
-        text-shadow: 0px 0px 1px #bad7e4;
+        top: 12px;
+        right: 0px;
     }
 
-        .tile .instruction .info, body .instruction .info {
-            margin-top: 5px;
-            font-family: GreatVibesRegular;
-            font-weight: bold;
-            font-size: large;
-        }
+.tile .instruction, body .instruction {
+    position: absolute;
+    top: -30px;
+    left: 10px;
+    width: 80px;
+    height: 50px;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px 0 20px;
+    border-radius: 50%;
+    box-shadow: 0 0 5px 5px rgba(255, 255, 255, 1);
+    text-align: center;
+    line-height: 100%;
+    font-family: CopseRegular;
+    font-size: medium;
+    color: #296e8b;
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-text-shadow: 0px 0px 1px #bad7e4;
+    text-shadow: 0px 0px 1px #bad7e4;
+}
 
-    .tile .rest {
-        position: absolute;
-        z-index: 5;
-        right: -30px;
-        top: 0;
-        visibility: hidden;
+    .tile .instruction .info, body .instruction .info {
+        margin-top: 5px;
+        font-family: GreatVibesRegular;
+        font-weight: bold;
+        font-size: large;
     }
 
-    .tile:hover .rest {
-        visibility: visible;
+.tile .rest {
+    position: absolute;
+    z-index: 2;
+    right: -30px;
+    top: 0;
+    visibility: hidden;
+}
+
+.tile:hover .rest {
+    visibility: visible;
+}
+
+.tile .rest .thumbnail {
+    margin-bottom: 3px;
+    border: 3px solid white;
+    border-radius: 100%;
+    width: 40px;
+    height: 40px;
+    -moz-background-size: 100% 100%;
+    -o-background-size: 100% 100%;
+    -webkit-background-size: 100% 100%;
+    background-size: 100% 100%;
+}
+
+    .tile .rest .thumbnail:hover {
+        border-color: orange;
     }
 
-    .tile .rest .thumbnail {
-        margin-bottom: 3px;
-        border: 3px solid white;
-        border-radius: 100%;
-        width: 40px;
-        height: 40px;
-        -moz-background-size: 100% 100%;
-        -o-background-size: 100% 100%;
-        -webkit-background-size: 100% 100%;
-        background-size: 100% 100%;
+    .tile .rest .thumbnail:last-child {
+        margin-bottom: 0;
     }
 
-        .tile .rest .thumbnail:hover {
-            border-color: orange;
-        }
+.tile .control {
+    font-size: 13px;
+    visibility: hidden;
+    position: absolute;
+    top: 50px;
+    left: 0px;
+    width: 60px;
+    height: 70px;
+    z-index: 2;
+    background-color: white;
+    border-radius: 100%;
+    color: #976b2c;
+}
 
-        .tile .rest .thumbnail:last-child {
-            margin-bottom: 0;
-        }
-
-    .tile .control {
-        font-size:13px;
-        visibility: hidden;
-        position: absolute;
-        top: 50px;
-        left: 0px;
-        width: 60px;
-        height: 70px;
-        z-index: 5;
-        background-color: white;
-        border-radius: 100%;
-        color: #976b2c;
-    }
-
-    .tile:hover .control {
-        visibility: visible;
-    }
+.tile:hover .control {
+    visibility: visible;
+}
 
 #tiles.woz .mask {
     background-image: url('../images/tiles/woz.jpg');
@@ -351,15 +358,24 @@
     background-image: url('../images/tiles/nf.jpg');
 }
 
+
 #workspace {
     position: relative;
     width: auto;
     height: 500px;
+    -moz-transition: height .5s ease-in-out;
+    -o-transition: height .5s ease-in-out;
+    -webkit-transition: height .5s ease-in-out;
+    transition: height .5s ease-in-out;
+}
+
+.loading #workspace {
+    height: 0px;
 }
 
 .magnet {
     position: absolute !important;
-    z-index: 4;
+    z-index: 2;
     padding: 2px 4px;
     border: 1px solid #e8e0d3;
     background-color: #fff;
@@ -402,10 +418,12 @@
         border: 1px solid #e8e0d3;
         text-align: center;
         padding-right: 3px;
-        z-index: 2;
+        z-index: 1;
     }
 
     .magnet.drag {
+        /*position: fixed !important;*/
+        z-index: 50;
         -moz-transform: scale(1.1) !important;
         -ms-transform: scale(1.1) !important;
         -o-transform: scale(1.1) !important;
@@ -478,7 +496,7 @@
     position: absolute;
     width: 80px;
     height: 80px;
-    z-index: 5;
+    z-index: 2;
     -moz-transition: left .5s 1s ease, top .5s 1s ease;
     -o-transition: left .5s 1s ease, top .5s 1s ease;
     -webkit-transition: left .5s 1s ease, top .5s 1s ease;

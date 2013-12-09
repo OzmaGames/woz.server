@@ -255,6 +255,13 @@ function broadcastGameObject( game, eventName, jsonObjs )
   }
 }
 
+function broadcastDiff( game, eventName, responseData )
+{
+  for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
+    sockets[ "game" + game.data.id ][ game.data[props.GAME.USERNAMES][i] ].emit( eventName, responseData[ game.data[props.GAME.USERNAMES][i] ] );
+  }
+}
+
 function broadcast( game, eventName, responseData )
 {
   for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
@@ -262,26 +269,27 @@ function broadcast( game, eventName, responseData )
   }
 }
 
-function fillGameUpdateData( game, data, _ )
+function fillGameUpdateData( game, _ )
 {
   var i = 0;
   var player;
-  var responseData = data;
+  var gameUpdateData = { playerInfo: [] };
   
-  responseData.gameOver = game.data[props.GAME.GAME_OVER];
+  gameUpdateData.gameOver = game.data[props.GAME.GAME_OVER];
   
   for( i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
     player = retriever.getGamePlayerByID( game.id, game.data[props.GAME.USERNAMES][i], _ );
-    responseData.playerInfo.push({
+    gameUpdateData.playerInfo.push({
       username: game.data[props.GAME.USERNAMES][i],
       score: player.data[props.PLAYER.SCORE],
-      active: game.data[props.GAME.GAME_OVER] === true ? false :
-      game.data[props.GAME.USERNAMES][i] === game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]],
+      active: game.data[props.GAME.GAME_OVER] === true ?
+        false :
+        game.data[props.GAME.USERNAMES][i] === game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]],
       resigned: player.data[props.PLAYER.RESIGNED]
     });
   }
   
-  return responseData;
+  return gameUpdateData;
 }
 
 //  Randomize array element order in-place using the Fisher-Yates shuffle algorithm.*
@@ -386,6 +394,7 @@ app.io.route( "game:lobby", function( req )
         game = games[i];
         
         responseData.games[i] = {};
+        responseData.games[i].gameID = game.data[props.ID];
         responseData.games[i].lastMod = game.data[props.GAME.LAST_MOD];
         responseData.games[i].startDate = game.data[props.GAME.START_DATE];
         responseData.games[i].collection = game.data[props.GAME.COLLECTION];
@@ -395,8 +404,8 @@ app.io.route( "game:lobby", function( req )
         responseData.games[i].lastPhrase = lastPhrase ? { phrase: lastPhrase.data[props.PHRASE.PHRASE_STRING], username: lastPhrase.data[props.PHRASE.USERNAME], score: lastPhrase.data[props.PHRASE.SCORE]} : {};
         
         players = retriever.getGamePlayers( game.id, _ );
+        responseData.games[i].players = [];
         for( j = 0; j < players.length; j++ ){
-          responseData.games[i].players = [];
           responseData.games[i].players.push({
             username: players[j].data[props.PLAYER.USERNAME],
             score: players[j].data[props.PLAYER.SCORE],
@@ -466,12 +475,27 @@ app.io.route( "game:resume", function( req )
   
   (function(_)
   {
-    var game = retriever.getGameByID( req.data.id, _ );
-    
-    if( game )
+    try
     {
-      var jsonObjs = tools.getGameObject( game, game.data[props.GAME.USERNAMES], _ );
-      broadcastGameObject( game, consts.START_GAME, jsonObjs );
+      var game = retriever.getGameByID( req.data.id, _ );
+      
+      if( !sockets.hasOwnProperty( sockets[ "game" + game.data[props.ID] ] ) )
+      {
+        sockets[ "game" + game.data[props.ID] ] = {};
+      }
+      sockets[ "game" + game.data[props.ID] ][req.data.username] = req.io;
+      
+      if( game )
+      {
+        var jsonObjs = tools.getGameObject( game, game.data[props.GAME.USERNAMES], _ );
+        req.io.respond( jsonObjs[req.data.username] );
+        
+      }
+    }
+    catch( ex )
+    {
+      console.log( "error resuming game " );
+      console.log( ex );
     }
   })( helper.logError );
   var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
@@ -486,20 +510,38 @@ app.io.route( "game:place-phrase", function( req )
   
   (function(_)
   {
+    var gameUpdateData;
+    var responseData = { success: false };
     var game = retriever.getGameByID( req.data.gameID, _ );
-    var responseData = { success: false, playerInfo: [] };
     
     if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === req.data.username )
     {
       ret = actions.placePhrase( game, req.data.username, req.data.pathID, req.data.words, _ );
-      responseData = fillGameUpdateData( game, responseData, _ );
+      gameUpdateData = fillGameUpdateData( game, _ );
       
-      responseData.words = ret.words;
-      responseData.success = ret.madness === 0;
-      responseData.placedPhrase = responseData.success ? req.data.words : [];
+      for( i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
+        responseData[ game.data[props.GAME.USERNAMES][i] ] = {};
+        responseData[ game.data[props.GAME.USERNAMES][i] ].gameOver = gameUpdateData.gameOver;
+        responseData[ game.data[props.GAME.USERNAMES][i] ].playerInfo = gameUpdateData.playerInfo;
+        
+        responseData[ game.data[props.GAME.USERNAMES][i] ].path = ret.path;
+        responseData[ game.data[props.GAME.USERNAMES][i] ].success = ret.madness === 0;
+        
+        if( game.data[props.GAME.USERNAMES][i] === req.data.username )
+        {
+          responseData[ game.data[props.GAME.USERNAMES][i] ].words = ret.words;
+        }
+      }
     }
-    
-    broadcast( game, "game:update", responseData );
+    try
+    {
+      broadcastDiff( game, "game:update", responseData );
+    }
+    catch( ex )
+    {
+      console.log( "error updating" );
+      console.log( ex );
+    }
   })( helper.logError );
   
   var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
@@ -532,7 +574,6 @@ app.io.route( "game:swap-words", function( req )
     if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
     {
       responseData.words = actions.swapWords( game, req.data.username, req.data.words, _ );
-      
       responseData.success = true;
     }
     req.io.respond( responseData );
@@ -578,7 +619,7 @@ app.io.route( "game:resign", function( req )
       game.save(_);
       player.save(_);
       
-      responseData =  fillGameUpdateData( game, responseData, _ );
+      responseData =  fillGameUpdateData( game, _ );
       responseData.success = true;
     }
     
@@ -705,7 +746,7 @@ app.io.route( "friends", function( req )
     
     try{
       if( req.data.command === "add" ){
-        friends.addFriend( req.data.username, req.data.friend, _ );
+        friends.addFriend( req.data.username, req.data.friendUsername, _ );
         responseData.success = true;
       }else if( req.data.command === "getAll" ){
         responseData.friends = friends.getFriends( req.data.username, _ );

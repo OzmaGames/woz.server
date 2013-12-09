@@ -30,14 +30,12 @@ module.exports =
       score += currentWord.data[props.WORD.POINTS];
       
       for( j = 0; j < firstTileImage.data.related.length; j++ ){
-      console.log( firstTileImage.data.related[j] );
         if( firstTileImage.data.related[j] == currentWord.data[props.WORD.LEMMA] ){
           score += consts.RELATED_WORD_BONUS;
         }
       }
       
       for( j = 0; j < secondTileImage.data.related.length; j++ ){
-      
         if( secondTileImage.data.related[j] == currentWord.data[props.WORD.LEMMA] ){
           score += consts.RELATED_WORD_BONUS;
         }
