@@ -598,7 +598,6 @@ app.io.route( "game:resign", function( req )
   {
   
     var ret;
-    var i = 0;
     var player;
     
     var game = retriever.getGameByID( req.data.gameID, _ );
@@ -606,8 +605,7 @@ app.io.route( "game:resign", function( req )
     
     if( game.data[props.GAME.GAME_OVER] === false )
     {
-      
-      player = retriever.getGamePlayerByID( game.id, game.data[props.GAME.USERNAMES][i], _ );
+      player = retriever.getGamePlayerByID( game.id, req.data.username, _ );
       
       player.data[props.PLAYER.RESIGNED] = true;
       game.data[props.GAME.RESIGNED_COUNT]++;
