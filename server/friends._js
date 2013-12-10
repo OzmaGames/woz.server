@@ -15,23 +15,26 @@ module.exports =
   { 
     var ok = false;
     
-    try
+    if( username != friendUsername )
     {
-      var rel = friendRetriever.getRelBetweenFriends( username, friendUsername, _ );
-      
-      if( !rel )
+      try
       {
-        var user = userRetriever.getUserByUsername( username, _ );
-        var friend = userRetriever.getUserByUsername( friendUsername, _ );
+        var rel = friendRetriever.getRelBetweenFriends( username, friendUsername, _ );
         
-        user.createRelationshipTo( friend, rels.IS_FRIEND_OF, {}, _ );
-        ok = true;
+        if( !rel )
+        {
+          var user = userRetriever.getUserByUsername( username, _ );
+          var friend = userRetriever.getUserByUsername( friendUsername, _ );
+          
+          user.createRelationshipTo( friend, rels.IS_FRIEND_OF, {}, _ );
+          ok = true;
+        }
       }
-    }
-    catch( ex )
-    {
-      console.log( "error adding friend" );
-      console.log( ex );
+      catch( ex )
+      {
+        console.log( "error adding friend" );
+        console.log( ex );
+      }
     }
     
     return ok;
@@ -42,20 +45,23 @@ module.exports =
     var rel;
     var ok = false;
     
-    try{
-      rel = friendRetriever.getRelBetweenFriends( username, friendUsername, _ );
-      if( rel )
+    if( username != friendUsername )
+    {
+      try
       {
-        rel.del( _ );
-        ok = true;
+        rel = friendRetriever.getRelBetweenFriends( username, friendUsername, _ );
+        if( rel )
+        {
+          rel.del( _ );
+          ok = true;
+        }
+      }
+      catch(ex)
+      {
+        console.log( "error deleting friend" );
+        console.log( ex );
       }
     }
-    catch(ex)
-    {
-      console.log( "error deleting friend" );
-      console.log( ex );
-    }
-    
     return ok;
   },
   

@@ -79,7 +79,7 @@ module.exports =
           points: word.points,
           classes: word.classes,
           categories: word.categories,
-          collections: words.collections,
+          collections: word.collections,
         }, _ );
         
         wordNode.index( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, word.lemma, _ );

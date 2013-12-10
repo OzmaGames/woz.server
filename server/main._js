@@ -248,24 +248,23 @@ function randomizeBoard( game, collectionName, level, _ )
   return ret;
 }
 
-function broadcastGameObject( game, eventName, jsonObjs )
-{
-  for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
-    sockets[ "game" + game.data.id ][ game.data[props.GAME.USERNAMES][i] ].emit( eventName, jsonObjs[ game.data[props.GAME.USERNAMES][i] ] );
-  }
-}
-
 function broadcastDiff( game, eventName, responseData )
 {
   for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
-    sockets[ "game" + game.data.id ][ game.data[props.GAME.USERNAMES][i] ].emit( eventName, responseData[ game.data[props.GAME.USERNAMES][i] ] );
+    if(  sockets.hasOwnProperty( game.data[props.GAME.USERNAMES][i] ) )
+    {
+      sockets[ game.data[props.GAME.USERNAMES][i] ].emit( eventName, responseData[ game.data[props.GAME.USERNAMES][i] ] );
+    }
   }
 }
 
 function broadcast( game, eventName, responseData )
 {
   for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
-    sockets[ "game" + game.data.id ][ game.data[props.GAME.USERNAMES][i] ].emit( eventName, responseData );
+    if(  sockets.hasOwnProperty( game.data[props.GAME.USERNAMES][i] ) )
+    {
+      sockets[ game.data[props.GAME.USERNAMES][i] ].emit( eventName, responseData );
+    }
   }
 }
 
@@ -387,7 +386,8 @@ app.io.route( "game:lobby", function( req )
     var responseData = { success: false, games: [] }
     var user = userRetriever.getUserByUsername( req.data.username, _ );
     
-    try{
+    try
+    {
       var games = retriever.getUserGames( user.id, true, _ );
       
       for( i = 0; i < games.length; i++ ){
@@ -399,12 +399,12 @@ app.io.route( "game:lobby", function( req )
         responseData.games[i].startDate = game.data[props.GAME.START_DATE];
         responseData.games[i].collection = game.data[props.GAME.COLLECTION];
         
-        lastPhrase = retriever.getGamePhraseByID( game.id, game.data[props.GAME.PHRASE_COUNT] - 1, _ );
-        
+        lastPhrase = retriever.getGamePhraseByID( game.id, game.data[props.GAME.PHRASE_COUNT] - 1, _ );   
         responseData.games[i].lastPhrase = lastPhrase ? { phrase: lastPhrase.data[props.PHRASE.PHRASE_STRING], username: lastPhrase.data[props.PHRASE.USERNAME], score: lastPhrase.data[props.PHRASE.SCORE]} : {};
         
         players = retriever.getGamePlayers( game.id, _ );
         responseData.games[i].players = [];
+        
         for( j = 0; j < players.length; j++ ){
           responseData.games[i].players.push({
             username: players[j].data[props.PLAYER.USERNAME],
@@ -412,10 +412,12 @@ app.io.route( "game:lobby", function( req )
             active: game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === players[j].data[props.PLAYER.USERNAME]
           });
         }
-        
-        responseData.success = true;
       }
-    }catch( ex ){
+      
+      responseData.success = true;
+    }
+    catch( ex )
+    {
       console.log( ex.message );
     }
     
@@ -450,7 +452,7 @@ app.io.route( "game:queue", function( req )
         for( i = 0; i < playerCount; i++ ){
           var user = queue[queueType].pop();
           usernames.push( user[props.USER.USERNAME] );
-          tempSockets[user[props.USER.USERNAME]] = user[props.PLAYER.SOCKET];
+          sockets[ user[props.USER.USERNAME] ] = user[props.PLAYER.SOCKET];
         }
         
         var start2 = new Date().getTime();
@@ -458,11 +460,12 @@ app.io.route( "game:queue", function( req )
         var now2 = new Date().getTime();
         console.log("q: " + ( now2 - start2 ) );
         
-        if( game ){
-          sockets[ "game" + game.data[props.ID] ] = tempSockets;
+        if( game )
+        {
           jsonObjs = tools.getGameObject( game, usernames, _ );
-          broadcastGameObject( game, consts.START_GAME, jsonObjs );
+          broadcastDiff( game, consts.START_GAME, jsonObjs );
         }
+      
       var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
     }
   }
@@ -477,19 +480,14 @@ app.io.route( "game:resume", function( req )
   {
     try
     {
-      var game = retriever.getGameByID( req.data.id, _ );
+      var game = retriever.getGameByID( req.data.id, false, _ );
       
-      if( !sockets.hasOwnProperty( sockets[ "game" + game.data[props.ID] ] ) )
-      {
-        sockets[ "game" + game.data[props.ID] ] = {};
-      }
-      sockets[ "game" + game.data[props.ID] ][req.data.username] = req.io;
+      sockets[ req.data.username ] = req.io;
       
       if( game )
       {
         var jsonObjs = tools.getGameObject( game, game.data[props.GAME.USERNAMES], _ );
         req.io.respond( jsonObjs[req.data.username] );
-        
       }
     }
     catch( ex )
@@ -497,8 +495,10 @@ app.io.route( "game:resume", function( req )
       console.log( "error resuming game " );
       console.log( ex );
     }
-  })( helper.logError );
-  var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
+    
+    var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
+  })
+  ( helper.logError );
 });
 
 app.io.route( "game:place-phrase", function( req )
@@ -512,7 +512,7 @@ app.io.route( "game:place-phrase", function( req )
   {
     var gameUpdateData;
     var responseData = { success: false };
-    var game = retriever.getGameByID( req.data.gameID, _ );
+    var game = retriever.getGameByID( req.data.gameID, false, _ );
     
     if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === req.data.username )
     {
@@ -524,12 +524,15 @@ app.io.route( "game:place-phrase", function( req )
         responseData[ game.data[props.GAME.USERNAMES][i] ].gameOver = gameUpdateData.gameOver;
         responseData[ game.data[props.GAME.USERNAMES][i] ].playerInfo = gameUpdateData.playerInfo;
         
-        responseData[ game.data[props.GAME.USERNAMES][i] ].path = ret.path;
         responseData[ game.data[props.GAME.USERNAMES][i] ].success = ret.madness === 0;
         
         if( game.data[props.GAME.USERNAMES][i] === req.data.username )
         {
           responseData[ game.data[props.GAME.USERNAMES][i] ].words = ret.words;
+        }
+        else
+        {
+          responseData[ game.data[props.GAME.USERNAMES][i] ].path = ret.path;
         }
       }
     }
@@ -548,18 +551,21 @@ app.io.route( "game:place-phrase", function( req )
 });
 
 app.io.route( "game:move-word", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write( "moving " );
-  
+{ 
   (function(_)
   {
-    var game = retriever.getGameByID( req.data.gameID, _ );
-    if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username ){
-      operations.move( game.id, req.data.wordID, req.data.x, req.data.y, req.data.angle, _ );
+    var start = new Date().getTime(); process.stdout.write( "moving " );
+    
+    var game = retriever.getGameByID( req.data.gameID, false, _ );
+    
+    if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
+    {
+      operations.move( game.id, req.data.word.id, req.data.word.x, req.data.word.y, _ );
     }
-  })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+  })
+  ( helper.logError );
 });
 
 app.io.route( "game:swap-words", function( req )
@@ -569,7 +575,7 @@ app.io.route( "game:swap-words", function( req )
   (function(_)
   {
     var responseData = { success: false, words: [] };
-    var game = retriever.getGameByID( req.data.gameID, _ );
+    var game = retriever.getGameByID( req.data.gameID, false, _ );
     
     if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
     {
@@ -587,44 +593,52 @@ app.io.route( "end:turn", function( req )
   (function(_)
   {
     operations.endTurn( req.data.game, _ );
-  })( helper.logError );
+  })
+  ( helper.logError );
 });
 
 app.io.route( "game:resign", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write("resigning ");
-  
+{ 
   (function(_)
   {
-  
+    var start = new Date().getTime(); process.stdout.write("resigning ");
+    
     var ret;
     var player;
-    
-    var game = retriever.getGameByID( req.data.gameID, _ );
     var responseData = { success: false, playerInfo: [] };
     
-    if( game.data[props.GAME.GAME_OVER] === false )
+    if( req.data.hasOwnProperty( "gameID" ) && req.data.hasOwnProperty( "username" ) )
     {
-      player = retriever.getGamePlayerByID( game.id, req.data.username, _ );
+      sockets[ req.data.username ] = req.io;
+      var game = retriever.getGameByID( req.data.gameID, false, _ );
       
-      player.data[props.PLAYER.RESIGNED] = true;
-      game.data[props.GAME.RESIGNED_COUNT]++;
-      
-      if( game.data[props.GAME.RESIGNED_COUNT] + 1 >= game.data[props.GAME.PLAYER_COUNT] ){
-        game.data[props.GAME.GAME_OVER] = true;
+      if( game && game.data[props.GAME.GAME_OVER] === false )
+      {
+        player = retriever.getGamePlayerByID( game.id, req.data.username, _ );
+        
+        if( player )
+        {
+          player.data[props.PLAYER.RESIGNED] = true;
+          game.data[props.GAME.RESIGNED_COUNT]++;
+          
+          if( game.data[props.GAME.RESIGNED_COUNT] + 1 >= game.data[props.GAME.PLAYER_COUNT] ){
+            game.data[props.GAME.GAME_OVER] = true;
+          }
+          
+          game.save(_);
+          player.save(_);
+          
+          responseData = fillGameUpdateData( game, _ );
+          responseData.success = true;
+        }
       }
       
-      game.save(_);
-      player.save(_);
-      
-      responseData =  fillGameUpdateData( game, _ );
-      responseData.success = true;
+      broadcast( game, "game:update", responseData );
     }
     
-    broadcast( game, "game:update", responseData );
-  })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+  })
+  ( helper.logError ); 
 });
 
 app.io.route( "manager:boards", function( req )
@@ -717,7 +731,7 @@ app.io.route( "manager:words", function( req )
     var responseData = { success:false }
     
     if( req.data.command === "set" ){
-      wordManager.setWord( req.data.lemma, req.data.classes, req.data.categories, req.data,collections, req.data.versionOf, _ );
+      wordManager.setWord( req.data.lemma, req.data.classes, req.data.categories, req.data.collections, req.data.versionOf, _ );
       responseData.success = true;
     }else if( req.data.command === "getAll" ){
       responseData.words = wordManager.getAllWords( _ );
@@ -742,10 +756,10 @@ app.io.route( "friends", function( req )
   {
     var responseData = { success:false };
     
-    try{
+    try
+    {
       if( req.data.command === "add" ){
-        friends.addFriend( req.data.username, req.data.friendUsername, _ );
-        responseData.success = true;
+        responseData.success = friends.addFriend( req.data.username, req.data.friendUsername, _ );
       }else if( req.data.command === "getAll" ){
         responseData.friends = friends.getFriends( req.data.username, _ );
         responseData.success = true;
@@ -758,7 +772,8 @@ app.io.route( "friends", function( req )
         responseData.success = true;
       }
     }
-    catch( ex ){
+    catch( ex )
+    {
       console.log( ex );
     }
     

@@ -1,13 +1,15 @@
-var neo4j = require("neo4j"),
-  randomizer = require("./randomizer._js"),
+var neo4j = require("neo4j");
+
+var helper = require("./helper.js");
+var randomizer = require("./randomizer._js");
+
+var types = require( "./constants/types.js" );
+var rels = require("./constants/relationships.js");
+var props = require( "./constants/properties.js" );
+var consts = require( "./constants/constants.js" );
+var environment = require("./constants/environment.js");
   
-  types = require( "./constants/types.js" ),
-  rels = require("./constants/relationships.js"),
-  props = require( "./constants/properties.js" ),
-  consts = require( "./constants/constants.js" ),
-  environment = require("./constants/environment.js"),
-  
-  retriever = require("./retrievers/retriever._js");
+var retriever = require("./retrievers/retriever._js");
   
 var db = new neo4j.GraphDatabase(environment.DB_URL);
 
@@ -94,6 +96,8 @@ module.exports =
         cw:  currentPath[props.PATH.CW]
       });
     }
+    
+    gameInfo.magnetPhrase.sort( helper.compareOrder );
     
     for( i = 0; i < game.data[props.GAME.PHRASE_COUNT]; i++ ){
       currentPhrase = gameInfo.phrase[i];

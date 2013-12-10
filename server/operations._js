@@ -11,13 +11,12 @@ var sup = require("./supporter._js"),
 
 module.exports =
 {
-  move: function( gameNodeID, magnetID, x, y, angle, _ )
+  move: function( gameNodeID, magnetID, x, y, _ )
   {
-    var magnet = retriever.getGameMagnetByID( gameNodeID, magnetID, _ );
+    var magnet = retriever.getGameMagnetByID( gameNodeID, magnetID, false, _ );
     
     magnet.data[props.MAGNET.X] = x;
     magnet.data[props.MAGNET.Y] = y;
-    magnet.data[props.MAGNET.ANGLE] = angle;
     
     magnet.save(_);
   },

@@ -14,12 +14,23 @@ var db = new neo4j.GraphDatabase(environment.DB_URL);
 module.exports =
 {
   
-  getCountNode: function(_){
+  getCountNode: function( _ )
+  {
     return db.getNodeById( 1, _ );
   },
   
-  getGameByID: function( id, _ ){
-    return db.getIndexedNodes( indexes.GAME_INDEX, props.GAME.ID, id, _ )[0];
+  getGameByID: function( id, pretty, _ )
+  {
+    var game = false;
+    
+    var tempResults = db.getIndexedNodes( indexes.GAME_INDEX, props.GAME.ID, id, _ );
+    
+    if( tempResults && tempResults.length > 0 )
+    {
+      game = pretty ? tempResults[0].data : tempResults[0];
+    }
+    
+    return game;
   },
 
   getUserGames: function( userNodeID, ongoing, _ )
@@ -32,10 +43,10 @@ module.exports =
       "WHERE game." + props.GAME.GAME_OVER + " = " + !ongoing + " " +
       "RETURN game;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    for( var i = 0; i < resultsTemp.length; i++ ){
-      games.push( resultsTemp[i].game );
+    for( var i = 0; i < tempResults.length; i++ ){
+      games.push( tempResults[i].game );
     }
     
     return games;
@@ -99,10 +110,10 @@ module.exports =
       "RETURN phrase;"
       
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    for( i = 0; i < resultsTemp.length; i++ ){
-      phrases.push( resultsTemp[i].phrase );
+    for( i = 0; i < tempResults.length; i++ ){
+      phrases.push( tempResults[i].phrase );
     }
     
     return phrases;
@@ -119,12 +130,12 @@ module.exports =
       "RETURN phrase;"
       
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    if( resultsTemp.length == 0 ){
+    if( tempResults.length == 0 ){
       phrase = false;
     }else{
-      phrase = resultsTemp[0].phrase;
+      phrase = tempResults[0].phrase;
     }
     
     return phrase;
@@ -139,10 +150,10 @@ module.exports =
       "MATCH m -[:" + rels.BEING_PLAYED_BY + "]-> player " +
       "RETURN player;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    for( i = 0; i < resultsTemp.length; i++ ){
-      players.push( resultsTemp[i].player );
+    for( i = 0; i < tempResults.length; i++ ){
+      players.push( tempResults[i].player );
     }
     
     return players;
@@ -151,14 +162,20 @@ module.exports =
   //Gets the player instance of the player with the given username for a given game
   getGamePlayerByID: function( gameNodeID, username, _ )
   {
-  
+    var player = false;
+    
     var query =
       "START m = node(" + gameNodeID + ") " +
       "MATCH m -[:" + rels.BEING_PLAYED_BY + "]-> player " +
       "WHERE player." + props.PLAYER.USERNAME + " = \'" + username + "\' " +
       "RETURN player;";
     
-    var player = db.query(query, {}, _ )[0].player;
+    var tempResults = db.query(query, {}, _ );
+    
+    if( tempResults && tempResults.length > 0 )
+    {
+      player = db.query(query, {}, _ )[0].player;
+    }
     
     return player;
   },
@@ -188,10 +205,10 @@ module.exports =
       "WHERE type(r) = \"" + rels.STARTS_WITH + "\" OR type(r) = \"" + rels.ENDS_WITH + "\" " +
       "RETURN tile;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    for( i = 0; i < resultsTemp.length; i++ ){
-      tiles.push( resultsTemp[i].tile);
+    for( i = 0; i < tempResults.length; i++ ){
+      tiles.push( tempResults[i].tile);
     }
     
     return tiles;
@@ -240,12 +257,12 @@ module.exports =
     }
       query += " ) RETURN tile;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    var a = resultsTemp.length;
+    var a = tempResults.length;
     while( a-- )
     {
-      tiles.push( resultsTemp[a].tile );
+      tiles.push( tempResults[a].tile );
     }
     
     return tiles;
@@ -260,12 +277,12 @@ module.exports =
     "MATCH m -[:hasTile]-> tile " +
     "RETURN tile;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    var a = resultsTemp.length;
+    var a = tempResults.length;
     while( a-- )
     {
-      tiles.push( resultsTemp[a].tile );
+      tiles.push( tempResults[a].tile );
     }
     
     return tiles;
@@ -280,11 +297,11 @@ module.exports =
     "MATCH m -[:" + rels.HAS_TILE + "]-> t -[:" + rels.REPRESENTS_IMAGE + "]-> image " +
     "RETURN image;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    var a = resultsTemp.length;
+    var a = tempResults.length;
     while( a-- ){
-      images.push( resultsTemp[a].image );
+      images.push( tempResults[a].image );
     }
     
     return images;
@@ -299,40 +316,50 @@ module.exports =
       "MATCH m -[:" + rels.HAS_TILE + "]-> t -[:" + rels.REPRESENTS_INSTRUCTION + "]-> instruction " +
       "RETURN instruction;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    var a = resultsTemp.length;
+    var a = tempResults.length;
     while( a-- ){
-      instructions.push( resultsTemp[a].instruction );
+      instructions.push( tempResults[a].instruction );
     }
     
     return instructions;
   },
   
-  getGameMagnetByID: function( gameNodeID, magnetID, _ ){
+  getGameMagnetByID: function( gameNodeID, magnetID, pretty, _ )
+  {
+    var magnet = false;
+    
     var query =
       "START m = node(" + gameNodeID + ") " +
-      "MATCH m -[:" + indexes.BEING_PLAYED_BY + "]-> player -[:" + indexes.HAS_MAGNET + "]-> magnet " +
+      "MATCH m -[:" + rels.BEING_PLAYED_BY + "]-> player -[:" + rels.HAS_MAGNET + "]-> magnet " +
       "WHERE magnet.id = " + magnetID + " " +
       "RETURN magnet;";
     
-    return db.query(query, {}, _ )[0].magnet;
+    var tempResults = db.query(query, {}, _ );
+    
+    if( tempResults && tempResults.length > 0 )
+    {
+      magnet = pretty ? tempResults[0].magnet.data : tempResults[0].magnet;
+    }
+    
+    return magnet;
   },
 
   getWordRelatedImages: function( gameNodeID, wordNodeID, _ ){
     var i = 0;
     var images = [];
-    var resultsTemp;
+    var tempResults;
     
     var query =
       "START game = node(" + gameNodeID + "), word = node(" + wordNodeID + ") " +
       "MATCH game -[:hasTile]-> tile -[:" + rels.REPRESENTS_IMAGE + "]-> image -[:" + rels.RELATES_TO + "]-> word " +
       "RETURN image;";
     
-    resultsTemp = db.query(query, {}, _ );
+    tempResults = db.query(query, {}, _ );
     
-    for( i = 0; i < resultsTemp.length; i++ ){
-      images.push( resultsTemp[i].tile );
+    for( i = 0; i < tempResults.length; i++ ){
+      images.push( tempResults[i].tile );
     }
     
     return images;
@@ -341,7 +368,7 @@ module.exports =
 //   getWordRelatedImages: function( gameNodeID, wordID, _ ){
 //     var i = 0;
 //     var images = [];
-//     var resultsTemp;
+//     var tempResults;
 //     
 //     var query =
 //       "START game = node(" + gameNodeID + ") " +
@@ -349,10 +376,10 @@ module.exports =
 //       "WHERE word.id = " + wordID + " " +
 //       "RETURN image;";
 //     
-//     resultsTemp = db.query(query, {}, _ );
+//     tempResults = db.query(query, {}, _ );
 //     
-//     for( i = 0; i < resultsTemp.length; i++ ){
-//       images.push( resultsTemp[i].tile );
+//     for( i = 0; i < tempResults.length; i++ ){
+//       images.push( tempResults[i].tile );
 //     }
 //     
 //     return images;
@@ -366,11 +393,11 @@ module.exports =
       "MATCH m -[:" + rels.HAS_MAGNET + "]-> magnet " +
       "RETURN distinct magnet;";
     
-    var resultsTemp = db.query( query, {}, _ );
+    var tempResults = db.query( query, {}, _ );
     
-    var a = resultsTemp.length;
+    var a = tempResults.length;
     while( a-- ){
-      magnets.push( resultsTemp[a].magnet );
+      magnets.push( tempResults[a].magnet );
     }
     
     return magnets;
@@ -393,11 +420,11 @@ module.exports =
     }
     query += " RETURN magnet;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
 
-    var b = resultsTemp.length;
+    var b = tempResults.length;
     while( b-- ){
-      results.push( resultsTemp[b].magnet );
+      results.push( tempResults[b].magnet );
     }
     
     return results;
@@ -422,10 +449,10 @@ module.exports =
       }
       query += " ) RETURN distinct magnet, word;";
       
-      var resultsTemp = db.query(query, {}, _ );
+      var tempResults = db.query(query, {}, _ );
       
-      for( i = 0; i < resultsTemp.length; i++ ){
-        mw.push({ magnet: resultsTemp[i].magnet, word: resultsTemp[i].word });
+      for( i = 0; i < tempResults.length; i++ ){
+        mw.push({ magnet: tempResults[i].magnet, word: tempResults[i].word });
       }
     }
     return mw;
@@ -449,10 +476,10 @@ module.exports =
     }
     query += " ) RETURN word;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    for( i = 0; i < resultsTemp.length; i++ ){
-      words.push( resultsTemp[a].word );
+    for( i = 0; i < tempResults.length; i++ ){
+      words.push( tempResults[a].word );
     }
     
     return words;
@@ -475,11 +502,11 @@ module.exports =
     }
     query += " ) RETURN tile;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    var a = resultsTemp.length;
+    var a = tempResults.length;
     while( a-- ){
-      tiles.push( resultsTemp[a].tile );
+      tiles.push( tempResults[a].tile );
     }
     
     return tiles;
@@ -564,10 +591,10 @@ module.exports =
   getWordsByClass: function( className, _ )
   {
     var words = [];
-    var resultsTemp = db.queryNodeIndex( className + "ClassIndex", "id: (*)" , _ );
+    var tempResults = db.queryNodeIndex( className + "ClassIndex", "id: (*)" , _ );
     
-    for( var i = 0; i < resultsTemp.length; i++ ){
-      words.push( resultsTemp[i] );
+    for( var i = 0; i < tempResults.length; i++ ){
+      words.push( tempResults[i] );
     }
     
     return words;
@@ -577,10 +604,10 @@ module.exports =
   {
     var words = [];
     
-    var resultsTemp = db.queryNodeIndex( indexes.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
+    var tempResults = db.queryNodeIndex( indexes.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
     
-    for( var i = 0; i < resultsTemp.length; i++ ){
-      words.push( pretty ? resultsTemp[i].data : resultsTemp[i] );
+    for( var i = 0; i < tempResults.length; i++ ){
+      words.push( pretty ? tempResults[i].data : tempResults[i] );
     }
     
     return words;
@@ -590,10 +617,10 @@ module.exports =
   {
   var i = 0;
     var boards = [];
-    var resultsTemp = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
+    var tempResults = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
     
-    for( i = 0; i < resultsTemp.length; i++ ){
-      boards.push( pretty ? resultsTemp[i].data : resultsTemp[i] );
+    for( i = 0; i < tempResults.length; i++ ){
+      boards.push( pretty ? tempResults[i].data : tempResults[i] );
     }
     
     return boards;
@@ -603,11 +630,11 @@ module.exports =
   {
   var i = 0;
     var boards = [];
-    var resultsTemp = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
+    var tempResults = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
     
-    for( i = 0; i < resultsTemp.length; i++ ){
-      if( resultsTemp[i].data.draft === false ){
-        boards.push( pretty ? resultsTemp[i].data : resultsTemp[i] );
+    for( i = 0; i < tempResults.length; i++ ){
+      if( tempResults[i].data.draft === false ){
+        boards.push( pretty ? tempResults[i].data : tempResults[i] );
       }
     }
     
@@ -618,11 +645,11 @@ module.exports =
   {
   var i = 0;
     var boards = [];
-    var resultsTemp = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
+    var tempResults = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
     
-    for( i = 0; i < resultsTemp.length; i++ ){
-      if( resultsTemp[i].data.draft == false && resultsTemp[i].data.level === level ){
-        boards.push( pretty ? resultsTemp[i].data : resultsTemp[i] );
+    for( i = 0; i < tempResults.length; i++ ){
+      if( tempResults[i].data.draft == false && tempResults[i].data.level === level ){
+        boards.push( pretty ? tempResults[i].data : tempResults[i] );
       }
     }
     
@@ -655,10 +682,10 @@ module.exports =
       "MATCH m -[:" + rels.HAS_PATH + "]-> path " +
       "RETURN path;";
 
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
 
-    for( var i = 0; i < resultsTemp.length; i++ ){
-      paths.push( pretty ? resultsTemp[i].path.data : resultsTemp[i].path );
+    for( var i = 0; i < tempResults.length; i++ ){
+      paths.push( pretty ? tempResults[i].path.data : tempResults[i].path );
     }
     
     return paths;
@@ -673,10 +700,10 @@ module.exports =
       "MATCH m -[:" + rels.HAS_TILE + "]-> tile " +
       "RETURN tile;";
     
-    var resultsTemp = db.query(query, {}, _ );
+    var tempResults = db.query(query, {}, _ );
     
-    for( var i = 0; i < resultsTemp.length; i++ ){
-      tiles.push( pretty ? resultsTemp[i].tile.data : resultsTemp[i].tile );
+    for( var i = 0; i < tempResults.length; i++ ){
+      tiles.push( pretty ? tempResults[i].tile.data : tempResults[i].tile );
     }
     
     return tiles;
@@ -698,12 +725,12 @@ module.exports =
       "MATCH m -[:" + relationshipType + "]-> result " +
       "RETURN result;";
       
-      var resultsTemp = db.query(query, {}, _ );
+      var tempResults = db.query(query, {}, _ );
       
-      var a = resultsTemp.length;
+      var a = tempResults.length;
       while( a-- )
       {
-        results.push( resultsTemp[a].result );
+        results.push( tempResults[a].result );
       }
     }
     

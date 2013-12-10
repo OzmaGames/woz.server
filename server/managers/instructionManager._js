@@ -23,7 +23,7 @@ module.exports =
 
   getAllInstructions: function ( _ )
   {
-    var instructions = retriever.getAllInstructions( true, _ );
+    var instructions = instructionRetriever.getAllInstructions( true, _ );
     
     return instructions;
   },

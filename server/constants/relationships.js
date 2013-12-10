@@ -22,10 +22,5 @@ module.exports =
   HAS_TILE : "hasTile",
   HAS_PATH : "hasPath",
   HAS_PHRASE : "hasPhrase",
-  HAS_MAGNET : "hasMagnet",
-  
-  CONNECTED_TO: "connectedTo",
-  REPRESENTED_WORD: "representedWord",
-  REPRESENTED_IMAGE: "representedImage",
-  REPRESENTED_INSTRUCTION: "representedInstruction",
+  HAS_MAGNET : "hasMagnet"
 };

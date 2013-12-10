@@ -52,13 +52,13 @@ module.exports =
           magnets.push( mw[i].magnet );
           phraseString += mw[i].word.data[props.WORD.LEMMA];
           ret.path.phrase.push({
-          id: magnetIDs[j],
-          lemma: mw[i].word.data[props.WORD.LEMMA],
-          points: mw[i].word.data[props.WORD.POINTS],
-          isRelated: mw[i].magnet.data[props.MAGNET.IS_RELATED],
-          x: mw[i].magnet.data[props.MAGNET.X],
-          y: mw[i].magnet.data[props.MAGNET.Y],
-          angle: mw[i].magnet.data[props.MAGNET.ANGLE],
+            id: magnetIDs[j],
+            lemma: mw[i].word.data[props.WORD.LEMMA],
+            points: mw[i].word.data[props.WORD.POINTS],
+            isRelated: mw[i].magnet.data[props.MAGNET.IS_RELATED],
+            x: mw[i].magnet.data[props.MAGNET.X],
+            y: mw[i].magnet.data[props.MAGNET.Y],
+            angle: mw[i].magnet.data[props.MAGNET.ANGLE],
           });
         }
       }
@@ -77,7 +77,7 @@ module.exports =
         phraseString: phraseString,
       }, _ );
       
-      ret.path.id = phrase.data[props.ID];
+      ret.path.id = pathID;
       player.createRelationshipTo( phrase, rels.WROTE, {}, _ );
       game.createRelationshipTo( phrase, rels.HAS_PHRASE, {}, _ );
       
@@ -91,6 +91,7 @@ module.exports =
         phrase.createRelationshipTo( currentMagnet, rels.HAS_MAGNET, { order : i }, _ );
         currentMagnet.data[props.MAGNET.OWNER] = phrase.data[props.ID];
         currentMagnet.data[props.TYPE] = types.MAGNET_PHRASE;
+        currentMagnet.data[props.MAGNET.ORDER] = i;
         currentMagnet.save(_);
         
         ret.words.push( adder.addMagnet(

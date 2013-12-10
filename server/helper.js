@@ -8,5 +8,10 @@ module.exports =
     {
       console.error( err );
     }
+  },
+  
+  compareOrder: function( a, b )
+  {
+    return a.order > b.order;
   }
 };

@@ -58,6 +58,7 @@ module.exports =
     ANGLE: "angle",
     OWNER: "owner",
     CLASS: "class",
+    ORDER: "order",
     IS_RELATED: "isRelated",
     COLLECTION: "collection",
     REPRESENTED_WORD: "representedWord"
@@ -89,7 +90,8 @@ module.exports =
     POINTS: "points",
     CLASSES: "classes",
     VERSION_OF: "versionOf",
-    CATEGORIES: "categories"
+    CATEGORIES: "categories",
+    COLLECTIONS: "collections",
   },
   
   IMAGE: {
