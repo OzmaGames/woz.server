@@ -20,7 +20,7 @@ module.exports =
   {
     var node;
     var savedNode;
-
+    
     try
     {
       node = db.createNode( properties );
@@ -62,7 +62,33 @@ module.exports =
     
     countNode.save(_);
     
+    consts.INSTRUCTION_COUNT++;
+    
     return newInstructionID;
+  },
+  
+  getGameUpdateData: function( game, _ )
+  {
+    var i = 0;
+    var player;
+    var gameUpdateData = { players: [] };
+    
+    gameUpdateData.gameID = game.data[props.ID];
+    gameUpdateData.over = game.data[props.GAME.OVER];
+    
+    for( i = 0; i < game.data[props.GAME.USERNAMES].length; i++ ){
+      player = retriever.getGamePlayerByID( game.id, game.data[props.GAME.USERNAMES][i], _ );
+      gameUpdateData.players.push({
+        username: game.data[props.GAME.USERNAMES][i],
+        score: player.data[props.PLAYER.SCORE],
+        active: game.data[props.GAME.OVER] === true ?
+          false :
+          game.data[props.GAME.USERNAMES][i] === game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]],
+        resigned: player.data[props.PLAYER.RESIGNED]
+      });
+    }
+    
+    return gameUpdateData;
   },
   
   getGameObject: function( game, usernames, _ )
@@ -97,12 +123,12 @@ module.exports =
       });
     }
     
-    gameInfo.magnetPhrase.sort( helper.compareOrder );
+    gameInfo.magnetPhrase.sort( helper.compareMagnetOrder );
     
     for( i = 0; i < game.data[props.GAME.PHRASE_COUNT]; i++ ){
       currentPhrase = gameInfo.phrase[i];
       
-      phraseMagnetInfo = getMagnetObject( gameInfo.magnetPhrase, gameInfo.word, currentPhrase[props.ID] );
+      phraseMagnetInfo = getMagnetObject( gameInfo.magnetPhrase, currentPhrase[props.ID] );
       
       for( j = 0; j < pathObjs.length; j++ ){
         if( pathObjs[j].id == currentPhrase[props.PHRASE.PATH_ID] )
@@ -146,11 +172,11 @@ module.exports =
       });
     }
     
-    for( i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
+    for( i = 0; i < game.data[props.GAME.USERNAMES].length; i++ ){
       playerObjs = [];
       scopeUsername = usernames[i];
       
-      for ( j = 0; j < game.data[props.GAME.PLAYER_COUNT]; j++ ) {
+      for ( j = 0; j < game.data[props.GAME.USERNAMES].length; j++ ) {
         playerMagnetInfo = [];
         currentPlayer = gameInfo[types.PLAYER][j];
         
@@ -163,45 +189,41 @@ module.exports =
       
       gameObjs[scopeUsername] = {
         id: game.data[props.ID],
-        collection: { name: "woz", size: 20 },
+        playerCount: game.data[props.GAME.PLAYER_COUNT],
+        actionDone: game.data[props.GAME.ACTION_DONE],
+        over: game.data[props.GAME.OVER],
+        
+        collection: { shortName: "woz", longName: "Words Of Oz", size: 20 },
+        words: getMagnetObject( gameInfo.magnetPlayer, scopeUsername ),
         players: playerObjs,
-        gameOver: game.data[props.GAME.GAME_OVER],
         tiles: tileObjs,
         paths: pathObjs,
-        words: getMagnetObject( gameInfo.magnetPlayer, gameInfo.word, scopeUsername )
       };
-      
-//       console.log( gameObjs[scopeUsername] )
     }
     
     return gameObjs;
   }
 };
 
-function getMagnetObject( magnets, words, owner ){
+function getMagnetObject( mw, owner )
+{
   var magnetInfo = [];
-  var wordsLength = words.length;
-  var magnetsLength = magnets.length;
   
-  for ( var m = 0; m < magnetsLength; m++ ){
-    if( magnets[m][props.MAGNET.OWNER] == owner )
+  for ( var a = 0; a < mw.length; a++ ){
+    if( mw[a].magnet[props.MAGNET.OWNER] == owner )
     {
-      var currentMagnet = magnets[m];
-      for( var w = 0; w < wordsLength; w++ ){
-        if( words[w][props.WORD.LEMMA] == currentMagnet[props.MAGNET.REPRESENTED_WORD] )
-        {
-          magnetInfo.push({
-            id: currentMagnet[props.ID],
-            angle: currentMagnet[props.MAGNET.ANGLE],
-            x: currentMagnet[props.MAGNET.X],
-            y: currentMagnet[props.MAGNET.Y],
-            isRelated: currentMagnet[props.MAGNET.IS_RELATED],
-            lemma: words[w][props.WORD.LEMMA],
-            points: words[w][props.WORD.POINTS]
-          });
-          break;
-        }
-      }
+      var currentMagnet = mw[a].magnet;
+      var currentWord = mw[a].word;
+      
+      magnetInfo.push({
+        id: currentMagnet[props.ID],
+        angle: currentMagnet[props.MAGNET.ANGLE],
+        x: currentMagnet[props.MAGNET.X],
+        y: currentMagnet[props.MAGNET.Y],
+        isRelated: currentMagnet[props.MAGNET.IS_RELATED],
+        lemma: currentWord[props.WORD.LEMMA],
+        points: currentWord[props.WORD.POINTS]
+      });
     }
   }
   

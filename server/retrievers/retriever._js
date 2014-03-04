@@ -40,7 +40,7 @@ module.exports =
     var query =
       "START m = node(" + userNodeID + ") " +
       "MATCH m -[:" + rels.PLAYS + "]-> game " +
-      "WHERE game." + props.GAME.GAME_OVER + " = " + !ongoing + " " +
+      "WHERE game." + props.GAME.OVER + " = " + !ongoing + " " +
       "RETURN game;";
     
     var tempResults = db.query(query, {}, _ );
@@ -52,6 +52,40 @@ module.exports =
     return games;
   },
   
+  getUserNonResignedGames: function( userNodeID, ongoing, _ )
+  {
+    var games = [];
+    
+    var query =
+      "START m = node(" + userNodeID + ") " +
+      "MATCH m -[:" + rels.PLAYS + "]-> game " +
+      "WHERE game." + props.GAME.OVER + " = " + !ongoing + " AND game." + props.GAME.RESIGNED_COUNT + " = 0 " +
+      "RETURN game;";
+    
+    var tempResults = db.query(query, {}, _ );
+    
+    for( var i = 0; i < tempResults.length; i++ ){
+      games.push( tempResults[i].game );
+    }
+    
+    return games;
+  },
+
+  getUserLobbyInfo: function( userNodeID, ongoing, _ )
+  {
+    var games = [];
+    
+    var query =
+      "START m = node(" + userNodeID + ") " +
+      "MATCH m -[:" + rels.PLAYS + "]-> game " + "-[:" + rels.BEING_PLAYED_BY + "]-> player " + "-[:" + rels.WROTE + "]-> phrase " +
+      "WHERE game." + props.GAME.OVER + " = " + !ongoing + " AND game." + props.GAME.RESIGNED_COUNT + " = 0 AND phrase.id = game." + props.GAME.PHRASE_COUNT + " - 1 " +
+      "RETURN game, player, phrase;";
+    
+    var tempResults = db.query(query, {}, _ );
+    
+    return games;
+  },
+  
   getWord: function( lemma, _ )
   {
     var word;
@@ -59,7 +93,7 @@ module.exports =
     try{
       var results = db.getIndexedNodes( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, lemma, _ );
       if( results && results.length > 0 ){
-        word = results[0]
+        word = results[0];
       }
     }catch( ex ){
       console.log( "couldn't find word in " + indexes.WORD_LEMMA_INDEX );
@@ -69,37 +103,6 @@ module.exports =
     return word;
   },
   
-  getWordFromClassIndex: function( collectionName, className, id, _ )
-  { 
-    var word = db.getIndexedNodes( collectionName + className + "ClassIndex", props.ID, id, _ )[0];
-    
-    return word;
-  },
-  
-  getWordsFromClassIndex: function( className, ids, _ )
-  {
-    var i = 0;
-    var words;
-    var query = "id: ";
-    
-    for( i = 0; i < ids.length; i++ ){
-      query += ids[i];
-      if( i < ids.length - 1 ){
-        query += " || id: ";
-      }
-    }
-    
-    try{
-      words = db.queryNodeIndex( className + "ClassIndex", query , _ );
-      
-    }catch( ex ){
-      console.log( "couldn't find word in class index" );
-      console.log( ex );
-    }
-    
-    return words;
-  },
-
    //Gets the phrases for a given game
   getGamePhrases: function( gameNodeID, _ ){
     var phrases = [];
@@ -107,7 +110,7 @@ module.exports =
     var query =
       "START m = node(" + gameNodeID + ") " +
       "MATCH m -[:" + rels.HAS_PHRASE + "]-> phrase " +
-      "RETURN phrase;"
+      "RETURN phrase;";
       
     
     var tempResults = db.query(query, {}, _ );
@@ -127,18 +130,36 @@ module.exports =
       "START m = node(" + gameNodeID + ") " +
       "MATCH m -[:" + rels.HAS_PHRASE + "]-> phrase " +
       "WHERE phrase.id = " + phraseID + " " +
-      "RETURN phrase;"
+      "RETURN phrase;";
       
     
     var tempResults = db.query(query, {}, _ );
     
-    if( tempResults.length == 0 ){
+    if( tempResults.length === 0 ){
       phrase = false;
     }else{
       phrase = tempResults[0].phrase;
     }
     
     return phrase;
+  },
+  
+  //Gets the users of a given game
+  getGameUsers: function( gameNodeID, _ ){
+    var users = [];
+    
+    var query =
+      "START m = node(" + gameNodeID + ") " +
+      "MATCH user -[:" + rels.PLAYS + "]-> m "+
+      "RETURN user;";
+    
+    var tempResults = db.query(query, {}, _ );
+    
+    for( i = 0; i < tempResults.length; i++ ){
+      users.push( tempResults[i].user );
+    }
+    
+    return users;
   },
   
   //Gets the players of a given game
@@ -345,15 +366,15 @@ module.exports =
     
     return magnet;
   },
-
-  getWordRelatedImages: function( gameNodeID, wordNodeID, _ ){
+  
+  getWordRelatedTiles: function( gameNodeID, wordNodeID, _ ){
     var i = 0;
     var images = [];
     var tempResults;
     
     var query =
       "START game = node(" + gameNodeID + "), word = node(" + wordNodeID + ") " +
-      "MATCH game -[:hasTile]-> tile -[:" + rels.REPRESENTS_IMAGE + "]-> image -[:" + rels.RELATES_TO + "]-> word " +
+      "MATCH game -[:" + rels.HAS_TILE + "]-> tile -[:" + rels.REPRESENTS_IMAGE + "]-> image -[:" + rels.RELATES_TO + "]-> word " +
       "RETURN image;";
     
     tempResults = db.query(query, {}, _ );
@@ -365,7 +386,7 @@ module.exports =
     return images;
   },
 
-//   getWordRelatedImages: function( gameNodeID, wordID, _ ){
+//   getWordRelatedTiles: function( gameNodeID, wordID, _ ){
 //     var i = 0;
 //     var images = [];
 //     var tempResults;
@@ -385,7 +406,8 @@ module.exports =
 //     return images;
 //   },
   
-  getPlayerMagnets: function( playerNodeID, _ ){
+  getPlayerMagnets: function( playerNodeID, pretty, _ )
+  {
     var magnets = [];
     
     var query =
@@ -397,12 +419,75 @@ module.exports =
     
     var a = tempResults.length;
     while( a-- ){
-      magnets.push( tempResults[a].magnet );
+      magnets.push( pretty ? tempResults[a].magnet.data : tempResults[a].magnet );
     }
     
     return magnets;
   },
 
+  getPlayerWordsExcludedByMagnetID: function( playerNodeID, magnetIDs, pretty, _ )
+  {
+    var a = 0;
+    var words = [];
+    
+    
+    if( magnetIDs.length > 0 )
+    {
+      var query =
+      "START m = node(" + playerNodeID + ") " +
+      "MATCH m -[r]-> magnet -[:" + rels.REPRESENTS_WORD + "]-> word " +
+      "WHERE type(r) = \'" + rels.HAS_MAGNET + "\' and ( ";
+      for( i = 0; i < magnetIDs.length; i++ ){
+        if( i === 0 ){
+          query += "r.id <> " + magnetIDs[i];
+        }else{
+          query += " or r.id <> " + magnetIDs[i];
+        }
+      }
+      query += " ) RETURN distinct magnet, word;";
+      
+      var tempResults = db.query(query, {}, _ );
+      
+      for( a = 0; a < tempResults.length; a++ ){
+        words.push( pretty ? tempResults[a].word.data : tempResults[a].word );
+      }
+    }
+    
+    return words;
+  },
+  
+  getPlayerMagnetsAndWordsExcludedByMagnetID: function( playerNodeID, magnetIDs, pretty, _ )
+  {
+    var mw = [];
+    var i = 0;
+    
+    if( magnetIDs.length > 0 )
+    {
+      var query =
+      "START m = node(" + playerNodeID + ") " +
+      "MATCH m -[r]-> magnet -[:" + rels.REPRESENTS_WORD + "]-> word " +
+      "WHERE type(r) = \'" + rels.HAS_MAGNET + "\' and ( ";
+      for( i = 0; i < magnetIDs.length; i++ ){
+        if( i === 0 ){
+          query += "r.id <> " + magnetIDs[i];
+        }else{
+          query += " or r.id <> " + magnetIDs[i];
+        }
+      }
+      query += " ) RETURN distinct magnet, word;";
+      
+      var tempResults = db.query(query, {}, _ );
+      
+      for( i = 0; i < tempResults.length; i++ ){
+        mw.push({
+          magnet: pretty ? tempResults[i].magnet.data : tempResults[i].magnet,
+          word: pretty ? tempResults[i].word.data : tempResults[i].word
+        });
+      }
+    }
+    return mw;
+  },
+  
   getPlayerMagnetsByID: function( playerNodeID, magnetIDs, _ ){
     var results = [];
     
@@ -428,6 +513,66 @@ module.exports =
     }
     
     return results;
+  },
+  
+  getPlayerMagnetsAndWords: function( playerNodeID, _ ){
+    var mw = [];
+    
+    var query =
+      "START m = node(" + playerNodeID + ") " +
+      "MATCH m -[:" + rels.HAS_MAGNET + "]-> magnet -[:" + rels.REPRESENTS_WORD + "]-> word" +
+      "RETURN distinct magnet, word;";
+    
+    var tempResults = db.query( query, {}, _ );
+    
+    var a = tempResults.length;
+    while( a-- ){
+      mw.push({ magnet: tempResults[i].magnet, word: tempResults[i].word });
+    }
+    
+    return mw;
+  },
+  
+  getGamePlayerMagnetsAndWords: function( gameNodeID, pretty, _ ){
+    var mw = [];
+    
+    var query =
+      "START m = node(" + gameNodeID + ") " +
+      "MATCH m -[:" + rels.BEING_PLAYED_BY + "]-> player -[:" + rels.HAS_MAGNET + "]-> magnet -[:" + rels.REPRESENTS_WORD + "]-> word " +
+      "RETURN magnet, word;";
+    
+    var tempResults = db.query( query, {}, _ );
+    
+    var a = tempResults.length;
+    while( a-- ){
+      if( pretty )
+        mw.push({ magnet: tempResults[a].magnet.data, word: tempResults[a].word.data });
+      else
+        mw.push({ magnet: tempResults[a].magnet, word: tempResults[a].word });
+    }
+    
+    return mw;
+  },
+  
+  getGamePhraseMagnetsAndWords: function( gameNodeID, pretty, _ ){
+    var mw = [];
+    
+    var query =
+      "START m = node(" + gameNodeID + ") " +
+      "MATCH m -[:" + rels.HAS_PHRASE + "]-> phrase -[:" + rels.HAS_MAGNET + "]-> magnet -[:" + rels.REPRESENTS_WORD + "]-> word " +
+      "RETURN magnet, word;"; 
+//       "ORDER BY magnet.`order`;"
+    var tempResults = db.query( query, {}, _ );
+    
+    var a = tempResults.length;
+    while( a-- ){
+      if( pretty )
+        mw.push({ magnet: tempResults[a].magnet.data, word: tempResults[a].word.data });
+      else
+        mw.push({ magnet: tempResults[a].magnet, word: tempResults[a].word });
+    }
+    
+    return mw;
   },
   
   getPlayerMagnetsAndWordsByID: function( playerNodeID, magnetIDs, _ ){
@@ -485,33 +630,6 @@ module.exports =
     return words;
   },
   
-  getPhraseMagnetWordsByID: function( gameNodeID, magnetIDs, _ )
-  {
-    var tiles = [];
-    
-    var query =
-    "START m = node(" + gameNodeID + ") " +
-    "MATCH m -[r]-> magnet " +
-    "WHERE type(r) = \'representsWord\' and ( ";
-    for( var i = 0; i < tileIDs.length; i++ ){
-      if( i === 0 ){
-        query += "r.id = " + tileIDs[i];
-      }else{
-        query += " or r.id = " + tileIDs[i];
-      }
-    }
-    query += " ) RETURN tile;";
-    
-    var tempResults = db.query(query, {}, _ );
-    
-    var a = tempResults.length;
-    while( a-- ){
-      tiles.push( tempResults[a].tile );
-    }
-    
-    return tiles;
-  },
-  
   getTileImage: function( tileNodeID, _ )
   {
     var image = getEndNodesByRelType( tileNodeID, rels.REPRESENTS_IMAGE, _ )[0];
@@ -528,21 +646,23 @@ module.exports =
   
   getGameData: function( gameNodeID, _ )
   {
+    var query;
     var gameData = {
       player: [],
       phrase: [],
       magnetPlayer: [],
       magnetPhrase: [],
-      word: [],
       path: [],
       tile: [],
       image: [],
       instruction: []
     };
-    var query =
-    "START m = node(" + gameNodeID + ") " +
-    "MATCH m -[*]-> result " +
-    "RETURN distinct result;";
+    
+    query =
+      "START m = node(" + gameNodeID + ") " +
+      "MATCH m -[*]-> result " +
+      "WHERE result.type <> \"" + types.WORD + "\" " + " AND result.type <> \"" + types.MAGNET + "\" " +
+      "RETURN distinct result;";
     
     var queryResults = db.query(query, {}, _ );
     var resultsCount = queryResults.length;
@@ -558,61 +678,183 @@ module.exports =
       }
     }
     
+    gameData.magnetPlayer = this.getGamePlayerMagnetsAndWords( gameNodeID, true, _ );
+    gameData.magnetPhrase = this.getGamePhraseMagnetsAndWords( gameNodeID, true, _ );
+    
     return gameData;
   },
-  
-  getMagnetObject: function( magnets, words, owner )
+
+  getAllCollections: function( pretty, _ )
   {
-    var magnetInfo = [];
-    var wordsLength = words.length;
-    var magnetsLength = magnets.length;
+    var collections = [];
     
-    for ( var m = 0; m < magnetsLength; m++ ){
-      if( magnets[m][props.MAGNET.OWNER] == owner ){
-        var currentMagnet = magnets[m];
-        for( var w = 0; w < wordsLength; w++ ){
-          if( words[w][props.ID] == currentMagnet[props.WORD.REPRESENTED_WORD] ){
-            magnetInfo.push({
-              id: currentMagnet[props.ID],
-              angle: currentMagnet[props.MAGNET.ANGLE],
-              x: currentMagnet[props.MAGNET.X],
-              y: currentMagnet[props.MAGNET.Y],
-              word: words[w]
-            });
-            break;
+    var tempResults = db.queryNodeIndex( indexes.COLLECTION_INDEX, props.COLLECTION.SHORT_NAME + ": (*)" , _ );
+    
+    for( var i = 0; i < tempResults.length; i++ ){
+      collections.push( pretty ? tempResults[i].data : tempResults[i] );
+    }
+    
+    return collections;
+  },
+  
+  getAllVersions: function( active, pretty, _ )  //active = all, active, inactive
+  {
+    var a;
+    var row;
+    var word;
+    var query;
+    var version;
+    var versions = {};
+    var tempVersions = [];
+    var currentLemma = "";
+    
+    query = "START word = node:wordLemmaIndex( \"lemma:*\" ) " +
+      "MATCH word <-[:" + rels.IS_VERSION_OF + "]- version " + 
+      "RETURN word, version " +
+      "ORDER BY word.lemma;";
+    
+    var queryResults = db.query(query, {}, _ );
+    var resultsCount = queryResults.length;
+    
+    for( a = 0; a < resultsCount; a++ ){
+      row = queryResults.pop();
+      version = row.version;
+      word = row.word;
+      
+      if( version && word )
+      {
+        if( active == "all" ||
+            active == "active" && word.data[props.WORD.ACTIVE] ||
+            active == "inactive" && !word.data[props.WORD.ACTIVE] )
+        {
+          if( word.data[props.WORD.LEMMA] !== currentLemma )
+          {
+            currentLemma = word.data[props.WORD.LEMMA];
+          }
+          
+          if( active == "all" ||
+              active == "active" && version.data[props.WORD.ACTIVE] ||
+              active == "inactive" && !version.data[props.WORD.ACTIVE] )
+          {
+            if( !versions.hasOwnProperty( currentLemma ) )
+            {
+              versions[currentLemma] = [];
+            }
+            versions[currentLemma].push( pretty ? version.data : version );
           }
         }
       }
     }
     
-    return magnetInfo;
+    return versions;
+  },
+  
+  getAllWordVersions: function( word, pretty, _ )
+  {
+    var a = 0;
+    var versions = [];
+    
+    var query =
+      "START word = node(" + word.id + ") " +
+      "MATCH word <-[:" + rels.IS_VERSION_OF + "]- version " +
+      "RETURN version;";
+    
+    var tempResults = db.query( query, {}, _ );
+    
+    if( tempResults.length > 0 )
+    {
+      for( a = 0; a < tempResults.length; a++ ){
+          versions.push( pretty ? tempResults[a].version.data : tempResults[a].version );
+        }
+    }
+    
+    return versions;
+  },
+  
+  getAllRelsBetweenWordAndVersions: function( word, _ )
+  {
+    var rels = [];
+    
+    var query =    
+      "START word = node(" + word.id + ") " +
+      "MATCH word <-[rel]- version " +
+      "WHERE type(rel) = \"" + rels.IS_VERSION_OF + "\" " +
+      "RETURN rel;";
+    
+    var tempResults = db.query( query, {}, _ );
+    
+    if( tempResults.length > 0 )
+    {
+      for( a = 0; a < tempResults.length; a++ ){
+        rels.push( pretty ? tempResults[a].rel.data : tempResults[a].rel );
+      }
+    }
+    
+    return rels;
   },
 
-  getWordsByClass: function( className, _ )
+  deleteAllRelsBetweenWordAndVersions: function( word, _ )
   {
-    var words = [];
-    var tempResults = db.queryNodeIndex( className + "ClassIndex", "id: (*)" , _ );
+    console.log( "gonna delete" );
+    var query =    
+      "START word = node(" + word.id + ") " +
+      "MATCH word <-[rel]- version " +
+      "WHERE type(rel) = \"" + rels.IS_VERSION_OF + "\" " +
+      "DELETE rel;";
+      
+    console.log( query );
+      
+    db.query( query, {}, _ );
     
-    for( var i = 0; i < tempResults.length; i++ ){
-      words.push( tempResults[i] );
+    console.log( "deleted" );
+  },
+  
+  getRelBetweenWordAndVersion: function( word, versionLemma, _ )
+  {
+    var rel = false;
+    
+    var query =
+      "START word = node(" + word.id + ") " +
+      "MATCH word <-[rel]- version " +
+      "WHERE type(rel) = \"" + rels.IS_VERSION_OF + "\" AND version.lemma = \"" + versionLemma + "\" " +
+      "RETURN rel;";
+    
+    var resultsTemp = db.query( query, {}, _ );
+    
+    if( resultsTemp.length > 0 )
+    {
+      rel = resultsTemp[0].rel;
+    }
+    
+    
+    return rel;
+  },
+  
+  getAllWords: function( active, pretty, _ )  //active = all, active, inactive
+  {
+    var a;
+    var word;
+    var words = [];
+    
+    var queryResults = db.queryNodeIndex( indexes.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
+    
+    for( a = 0; a < queryResults.length; a++ ){
+      word = queryResults[a];
+      
+      if( word )
+      {
+        if( active == "all" ||
+            active == "active" && word.data[props.WORD.ACTIVE] ||
+            active == "inactive" && !word.data[props.WORD.ACTIVE] )
+        {
+            words.push( pretty ? word.data : word );
+        }
+      }
     }
     
     return words;
   },
-
-  getAllWords: function( pretty, _ )
-  {
-    var words = [];
-    
-    var tempResults = db.queryNodeIndex( indexes.WORD_LEMMA_INDEX, "lemma: (*)" , _ );
-    
-    for( var i = 0; i < tempResults.length; i++ ){
-      words.push( pretty ? tempResults[i].data : tempResults[i] );
-    }
-    
-    return words;
-  },
-
+  
   getAllBoards: function( pretty, _ )
   {
   var i = 0;
@@ -648,7 +890,7 @@ module.exports =
     var tempResults = db.queryNodeIndex( indexes.BOARD_INDEX, "id: (*)" , _ );
     
     for( i = 0; i < tempResults.length; i++ ){
-      if( tempResults[i].data.draft == false && tempResults[i].data.level === level ){
+      if( tempResults[i].data.draft == false && tempResults[i].data.level === level ){ //the == false is ON PURPOSE
         boards.push( pretty ? tempResults[i].data : tempResults[i] );
       }
     }

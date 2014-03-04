@@ -11,18 +11,30 @@ var db = new neo4j.GraphDatabase(environment.DB_URL);
 
 module.exports =
 {
-  getUserByUsername: function( username, _ )
+  getUserByUsername: function( username, pretty, _ )
   {
-    var users = db.getIndexedNodes( indexes.USER_USERNAME_INDEX, props.USER.USERNAME, username, _ );
+    var user = false;
+    var tempResults = db.getIndexedNodes( indexes.USER_USERNAME_INDEX, props.USER.USERNAME, username, _ );
     
-    return users[0];
+    if( tempResults && tempResults.length > 0 )
+    {
+      user = pretty ? tempResults[0].data : tempResults[0];
+    }
+    
+    return user;
   },
   
-  getUserByEmail: function( email, _ )
+  getUserByEmail: function( email, pretty, _ )
   {
-    var users = db.getIndexedNodes( indexes.USER_EMAIL_INDEX, props.USER.EMAIL, email, _ );
+    var user = false;
+    var tempResults = db.getIndexedNodes( indexes.USER_EMAIL_INDEX, props.USER.EMAIL, email, _ );
     
-    return users[0];
+    if( tempResults && tempResults.length > 0 )
+    {
+      user = pretty ? tempResults[0].data : tempResults[0];
+    }
+    
+    return user;
   },
   
   searchUser: function( keyword, _ )
@@ -62,7 +74,7 @@ module.exports =
     var query =
       "START m = node(" + userNodeID + ") " +
       "MATCH m -[:" + rels.PLAYS + "]-> game " +
-      "WHERE game." + props.GAME.GAME_OVER + " = " + !ongoing + " " +
+      "WHERE game." + props.GAME.OVER + " = " + !ongoing + " " +
       "RETURN game;";
     
     var resultsTemp = db.query(query, {}, _ );

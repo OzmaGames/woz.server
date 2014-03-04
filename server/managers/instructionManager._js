@@ -28,39 +28,56 @@ module.exports =
     return instructions;
   },
   
-  setInstruction: function( id, condition, shortDescription, longDescription, collections, bonus, mult, level, _ )
+  setInstruction: function( id, conditions, shortDescription, longDescription, collections, bonus, mult, level, _ )
   {
     var instruction;
     
     if( id === -1 )
     {
       id = tools.getNewInstructionID(_);
-      var instructionNode = tools.createNode({
+      instruction = tools.createNode({
           type: types.INSTRUCTION,
           id: id,
           mult: mult,
           bonus: bonus,
-          condition: condition,
-          shortDescription: shortDescription,
-          longDescription: longDescription
+          level: level,
+          condition: conditions,
+          collections: collections,
+          longDescription: longDescription,
+          shortDescription: shortDescription
+          
         }, _ );
         
-        instructionNode.index( indexes.INSTRUCTION_INDEX, props.ID, id, _ );
+        instruction.index( indexes.INSTRUCTION_INDEX, props.ID, id, _ );
     }
     else
-    {
-      instruction = this.getInstruction( id, _ );
+    {    
+      instruction = instructionRetriever.getInstructionByID( id, false, _ );
       
       if( instruction )
       {
-        instruction.data[props.INSTRUCTION.CONDITION] = condition;
+        instruction.data[props.INSTRUCTION.CONDITION] = conditions;
         instruction.data[props.INSTRUCTION.SHORT_DESCRIPTION] = shortDescription;
         instruction.data[props.INSTRUCTION.LONG_DESCRIPTION] = longDescription;
         instruction.data[props.INSTRUCTION.COLLECTIONS] = collections;
         instruction.data[props.INSTRUCTION.BONUS] = bonus;
         instruction.data[props.INSTRUCTION.MULT] = mult;
         instruction.data[props.INSTRUCTION.LEVEL] = level;
+        
+        instruction.save( _ );
       }
     }
+    
+    return id;
+  },
+  
+  deleteInstruction: function( id, _ )
+  {
+    var instruction = instructionRetriever.getInstructionByID( id, false, _ );    
+    if( instruction )
+    {
+      instruction.data[props.WORD.ACTIVE] = false;
+      instruction.save( _ );
+    }
   }
-}
+};

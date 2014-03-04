@@ -22,20 +22,34 @@ module.exports =
 
   getAllImages: function ( _ )
   {
-    var instructions = imageRetriever.getAllImages( true, _ );
+    var images = imageRetriever.getAllImages( true, _ );
     
-    return instructions;
+    return images;
   },
   
   setImage: function( name, id, related, _ )
   {
     var i;
-    var imageNode;
+    var image;
     
-    if( id === -1 )
+    image = imageRetriever.getImageByName( name, false, _ );
+    
+    if( image )
+    {
+      image.unindex( indexes.IMAGE_INDEX, props.IMAGE.NAME, image.data[props.IMAGE.NAME], _ );
+      image.unindex( collection, collection + indexes.IMAGE_INDEX, props.IMAGE.NAME, image.data[props.ID], _ );
+      
+      image.data[props.IMAGE.NAME] = name;
+      image.data[props.IMAGE.RELATED] = related;
+      image.data[props.IMAGE.COLLECTION] = collection;
+      
+      image.index( indexes.IMAGE_INDEX, props.IMAGE.NAME, name, _ );
+      image.index( collection, collection + indexes.IMAGE_INDEX, props.IMAGE.NAME, id, _ );
+    }
+    else if( id === -1 )
     {
       id = tools.getNewInstructionID(_);
-      imageNode = tools.createNode({
+      image = tools.createNode({
           type: types.IMAGE,
           id: id,
           name: name,
@@ -43,25 +57,83 @@ module.exports =
           collection: collection
         }, _ );
         
-      imageNode.index( indexes.IMAGE_INDEX, props.IMAGE.NAME, name, _ );
-      imageNode.index( collection, collection + indexes.IMAGE_INDEX, props.IMAGE.NAME, id, _ );
+      image.index( indexes.IMAGE_INDEX, props.IMAGE.NAME, name, _ );
+      image.index( collection, collection + indexes.IMAGE_INDEX, props.IMAGE.NAME, id, _ );
     }
-    else
-    {
-      imageNode = imageRetriever.getImageByName( name, false, _ );
+    
+    return id;
+  },
+  
+  getRelatedWords: function( name, _ )
+  {
+    var image = imageRetriever.getImageByName( name, false, _ );
+    
+    return image.data[props.IMAGE.RELATED];
+  },
+  
+  setRelatedWords: function( name, relatedWords, _ )
+  {
+    var a, b;
+    var relatedWord;
+    var relatedImages;
+    var oldRelatedImages;
+    
+    var image = imageRetriever.getImageByName( name, false, _ );
+    var oldRelatedWords = imageRetriever.getImageRelatedWords( image.id, false, _ );
+    var oldRelatedRels = imageRetriever.getRelBetweenImageAndRelatedWords( image.id, false, _ );
+    
+    for( a = 0; a < oldRelatedRels.length; a++ ){
+      oldRelatedRels[a].del(_);
+    }
+    
+    for( a = 0; a < oldRelatedWords.length; a++ ){
+      relatedWord = oldRelatedWords[a];
       
-      if( imageNode )
+      oldRelatedImages = imageRetriever.getWordRelatedImages( relatedWord.id, _ );
+      
+      if( oldRelatedImages.length === 0 )
       {
-        imageNode.unindex( indexes.IMAGE_INDEX, props.IMAGE.NAME, imageNode.data[props.IMAGE.NAME], _ );
-        imageNode.unindex( collection, collection + indexes.IMAGE_INDEX, props.IMAGE.NAME, imageNode.data[props.ID], _ );
+        for( b = 0; b < relatedWord.data[props.WORD.CLASSES].length; b++ ){
+          
+          if( relatedWord.data[props.WORD.CLASSES][b] === "related" )
+          {
+            relatedWord.data[props.WORD.CLASSES].splice( b, 1 );
+            relatedWord.save( _ );
+            break;
+          }
+        }
+      }
+    }
+    
+    for( a = 0; a < relatedWords.length; a++ ){
+      try
+      {
+        relatedWord = retriever.getWord( relatedWords[a], _ );
+        image.createRelationshipTo( relatedWord, rels.RELATES_TO, {}, _ );
         
-        imageNode.data[props.IMAGE.NAME] = name;
-        imageNode.data[props.IMAGE.RELATED] = related;
-        imageNode.data[props.IMAGE.COLLECTION] = collection;
+        alreadyRelated = false;
+        for( b = 0; b < relatedWord.data[props.WORD.CLASSES].length; b++ ){
+          if( relatedWord.data[props.WORD.CLASSES][b] === "related" )
+          {
+            alreadyRelated = true;
+            break;
+          }
+        }
         
-        imageNode.index( indexes.IMAGE_INDEX, props.IMAGE.NAME, name, _ );
-        imageNode.index( collection, collection + indexes.IMAGE_INDEX, props.IMAGE.NAME, id, _ );
+        if( !alreadyRelated )
+        {
+          relatedWord.data.classes.push( "related" );
+          relatedWord.save(_);
+        }
+        
+        image.data[props.IMAGE.RELATED] = relatedWords;
+        image.save(_);
+      }
+      catch( ex )
+      {
+        console.log( "failed relating " + relatedWords[a] + " to " + name );
+        console.log( ex );
       }
     }
   }
-}
+};

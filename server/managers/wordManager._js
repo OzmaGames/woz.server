@@ -1,94 +1,170 @@
-var oz = oz || {};
+ var oz = oz || {};
 
-var tools = require("../tools._js"),
-  loader = require( "../loader._js" ),
+var tools = require("../tools._js");
+var wordLoader = require( "../wordLoader._js" );  
+var randomizer = require("../randomizer._js");
+
+var retriever = require("../retrievers/retriever._js");
   
-  retriever = require("../retrievers/retriever._js"),
-  
-  types = require( "../constants/types.js" ),
-  rels = require("../constants/relationships.js"),
-  props = require( "../constants/properties.js" ),
-  indexes = require( "../constants/indexes.js" ),
-  consts = require( "../constants/constants.js" );
+var types = require( "../constants/types.js" );
+var rels = require("../constants/relationships.js");
+var props = require( "../constants/properties.js" );
+var indexes = require( "../constants/indexes.js" );
+var consts = require( "../constants/constants.js" );
 
 module.exports =
 {
 
-  getAllWords: function ( _ )
+  getAllVersions: function ( active, pretty, _ )
+  {
+    var versions = {};
+    try
+    {
+      versions = retriever.getAllVersions( active, pretty, _ );
+    }
+    catch( ex )
+    {
+      console.log( "Error Getting Versions:" );
+      console.log( ex );
+    }
+    
+    return versions;
+  },
+
+  getAllWords: function ( active, pretty, _ )
   {
     var i = 0;
     
     var word;
     var words = [];
-    var versions = {};
-    var allWordsArray = loader.loadWords( _ );
+    var versions = this.getAllVersions( active, pretty, _ );
+    var allWordsArray = retriever.getAllWords( active, pretty, _ );
+    
     
     for( i = 0; i < allWordsArray.length; i++ ){
       word = allWordsArray[i];
       
-      if( !word.hasOwnProperty( props.WORD.VERSION_OF ) ) word[props.WORD.VERSION_OF] = "";
-      
-       if( word[props.WORD.VERSION_OF].length === 0 ){
-        words.push( word );
-      }else{
-        if( versions.hasOwnProperty( word.lemma ) ){
-          versions[ word.lemma ].push( word );
-        }else{
-          versions[ word.lemma ] = [ word ];
-        }
-      }
-      
-      for( i = 0; i < words.length; i++ ){
-        word  = words[i];
-        if( versions.hasOwnProperty( word.lemma ) )
+        if( word[props.WORD.CATEGORIES] && word[props.WORD.CATEGORIES].length > 0 && word[props.WORD.CATEGORIES][0] === "" )
         {
-          word.versions = versions[word.lemma];
+          word[props.WORD.CATEGORIES] = [];
+        }
+        
+        if( versions.hasOwnProperty( word[props.WORD.LEMMA] ) )
+        {
+          word.versions = versions[ word[props.WORD.LEMMA] ];
         }
         else
         {
           word.versions = [];
         }
+        
+        words.push( word );
       }
-    }
     
     return words;
   },
   
-  setWord: function( lemma, classes, categories, collections, versionOf, _ )
+  setWord: function( lemma, oldLemma, classes, categories, collections, _ )
   {
     var i, j;
+    var word;
+    var isLemmaUpdate = false;
+    
+    if( lemma )
+    {
+      if( !classes ) classes = [""];
+      if( !categories ) categories = [""];
+      if( !collections ) collections = [""];
+      
+      if( classes.length === 0 ) classes = [""];
+      if( categories.length === 0 ) categories = [""];
+      if( collections.length === 0 ) collections = [""];
+      
+      if( !word ) word = retriever.getWord( oldLemma, _ );
+      if( !word ){
+        word = retriever.getWord( lemma, _  );
+      }
+      else
+      {
+        isLemmaUpdate = true;
+      }
+      
+      if( word )
+      {
+        word.data[props.WORD.LEMMA] = lemma;
+        word.data[props.WORD.CLASSES] = classes;
+        word.data[props.WORD.CATEGORIES] = categories;
+        word.data[props.WORD.COLLECTIONS] = collections;
+        word.data[props.WORD.ACTIVE] = true;
+        
+        if( isLemmaUpdate ){
+          word.unindex( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, oldLemma, _ );
+          word.index( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, lemma, _ );
+        }
+        
+        word.save(_);
+      }
+      else
+      {
+        word = tools.createNode({
+          type: types.WORD,
+          lemma: lemma,
+          points: randomizer.getRandomIntegerInRange(1, 4),
+          classes: classes,
+          categories: categories,
+          collections: collections,
+          active: true
+        }, _ );
+        
+        word.index( indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, lemma, _ );
+      }
+    }
+    
+    return word;
+  },
+  
+  setVersions: function( lemma, versions, _ )
+  {
+    var a;
+    var version;
+    var motherWord;
+    var success = false;
+    
+    if( lemma )
+    {
+      motherWord = retriever.getWord( lemma, _ );
+      if( motherWord )
+      {
+        console.log( "1" );
+        retriever.deleteAllRelsBetweenWordAndVersions( motherWord, _ );
+        console.log( "2" );
+        for( a = 0; a < versions.length; a++ )
+        {
+          console.log( "3" );
+          version = versions[a];
+          console.log( "4" );
+          word = this.setWord( version.lemma, "", version.classes, version.categories, version.collections, _ );
+          console.log( "5" );
+          console.log( motherWord.data );
+          console.log( word.data );
+          console.log( rels.IS_VERSION_OF );
+          word.createRelationshipTo( motherWord, rels.IS_VERSION_OF, {}, _ );
+          console.log( "6" );
+        }
+        success = true;
+      }
+    }
+    return success;
+  },
+  
+  deleteWord: function( lemma, _ )
+  {
     var word = retriever.getWord( lemma, _ );
     
     if( word )
     {
-      console.log("1");
-      word.data[props.WORD.CLASSES] = classes;
-      word.data[props.WORD.CATEGORIES] = categories;
-      word.data[props.WORD.COLLECTIONS] = collections;
-      word.data[props.WORD.VERSION_OF] = versionOf;
-      console.log("2");
-    }
-    else
-    {
-    console.log("3");
-      currentWordNode = tools.createNode({
-        type: types.WORD,
-        lemma: lemma,
-        points: randomizer.getRandomIntegerInRange(0, 4),
-        collections: collections,
-        versionOf: versionOf
-      }, _ );
-      console.log("4");
-      currentWordNode.index( collectionName + indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
-      console.log("5");
-      for( i = 0; i < classes.length; i++ ){
-      console.log("6");
-        for( j = 0; j < collections.length; j++ ){
-          console.log("7");
-          currentWordNode.index( collections[j] + indexes.WORD_LEMMA_INDEX, props.WORD.LEMMA, currentWord.lemma, _ );
-          currentWordNode.index( collections[j] + classes[i] + "ClassIndex", props.ID, lassCounts[collections[j]][classes[i]]++, _ );
-        }
-      }
+      word.data[props.WORD.ACTIVE] = false;
+      word.save( _ );
     }
   }
-}
+};

@@ -165,8 +165,68 @@ module.exports =
     
     return images;
   },
-
-  getWordRelatedImages: function( gameNodeID, wordNodeID, _ ){
+  
+  getRelBetweenImageAndRelatedWords: function( imageNodeID, pretty, _ )
+  {
+    var i = 0;
+    var relatedRels = [];
+    var resultsTemp;
+    
+    var query =
+      "START image = node(" + imageNodeID + ") " +
+      "MATCH image -[r]-> word " +
+      "WHERE type(r) = \"" + rels.RELATES_TO + "\" " +
+      "RETURN r;";
+    
+    resultsTemp = db.query(query, {}, _ );
+    
+    for( i = 0; i < resultsTemp.length; i++ ){
+      relatedRels.push( pretty ? resultsTemp[i].r.data : resultsTemp[i].r );
+    }
+    
+    return relatedRels;
+  },
+  
+  getImageRelatedWords: function( imageNodeID, pretty, _ )
+  {
+    var i = 0;
+    var words = [];
+    var resultsTemp;
+    
+    var query =
+      "START image = node(" + imageNodeID + ") " +
+      "MATCH image -[:" + rels.RELATES_TO + "]-> word " +
+      "RETURN word;";
+    
+    resultsTemp = db.query(query, {}, _ );
+    
+    for( i = 0; i < resultsTemp.length; i++ ){
+      words.push( pretty ? resultsTemp[i].word.data : resultsTemp[i].word );
+    }
+    
+    return words;
+  },
+  
+  getWordRelatedImages: function( wordNodeID, _ ){
+    var i = 0;
+    var images = [];
+    var resultsTemp;
+    
+    var query =
+      "START word = node(" + wordNodeID + ") " +
+      "MATCH word <-[:" + rels.RELATES_TO + "]- image " +
+      "RETURN image;";
+    
+    resultsTemp = db.query(query, {}, _ );
+    
+    for( i = 0; i < resultsTemp.length; i++ ){
+      images.push( resultsTemp[i].image );
+    }
+    
+    return images;
+  },
+  
+  getWordRelatedTiles: function( gameNodeID, wordNodeID, _ ){
     var i = 0;
     var images = [];
     var resultsTemp;
@@ -185,7 +245,7 @@ module.exports =
     return images;
   },
 
-//   getWordRelatedImages: function( gameNodeID, wordID, _ ){
+//   getWordRelatedTiles: function( gameNodeID, wordID, _ ){
 //     var i = 0;
 //     var images = [];
 //     var resultsTemp;

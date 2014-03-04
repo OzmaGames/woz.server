@@ -10,8 +10,8 @@ module.exports =
     }
   },
   
-  compareOrder: function( a, b )
+  compareMagnetOrder: function( a, b )
   {
-    return a.order > b.order;
+    return a.magnet.order - b.magnet.order;
   }
 };

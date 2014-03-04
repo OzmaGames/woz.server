@@ -1,19 +1,18 @@
 var oz = oz || {};
   
-var adder = require("./adder._js"),
-  tools = require( "./tools._js" ),
-  sup = require( "./supporter._js" ),
-  operations = require("./operations._js"),
-  randomizer = require("./randomizer._js"),
-  
-  retriever = require("./retrievers/retriever._js"),
-  
-  types = require( "./constants/types.js" ),
-  rels = require("./constants/relationships.js"),
-  props = require( "./constants/properties.js" ),
-  consts = require( "./constants/constants.js" );
-  
-  
+var adder = require("./adder._js");
+var tools = require( "./tools._js" );
+var wordLoader = require("./wordLoader._js");
+var sup = require( "./supporter._js" );
+var operations = require("./operations._js");
+var randomizer = require("./randomizer._js");
+
+var retriever = require("./retrievers/retriever._js");
+
+var types = require( "./constants/types.js" );
+var rels = require("./constants/relationships.js");
+var props = require( "./constants/properties.js" );
+var consts = require( "./constants/constants.js" );
 
 module.exports =
 {
@@ -21,36 +20,50 @@ module.exports =
   placePhrase: function( game, username, pathID, magnetIDs, _ )
   {
     var i, j;
-    var score = 0;
+    var score = { total: 0 };
     
     var mw;
+    var word;
+    var magnet;
     var phrase;
+    var rToPlayer;
     var endTileImage;
     var startTileImage;
     var endTileInstruction;
     var startTileInstruction;
     
+    var users = [];
+    var tiles = [];
     var words = [];
     var magnets = [];
     
     var phraseString = "";
     
-    var ret = { madness: -1, score: 0, words: [], path: { id: -1, phrase: [] } };
-    var path = retriever.getGamePathByID( game.id, pathID, _);
+    var ret = { madness: -1, score: 0, words: [], path: { id: -1, phrase: [], username: username } };
+    var path = retriever.getGamePathByID( game.id, pathID, _ );
     
     var wordCount = magnetIDs.length;
-    var tiles = retriever.getPathTiles( path.id, _ );
     var player = retriever.getGamePlayerByID( game.id, username, _ );
+    var otherWords = retriever.getPlayerWordsExcludedByMagnetID( player.id, magnetIDs, false, _ );
     
     mw = retriever.getPlayerMagnetsAndWordsByID( player.id, magnetIDs, _ );
     
+    tiles.push( retriever.getPathStartTile( path.id, _ ) );
+    tiles.push( retriever.getPathEndTile( path.id, _ ) );
+    
     for( j = 0; j < magnetIDs.length; j++ ){
       if( phraseString.length > 0 ) phraseString += " ";
+      
       for( i = 0; i < mw.length; i ++ ){
-        if( mw[i].magnet.data.id == magnetIDs[j] ){
+        if( mw[i].magnet.data.id == magnetIDs[j] )
+        {
+          console.log( mw[i].word.data.lemma );
+          console.log( mw[i].magnet.data.id);
+          
           words.push( mw[i].word );
           magnets.push( mw[i].magnet );
           phraseString += mw[i].word.data[props.WORD.LEMMA];
+          
           ret.path.phrase.push({
             id: magnetIDs[j],
             lemma: mw[i].word.data[props.WORD.LEMMA],
@@ -75,6 +88,7 @@ module.exports =
         username: username,
         pathID: pathID,
         phraseString: phraseString,
+        creationDate: Date.parse( new Date() )
       }, _ );
       
       ret.path.id = pathID;
@@ -83,38 +97,48 @@ module.exports =
       
       for( i = 0; i < wordCount; i++ )  //disconnect from the player, connect to the phrase. replace with new magnets
       {  
-        var currentWord = words[i];
-        var currentMagnet = magnets[i];
-        var rToPlayer = currentMagnet.incoming( rels.HAS_MAGNET, _ )[0];
+        magnet = magnets[i];
+        rToPlayer = magnet.incoming( rels.HAS_MAGNET, _ )[0];
         rToPlayer["delete"](_);
         
-        phrase.createRelationshipTo( currentMagnet, rels.HAS_MAGNET, { order : i }, _ );
-        currentMagnet.data[props.MAGNET.OWNER] = phrase.data[props.ID];
-        currentMagnet.data[props.TYPE] = types.MAGNET_PHRASE;
-        currentMagnet.data[props.MAGNET.ORDER] = i;
-        currentMagnet.save(_);
+        phrase.createRelationshipTo( magnet, rels.HAS_MAGNET, { order : i }, _ );
+        magnet.data[props.MAGNET.OWNER] = phrase.data[props.ID];
+        magnet.data[props.TYPE] = types.MAGNET_PHRASE;
+        magnet.data[props.MAGNET.ORDER] = i;
+        magnet.save(_);
+        
+        word = wordLoader.getRandomWord( magnet.data[props.MAGNET.COLLECTION], magnet.data[props.MAGNET.CLASS], otherWords );
+        otherWords.push( word );
         
         ret.words.push( adder.addMagnet(
           game,
           player,
-          currentMagnet.data[props.MAGNET.COLLECTION],
-          currentMagnet.data[props.MAGNET.CLASS],
-          currentMagnet.data[props.MAGNET.X],
-          currentMagnet.data[props.MAGNET.Y],
+          magnet.data[props.MAGNET.COLLECTION],
+          magnet.data[props.MAGNET.CLASS],
+          word,
+          magnet.data[props.MAGNET.X],
+          magnet.data[props.MAGNET.Y],
         _ ) );
       }
       
       score = sup.scoringTime( words, tiles, _ );
-      
-      phrase.data[props.PHRASE.SCORE] = score;
-      player.data[props.PLAYER.SCORE] += score;
-      ret[props.PLAYER.SCORE] = player.data[props.PLAYER.SCORE];
+      phrase.data[props.PHRASE.SCORE] = score.total;
+      player.data[props.PLAYER.SCORE] += score.total;
+      ret.path.score = score;
       
       game.data[props.GAME.PHRASE_COUNT]++;
       game.data[props.GAME.ACTION_DONE] = false;
-      game.data[props.GAME.LAST_MOD] = Date.parse( new Date() );
-      game.data[props.GAME.GAME_OVER] = sup.isTheGameOver( game, _ );
-      if( !game.data[props.GAME.GAME_OVER] ) game.data[props.GAME.TURN]++;
+      game.data[props.GAME.MOD_DATE] = Date.parse( new Date() );
+      
+      if( game.data[props.GAME.PHRASE_COUNT] == game.data[props.GAME.PATH_COUNT] ){
+        game.data[props.GAME.OVER] = true;
+        game.data[props.GAME.OVER_DATE] = Date.parse( new Date() );
+      }
+      
+      if( !game.data[props.GAME.OVER] )
+      {
+        game.data[props.GAME.TURN]++;
+      }
       
       phrase.save(_);
       player.save(_);
@@ -130,21 +154,25 @@ module.exports =
 
  swapWords: function( game, username, magnetIDs, _ )
   { 
+    var a, b, c;
     var ret = [];
     var words = [];
     var magnets = [];
     
     var mw; 
+    var word;
+    var magnet;
     var player;
-    var currentWord;
-    var currentMagnet;
+    var isRelated;
+    var otherWords;
     var collectionName;
     
     if( game.data[props.GAME.ACTION_DONE] === false ){
       sup.setActionDone( game, true, _ );
-      
       player = retriever.getGamePlayerByID( game.id, username, _ );
       mw = retriever.getPlayerMagnetsAndWordsByID( player.id, magnetIDs, _ );
+      
+      otherWords = retriever.getPlayerWordsExcludedByMagnetID( player.id, magnetIDs, false, _ );
       
       for( i = 0; i < mw.length; i ++ ){
         words.push( mw[i].word );
@@ -154,26 +182,30 @@ module.exports =
       for( var i = magnets.length - 1; i >= 0; i-- ){
         try
         {
-          currentWord = words[i];
-          currentMagnet = magnets[i];
-          collectionName = currentMagnet.data[props.MAGNET.COLLECTION];
+          word = words[i];
+          magnet = magnets[i];
+          collectionName = magnet.data[props.MAGNET.COLLECTION];
           
-          currentMagnet.outgoing( rels.REPRESENTS_WORD, _ )[0]["delete"](_);
-          currentWord = randomizer.getRandomWordByClass( collectionName, currentMagnet.data[props.MAGNET.CLASS] , _);
+          magnet.outgoing( rels.REPRESENTS_WORD, _ )[0]["delete"](_);
+          
+          word = wordLoader.getRandomWord( collectionName, magnet.data[props.MAGNET.CLASS], otherWords );
+          otherWords.push( word );
+          
+          isRelated = retriever.getWordRelatedTiles( game.id, word.id, _ ).length > 0;
+          magnet.data[props.MAGNET.IS_RELATED] = isRelated;
+          magnet.save(_);
+          
+          magnet.createRelationshipTo( word, rels.REPRESENTS_WORD, {}, _ );
           
           ret.push({
-            id: currentMagnet.data.id,
-            angle: currentMagnet.data[props.MAGNET.ANGLE],
-            x: currentMagnet.data[props.MAGNET.X],
-            y: currentMagnet.data[props.MAGNET.Y],
-            isRelated: currentMagnet.data[props.MAGNET.IS_RELATED],
-            lemma: currentWord.data[props.WORD.LEMMA],
-            points: currentWord.data[props.WORD.POINTS]
+            id: magnet.data.id,
+            angle: magnet.data[props.MAGNET.ANGLE],
+            x: magnet.data[props.MAGNET.X],
+            y: magnet.data[props.MAGNET.Y],
+            isRelated: isRelated,
+            lemma: word.data[props.WORD.LEMMA],
+            points: word.data[props.WORD.POINTS]
           });
-          
-          currentMagnet.data[ props.MAGNET.REPRESENTED_WORD ] = currentWord.data.id;
-          currentMagnet.createRelationshipTo( currentWord, rels.REPRESENTS_WORD, {}, _ );
-          currentMagnet.save(_);
         }
         catch( ex )
         {
@@ -183,5 +215,23 @@ module.exports =
       }
     }
     return ret;
+  },
+  
+  addWord: function( game, username, lemma, x, y, _ )
+  {
+    var word;
+    var magnet;
+    var player;
+    
+    if( game.data[props.GAME.ACTION_DONE] === false ){
+      sup.setActionDone( game, true, _ );
+      
+      player = retriever.getGamePlayerByID( game.id, username, _ );
+      word = retriever.getWord( lemma, _ );
+      
+      magnet = adder.addMagnet( game, player, word.data[props.WORD.COLLECTIONS][0], word.data[props.WORD.CASSES][0], word, _ );
+    }
+    
+    return magnet;
   },
 };

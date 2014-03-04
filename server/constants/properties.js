@@ -30,26 +30,31 @@ module.exports =
     SOCKET: "socket",
     MADNESS: "madness",
     USERNAME: "username",
-    RESIGNED: "resigned"
+    RESIGNED: "resigned",
+    RESIGNATION_DATE: "resignationDate"
   },
   
   GAME: {
     ID: "id",
-    TURN: "turn",
     LEVEL: "level",
-    LAST_MOD: "lastMod",
-    GAME_OVER: "gameOver",
-    USERNAMES: "usernames",
-    START_DATE: "startDate",
     COLLECTION: "collection",
+    
+    USERNAMES: "usernames",
+    
+    OVER: "over",
     ACTION_DONE: "actionDone",
     
+    TURN: "turn",
     WORD_COUNT: "wordCount",
     TILE_COUNT: "tileCount",
     PATH_COUNT: "pathCount",
     PLAYER_COUNT: "playerCount",
     PHRASE_COUNT: "phraseCount",
-    RESIGNED_COUNT: "resignedCount"
+    RESIGNED_COUNT: "resignedCount",
+    
+    MOD_DATE: "modDate",
+    OVER_DATE: "overDate",
+    CREATION_DATE: "creationDate"
   },
   
   MAGNET: {
@@ -60,8 +65,7 @@ module.exports =
     CLASS: "class",
     ORDER: "order",
     IS_RELATED: "isRelated",
-    COLLECTION: "collection",
-    REPRESENTED_WORD: "representedWord"
+    COLLECTION: "collection"
   },
   
   TILE: {
@@ -88,6 +92,7 @@ module.exports =
   WORD: {
     LEMMA: "lemma",
     POINTS: "points",
+    ACTIVE: "active",
     CLASSES: "classes",
     VERSION_OF: "versionOf",
     CATEGORIES: "categories",
@@ -96,6 +101,7 @@ module.exports =
   
   IMAGE: {
     NAME: "name",
+    ACTIVE: "active",
     RELATED: "related",
     COLLECTION: "collection"
   },
@@ -104,8 +110,9 @@ module.exports =
     MULT: "mult",
     BONUS: "bonus",
     LEVEL: "level",
+    ACTIVE: "active",
     CONDITION: "condition",
-    INSPIRATIONAL: "inspirational",
+    COLLECTIONS: "collections",
     LONG_DESCRIPTION : "longDescription",
     SHORT_DESCRIPTION : "shortDescription"
   },

@@ -10,6 +10,9 @@ module.exports =
   //Users
   IS_FRIEND_OF: "isFriendOf",
   
+  //Words
+  IS_VERSION_OF: "isVersionOf",
+  
   //Magnets & Tiles
   ENDS_WITH: "endsWith",
   RELATES_TO: "relatesTo",

@@ -16,7 +16,7 @@ module.exports =
   getFriends: function( username, _ )
   {
     var friends = [];
-    var user = userRetriever.getUserByUsername( username, _ );
+    var user = userRetriever.getUserByUsername( username, false, _ );
     
     var query =
       "START m = node(" + user.id + ") " +
@@ -35,7 +35,7 @@ module.exports =
   searchFriendOfFriend: function( username, fofUsername, _ )
   {
     var fofs = [];
-    var user = userRetriever.getUserByUsername( username, _ );
+    var user = userRetriever.getUserByUsername( username, false, _ );
     
     var query =
       "START m = node(" + user.id + ") " +
@@ -55,7 +55,7 @@ module.exports =
   getRelBetweenFriends: function( username, friendUsername, _ )
   {
     var rel = false;
-    var user = userRetriever.getUserByUsername( username, _ );
+    var user = userRetriever.getUserByUsername( username, false, _ );
     
     var query =    
       "START m = node(" + user.id + ") " +

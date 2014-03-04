@@ -15,12 +15,12 @@ if ( process.env.IS_HEROKU )
   {
     case "development":
       console.log( "environment is development" );
-      module.exports.DB_URL = "http://9b185eb71:190a55498@948891172.hosted.neo4j.org:7759";
+      module.exports.DB_URL = "http://WozDevel:p4Fsf0BhTQ0qs36O8Guv@wozdevel.sb01.stations.graphenedb.com:24789";
       break;
     
     case "testing":
       console.log( "environment is testing" );
-      module.exports.DB_URL = "http://023028cba:cc90afdd5@582127fb2.hosted.neo4j.org:7262";
+      module.exports.DB_URL = "http://WozTesting:jxE98rlWtUhDOlZEJrTO@woztesting.sb01.stations.graphenedb.com:24789";
       break;
     
     default:

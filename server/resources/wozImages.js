@@ -70,7 +70,8 @@ module.exports =
     {
       "id": "13",
       "name": "misty_forest",
-      "related": ["mist", "forest", "trunk", "grass", "spruce", "wood", "moss", "branch"]
+//       "related": ["mist", "forest", "trunk", "grass", "spruce", "wood", "moss", "branch"]
+      "related": [""]
     },
     {
       "id": "14",

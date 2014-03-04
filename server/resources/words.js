@@ -880,7 +880,7 @@ module.exports = {
         "basic"
       ],
       "points": 3,
-      "lemma": "other",
+      "lemma": "important",
       "type": "word"
     },
     {
@@ -1918,7 +1918,7 @@ module.exports = {
     },
     {
       "classes": [
-        "other",
+        "important",
         "conjunction"
       ],
       "versionOf": "",
@@ -1964,7 +1964,7 @@ module.exports = {
     },
     {
       "classes": [
-        "other",
+        "important",
         "conjunction"
       ],
       "versionOf": "",
@@ -3467,7 +3467,7 @@ module.exports = {
     },
     {
       "classes": [
-        "other"
+        "important"
       ],
       "versionOf": "",
       "categories": [
@@ -3513,7 +3513,7 @@ module.exports = {
     },
     {
       "classes": [
-        "other",
+        "important",
         "preposition"
       ],
       "versionOf": "",
@@ -3951,7 +3951,7 @@ module.exports = {
     {
       "classes": [
         "preposition",
-        "other"
+        "important"
       ],
       "versionOf": "",
       "categories": [
@@ -4502,7 +4502,7 @@ module.exports = {
     {
       "classes": [
         "verb",
-        "other"
+        "important"
       ],
       "versionOf": "",
       "categories": [
@@ -6027,7 +6027,7 @@ module.exports = {
     {
       "classes": [
         "verb",
-        "other"
+        "important"
       ],
       "versionOf": "",
       "categories": [

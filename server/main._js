@@ -11,18 +11,21 @@ var adder = require("./adder._js");
 var tools = require("./tools._js");
 var users = require("./users._js");
 var helper = require("./helper.js");
-var loader = require("./loader._js");
 var mailer = require("./mailer._js");
+var sup = require( "./supporter._js" );
 var friends = require("./friends._js");
 var actions = require("./actions._js");
 var inparser = require("./inparser._js");
-    
+
 var randomizer = require("./randomizer._js");
 var operations = require("./operations._js");
 var initializer = require("./initializer._js");
 
 var wordManager = require("./managers/wordManager._js");
 var boardManager = require("./managers/boardManager._js");
+var imageManager = require("./managers/imageManager._js");
+var categoryManager = require("./managers/categoryManager._js");
+var collectionManager = require("./managers/collectionManager._js");
 var instructionManager = require("./managers/instructionManager._js");
 
 var types = require( "./constants/types.js" );
@@ -32,10 +35,14 @@ var props = require( "./constants/properties.js" );
 var rels = require("./constants/relationships.js");
 var environment = require("./constants/environment.js");
 
+var wordLoader = require("./wordLoader._js");
+var instructionLoader = require("./instructionLoader._js");
+
 var retriever = require("./retrievers/retriever._js");
 var userRetriever = require("./retrievers/userRetriever._js");
+var instructionRetriever = require("./retrievers/instructionRetriever._js");
 
-var db = new neo4j.GraphDatabase(environment.DB_URL);  
+var db = new neo4j.GraphDatabase(environment.DB_URL);
 var app = express();
 
 if( environment.IS_HEROKU ){
@@ -49,179 +56,264 @@ app.use( express.cookieParser() );
 
 app.http();
 
-// both players get the new words for the player that placed the phrase
-// placed phrase in the object only sends ids, needs words
-// fix swap words concurrency (and some other things as well i guess)
+// optimise lobby!
+// optimise inparser, some instructions do more than they really need
+// getuserlobbyinfo doesnt really do anything
+// swap words concurrency (and some other things as well i guess)
+// indexing and removing bogus nodes fixes the first index node problem
+// if we ever use the word constructor it might collide with the versions object. it will most likely be harmless though since I dont care about the original constructor in that case but have to take care not to send it as the version array to the manager.
 
 var io = app.io();
 
 var active = {};
 var sockets = {};
-var queue =  [ [], [] ];
-var countNode;
+var queue =  [];
 
 var print = false;
 
 io.set("log level", 1);
 
 if ( environment.IS_HEROKU ) {
+  
+  var allowCrossDomain = function(req, res, next) {
+    res.header( "Access-Control-Allow-Origin", "*" );
+    res.header( "Access-Control-Allow-Methods", "GET,PUT,POST,DELETE" );
+    res.header( "Access-Control-Allow-Headers", "Content-Type" );
+    res.end();
+  }
+  
   app.io.configure( function() {
     app.io.set( "transports", ["xhr-polling"] );
     app.io.set( "polling duration", 10 );
+    app.use( allowCrossDomain );
   });
   app.listen( process.env.PORT );
 } else {
   app.listen( 8080 );
 }
 
+app.get("/test", function( req, res ){
+
+  console.log( "1" );
+  console.log( res );
+  res.write( "{ ali: \"This is a test\" }" );
+  
+  console.log( "2" );
+  
+});
+
 try
 {
-  countNode = retriever.getCountNode(_);
+  var countNode = retriever.getCountNode(_);
   
-//   consts.CLASS_COUNTS = {}; 
-//   for( var i = 0; i < consts.COLLECTION_NAMES.length; i++ ){
-//     consts.CLASS_COUNTS[ consts.COLLECTION_NAMES[i] ] = countNode.data[ consts.COLLECTION_NAMES + "ClassCounts" ];
-//   }
-//   console.log( consts.CLASS_COUNTS );
+  wordLoader.loadWords( _ );
+  wordLoader.loadVersions( _ );
+  instructionLoader.loadInstructions( _ );
 }
 catch( exception )
 {
-  console.log( "initializing db." );
-
-  initializer.initDB( _ );
-
-  countNode = retriever.getCountNode(_);
-  console.log( "done." );
+//   console.log( "initialising db." );
+//   initializer.initDB( _ );
+//   console.log( "done." );
+  console.log( "need to initialise the db." );
+  console.log( exception );
 }
 
-function createGame( usernames, collectionName, level, _ )
+// var limit = 100;
+// var start = new Date().getTime();
+// for ( var a = 0; a < limit; a++ ){
+// }
+// var end = new Date().getTime(); var time = end - start;
+// console.log("average time: " + time/limit );
+
+function createGame( playerCount, collectionName, level, _ )
 {
-  collectionName = "woz";
   
   var now, time = 0, start = new Date().getTime();
-
-  var player;
+  
+  var a, b, c = 0;
+  
+  var x = 0;
+  var y = 0;
+  var row = 0;
+  var indexInRow = 0;
+  var nextRow = consts.WORDS_IN_FIRST_ROW;
+  
+  var word;
   var nWords;
+  var words = [];
   var randomArray;
-  var a, i, j, k = 0;
+  
   var gameID = tools.getNewGameID(_);
-  var playerCount = usernames.length;
-  var startDate = Date.parse( new Date() );
+  var creationDate = Date.parse( new Date() );
   
-  now = new Date().getTime();
-  time = now - start;
-  if( print ) console.log("cg1: " + time );
-  start = new Date().getTime();
-  
+  console.log( "cg1" );
   var game = tools.createNode({
     type: types.GAME,
+    
     id: gameID,
     level: level,
-    turn: 0,
-    gameOver: false,
+    collection: collectionName,
+    
+    over: false,
     actionDone: false,
+    
+    turn: 0,
     wordCount: 0,
     tileCount: 0,
     pathCount: 0,
     phraseCount: 0,
-    usernames: usernames,
+    resignedCount: 0,
     playerCount: playerCount,
-    collection: collectionName,
-    lastMod: startDate,
-    startDate: startDate,
-    resignedCount: 0
+    
+    endDate: false,
+    modDate: creationDate,
+    creationDate: creationDate
   }, _ );
   
   game.index( indexes.GAME_INDEX, props.ID, gameID, _ );
-  
-  now = new Date().getTime(); time = now - start;
-  if( print )  console.log("cg2: " + time ); start = new Date().getTime();
-  
+  console.log( "cg2" );
   try
   {
+    console.log( "cg3" );
     randomizeBoard( game, collectionName, level, _ );
-    
+    console.log( "cg4" );
     now = new Date().getTime(); time = now - start;
-    if( print ) console.log("cg3: " + time ); start = new Date().getTime();
-    
-    for( a = 0; a < playerCount; a++ )  //creates a player instance for each player
-    {
-      var username = usernames[a];
-      var user = userRetriever.getUserByUsername( username, _ );
-      
-      player = tools.createNode({
-        type: types.PLAYER,
-        username: username,
-        score: 0,
-        order: a,
-        resigned: false
-      }, _ );
-      
-      user.createRelationshipTo( game, rels.PLAYS, {}, _ );
-      game.createRelationshipTo( player, rels.BEING_PLAYED_BY, {}, _ );
-      
-      now = new Date().getTime(); time = now - start;
-      console.log("cg4: " + time ); start = new Date().getTime();
-      
-      k = 0;
-      var x = 0;
-      var y = 0;
-      for( i = 0; i < consts.BALANCE_BASIC.length; i++ ){
-        for( j = 0; j < consts.BALANCE_BASIC[i]; j++ ){
-          x = k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03;
-          y = k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01);
-          
-          adder.addMagnet( game, player, "basic", consts.CLASS_NAMES[i], x, y, _ );
-          k++;
-        }
-      }
-      
-      for( i = 0; i < consts.BALANCE_COLLECTION.length; i++ ){
-        for( j = 0; j < consts.BALANCE_COLLECTION[i]; j++ ){
-          x = k > 9 ? (k-10) * 0.09 + 0.03: k * 0.09 + 0.03;
-          y = k > 9 ? 0.1 + randomizer.getSignedRandomInRange(0, 0.01) : 0 + randomizer.getSignedRandomInRange(0, 0.01);
-          
-          adder.addMagnet( game, player, collectionName, consts.CLASS_NAMES[i], x, y, _ );
-          k++;
-        }
-      }
-    }
-    
-    now = new Date().getTime(); time = now - start;
-    console.log("cg5: " + time );
+    if( print ) console.log("cg: " + time );
   }
   catch( ex )
   {
     console.log( "Error creating game" );
     console.log( ex );
   }
-//   console.log( "Added Game " + gameID + ". Node n. " + game.id );
+  //   console.log( "Added Game " + gameID + ". Node n. " + game.id );
+  
+  return game;
+  
+}
+
+function addPlayer( game, user, _ )
+{
+  var now, time = 0, start = new Date().getTime();
+  
+  var a, b, c = 0;
+  
+  var x = 0;
+  var y = 0;
+  var row = 0;
+  var nWords = 0;
+  var indexInRow = 0;
+  var nextRow = consts.WORDS_IN_FIRST_ROW;
+  
+  var word;
+  var player;
+  
+  var words = [];
+  
+  var creationDate = Date.parse( new Date() );
+  console.log( "ap1" );
+  try
+  { 
+    if( !game.data.hasOwnProperty( props.GAME.USERNAMES ) ) game.data[props.GAME.USERNAMES] = [];
+    console.log( "ap2" );
+    if( game.data[props.GAME.USERNAMES].length < game.data[props.GAME.PLAYER_COUNT] )
+    {
+      player = tools.createNode({
+        type: types.PLAYER,
+        username: user.data[props.USER.USERNAME],
+        score: 0,
+        order: a,
+        resigned: false,
+        resignationDate: false
+      }, _ );
+      
+      console.log( "ap3" );
+      user.createRelationshipTo( game, rels.PLAYS, {}, _ );
+      game.createRelationshipTo( player, rels.BEING_PLAYED_BY, {}, _ );
+      game.data[props.GAME.USERNAMES].push( user.data[props.USER.USERNAME] );
+      console.log( "ap4" );
+      game.save(_);
+      
+      now = new Date().getTime(); time = now - start;
+      if( print ) console.log("cg4: " + time ); start = new Date().getTime();
+      console.log( "ap5" );
+      row = 0;
+      indexInRow = 0;
+      nextRow = consts.WORDS_IN_FIRST_ROW;
+      for( b = 0; b < consts.BALANCE_BASIC.length; b++ ){
+        for( c = 0; c < consts.BALANCE_BASIC[b]; c++ ){
+          if( indexInRow == nextRow )
+          {
+            row++;
+            indexInRow = 0;
+            nextRow = consts.WORDS_IN_OTHER_ROWS;
+          }
+          x = row === 0 ? indexInRow * 0.1 + 0.15 : indexInRow * 0.125 + 0.175;
+          y = row * 0.1 + randomizer.getSignedRandomInRange(0, 0.01);
+          
+          word = wordLoader.getRandomWord( "basic", consts.CLASS_NAMES[b], words );
+          adder.addMagnet( game, player, "basic", consts.CLASS_NAMES[b], word, x, y, _ );
+          
+          indexInRow++;
+          words.push( word );
+        }
+      }
+      console.log( "ap6" );
+      for( b = 0; b < consts.BALANCE_COLLECTION.length; b++ ){
+        for( c = 0; c < consts.BALANCE_COLLECTION[b]; c++ ){
+          if( indexInRow == nextRow )
+          {
+            row++;
+            indexInRow = 0;
+          }
+          x = row === 0 ? indexInRow * 0.1 + 0.15 : indexInRow * 0.125 + 0.175;
+          y = row * 0.1 + randomizer.getSignedRandomInRange(0, 0.01);
+          
+          word = wordLoader.getRandomWord( game.data[props.GAME.COLLECTION], consts.CLASS_NAMES[b], words );
+          adder.addMagnet( game, player, game.data[props.GAME.COLLECTION], consts.CLASS_NAMES[b], word, x, y, _ );
+          
+          indexInRow++;
+          words.push( word );
+        }
+      }
+    }
+  }
+  catch( ex )
+  {
+    console.log( "Error creating game" );
+    console.log( ex );
+  }
+  console.log( "ap7" );
+  now = new Date().getTime(); time = now - start;
+  if( print ) console.log("cg5: " + time );
   
   return game;
 }
 
 function randomizeBoard( game, collectionName, level, _ )
-{
-  var now, time, start = new Date().getTime();
-  
-  var i = 0;
-  var j = 0;
+{ 
+  var i, j;
+  var board;
   var dist = 0;
   var nWords = 0;
   var ret = false;
+  var randomBoardID;
   
   var tiles = {};
   var connections = [];
+  var instructions = [];
   
   var boards = boardManager.getPublishedBoardsByLevel( level, false, _ );
   
   if( boards.length !== 0 )
   {
-    var randomBoardID = randomizer.getRandomIntegerInRange( 0, boards.length - 1 );    
-    var board = boards[ boards.length === 1 ? 0 : randomBoardID ];
+    randomBoardID = randomizer.getRandomIntegerInRange( 0, boards.length - 1 );    
+    board = boards[ boards.length === 1 ? 0 : randomBoardID ];
+    
+    instructions = instructionLoader.getRandomInstructions( collectionName, board.tiles.length );
     
     for( i = 0; i < board.tiles.length; i++ ){
-      tiles[board.tiles[i].data.id] = adder.addTile( game, collectionName, board.tiles[i].data.id, board.tiles[i].data.x, board.tiles[i].data.y, board.tiles[i].data.angle, _ );
+      tiles[board.tiles[i].data.id] = adder.addTile( game, collectionName, board.tiles[i].data.id, instructions[i], board.tiles[i].data.x, board.tiles[i].data.y, board.tiles[i].data.angle, _ );
     }
     
     for( i = 0; i < board.paths.length; i++ ){
@@ -242,15 +334,12 @@ function randomizeBoard( game, collectionName, level, _ )
     console.log( "No Game Boards Found" );
   }
   
-  now = new Date().getTime(); time = now - start;
-  console.log("rb1: " + time );
-  
   return ret;
 }
 
 function broadcastDiff( game, eventName, responseData )
 {
-  for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
+  for( var i = 0; i < game.data[props.GAME.USERNAMES].length; i++ ){
     if(  sockets.hasOwnProperty( game.data[props.GAME.USERNAMES][i] ) )
     {
       sockets[ game.data[props.GAME.USERNAMES][i] ].emit( eventName, responseData[ game.data[props.GAME.USERNAMES][i] ] );
@@ -260,7 +349,7 @@ function broadcastDiff( game, eventName, responseData )
 
 function broadcast( game, eventName, responseData )
 {
-  for( var i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
+  for( var i = 0; i < game.data[props.GAME.USERNAMES].length; i++ ){
     if(  sockets.hasOwnProperty( game.data[props.GAME.USERNAMES][i] ) )
     {
       sockets[ game.data[props.GAME.USERNAMES][i] ].emit( eventName, responseData );
@@ -268,52 +357,13 @@ function broadcast( game, eventName, responseData )
   }
 }
 
-function fillGameUpdateData( game, _ )
-{
-  var i = 0;
-  var player;
-  var gameUpdateData = { playerInfo: [] };
-  
-  gameUpdateData.gameOver = game.data[props.GAME.GAME_OVER];
-  
-  for( i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
-    player = retriever.getGamePlayerByID( game.id, game.data[props.GAME.USERNAMES][i], _ );
-    gameUpdateData.playerInfo.push({
-      username: game.data[props.GAME.USERNAMES][i],
-      score: player.data[props.PLAYER.SCORE],
-      active: game.data[props.GAME.GAME_OVER] === true ?
-        false :
-        game.data[props.GAME.USERNAMES][i] === game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]],
-      resigned: player.data[props.PLAYER.RESIGNED]
-    });
-  }
-  
-  return gameUpdateData;
-}
-
-//  Randomize array element order in-place using the Fisher-Yates shuffle algorithm.*
-function shuffleArray( array )
-{
-  for( var i = array.length - 1; i > 0; i-- ){
-    var j = Math.floor( Math.random() * (i + 1) );
-    var temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-  return array;
-}
-
-// app.get("/", function( req, res ){
-//   res.sendfile( "index.html", { root: "../client/" } );
-// });
-
 app.io.route( "account:sign-up", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write("signing up ");
-  
+{ 
   (function(_)
   {
-    var responseData = { success : false }
+    var start = new Date().getTime(); process.stdout.write("signing up ");
+    
+    var responseData = { success : false };
     var success = false;
     
     success = users.addUser( req.data.username, req.data.password, req.data.email, "miss", "mister", "eng", consts.STARTING_BESOZ, _ );
@@ -324,31 +374,35 @@ app.io.route( "account:sign-up", function( req )
     
     responseData.success = success;
     req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
-} );
+});
 
 app.io.route( "account:login", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write("logging in "); 
-  
+{ 
   (function(_)
   {
+    var start = new Date().getTime(); process.stdout.write("logging in "); 
+    
     var responseData = { success: false };
     var user = users.login( req.data.username, req.data.password, _ );
     
-    if( user !== false ){
+    if( user !== false )
+    {  
+      sockets[ req.data.username ] = req.io;
       active[ req.data.username ] = { socket: req.io, active: true, lastActive: new Date() };
-      responseData = { success: true };
-    }else{
-      responseData.message = "Sorry, that user or password was not recognized. Please try again.";
+      responseData = { username: user.data[props.USER.USERNAME], success: true };
+    }else
+    {
+      responseData.message = "Sorry, that username or password was not recognized. Please try again.";
     }
     
     req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
   
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "logout", function( req )
@@ -372,31 +426,101 @@ app.io.route( "recover:password", function( req )
 });
 
 app.io.route( "game:lobby", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write("lobby "); 
-  
+{ 
   (function(_)
   {
+    var start = new Date().getTime(); process.stdout.write("lobby "); 
+    
     var i, j;
+    var user;
     var game;
     var lastPhrase;
     var games = [];
     var phrases = [];
     var players = [];
-    var responseData = { success: false, games: [] }
-    var user = userRetriever.getUserByUsername( req.data.username, _ );
+    var responseData = { success: false, games: [] };
     
     try
     {
-      var games = retriever.getUserGames( user.id, true, _ );
+      user = users.getUser( req.data.username, false, _ );
+      console.log( user.data );
+      if( user )
+      {
+        sockets[ user.data[props.USER.USERNAME] ] = req.io;
+      }
+      
+      games = retriever.getUserGames( user.id, true, _ );
       
       for( i = 0; i < games.length; i++ ){
         game = games[i];
         
         responseData.games[i] = {};
         responseData.games[i].gameID = game.data[props.ID];
-        responseData.games[i].lastMod = game.data[props.GAME.LAST_MOD];
-        responseData.games[i].startDate = game.data[props.GAME.START_DATE];
+        responseData.games[i].modDate = game.data[props.GAME.MOD_DATE];
+        responseData.games[i].creationDate = game.data[props.GAME.CREATION_DATE];
+        responseData.games[i].collection = game.data[props.GAME.COLLECTION];
+        
+        lastPhrase = retriever.getGamePhraseByID( game.id, game.data[props.GAME.PHRASE_COUNT] - 1, _ );
+        responseData.games[i].lastPhrase = lastPhrase ? { phrase: lastPhrase.data[props.PHRASE.PHRASE_STRING], username: lastPhrase.data[props.PHRASE.USERNAME], score: lastPhrase.data[props.PHRASE.SCORE]} : {};
+        
+        players = retriever.getGamePlayers( game.id, _ );
+        responseData.games[i].players = [];
+        
+        for( j = 0; j < players.length; j++ ){
+          responseData.games[i].players.push({
+            username: players[j].data[props.PLAYER.USERNAME],
+            score: players[j].data[props.PLAYER.SCORE],
+            active: game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === players[j].data[props.PLAYER.USERNAME]
+          });
+        }
+      }
+      
+      responseData.success = true;
+    }
+    catch( ex )
+    {
+      console.log( ex.message );
+    }
+    
+    req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+  })( helper.logError );
+});
+
+app.io.route( "game:archive", function( req )
+{ 
+  (function(_)
+  {
+    var start = new Date().getTime(); process.stdout.write("lobby "); 
+    
+    var i, j;
+    var user;
+    var game;
+    var games;
+    var lastPhrase;
+    
+    var phrases = [];
+    var players = [];
+    var responseData = { success: false, games: [] };
+    
+    try
+    {
+      user = userRetriever.getUserByUsername( req.data.username, false, _ );
+      if( user )
+      {  
+        sockets[ req.data.username ] = req.io;
+      }
+      
+      games = retriever.getUserNonResignedGames( user.id, false, _ );
+      
+      for( i = 0; i < games.length; i++ ){
+        game = games[i];
+        
+        responseData.games[i] = {};
+        responseData.games[i].gameID = game.data[props.ID];
+        responseData.games[i].modDate = game.data[props.GAME.MOD_DATE];
+        responseData.games[i].creationDate = game.data[props.GAME.CREATION_DATE];
         responseData.games[i].collection = game.data[props.GAME.COLLECTION];
         
         lastPhrase = retriever.getGamePhraseByID( game.id, game.data[props.GAME.PHRASE_COUNT] - 1, _ );   
@@ -422,62 +546,87 @@ app.io.route( "game:lobby", function( req )
     }
     
     req.io.respond( responseData );
-  })( helper.logError );
     
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+  })( helper.logError );
 });
 
-app.io.route( "game:queue", function( req )
+app.io.route( "game:request", function( req )
 { 
   (function(_)
-  { 
-    var playerCount = req.data.playerCount;
-    var queueType = playerCount -1;
+  {
+    var type = req.data.type;
+    var username = req.data.username;
+    var playerCount = req.data.type === consts.SINGLE ? 1 : 2;
     
-    if( users.login( req.data.username, req.data.password, _ ) )
+    var a;
+    var user;
+    var game;
+    var friend;
+    var jsonObjs;
+    var usernames = [];
+    var tempSockets = {};
+    
+    var now, time, start;
+    user = userRetriever.getUserByUsername( username, false, _ );
+    
+    req.io.respond({ success: user ? true : false });
+    
+    if( user )
     {
-      queue[queueType].push({ username: req.data.username, socket: req.io });
-      req.io.respond({ success: true });
-      
-      if( queue[queueType].length >= playerCount )
+      sockets[ username ] = req.io;
+      console.log( req.data );
+      if( type === consts.RANDOM && queue.length > 0 )
       {
-        var i, j = 0;
-        var game;
-        var jsonObjs;
-        var usernames = [];
-        var tempSockets = {};
-        var start = new Date().getTime();
-        process.stdout.write( "creating new game " );
+        game = queue[0];
+        queue.splice( 0, 1 );
+      }
+      else
+      {
+        start = new Date().getTime();
+        game = createGame( playerCount, req.data.collection, 0, _ );
         
-        for( i = 0; i < playerCount; i++ ){
-          var user = queue[queueType].pop();
-          usernames.push( user[props.USER.USERNAME] );
-          sockets[ user[props.USER.USERNAME] ] = user[props.PLAYER.SOCKET];
-        }
-        
-        var start2 = new Date().getTime();
-        game = createGame( usernames, "woz", 0, _ );
-        var now2 = new Date().getTime();
-        console.log("q: " + ( now2 - start2 ) );
-        
-        if( game )
-        {
-          jsonObjs = tools.getGameObject( game, usernames, _ );
-          broadcastDiff( game, consts.START_GAME, jsonObjs );
-        }
+        now = new Date().getTime(); time = now - start;
+        if( print ) console.log("took: " + time ); start = new Date().getTime();
+      } 
       
-      var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
+      start = new Date().getTime();
+      process.stdout.write( "adding player(s) to game " );
+      
+      game = addPlayer( game, user, _ );
+      if( type === consts.FRIEND ){
+        friend = userRetriever.getUserByUsername( req.data.friendUsername, false, _ );
+        if( friend ) game = addPlayer( game, friend, _ );
+      }
+      
+      now = new Date().getTime(); time = now - start;
+      if( print ) console.log("took: " + time ); start = new Date().getTime();
+      
+      if( game && type === consts.RANDOM && game.data[props.GAME.PLAYER_COUNT] !== game.data[props.GAME.USERNAMES].length )
+      {
+        queue.push( game );
+      }
+        
+      jsonObjs = tools.getGameObject( game, game.data[props.GAME.USERNAMES], _ );
+      broadcastDiff( game, consts.START_GAME, jsonObjs );
     }
-  }
+      
+    //send lobby event also to the creator of the game
+    //send lobby object to the other player so the client can update the lobby with the new game
+    
+    now = new Date().getTime(); time = now - start;
+    if( print ) console.log("broadcast: " + time );
+    
+    var end = new Date().getTime(); time = end - start;  console.log( "took: " + time + "ms" );
   })( helper.logError );
 });
 
 app.io.route( "game:resume", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write("resuming game ");
-  
+{ 
   (function(_)
   {
+    var start = new Date().getTime(); process.stdout.write("resuming game ");
+    
     try
     {
       var game = retriever.getGameByID( req.data.id, false, _ );
@@ -497,57 +646,83 @@ app.io.route( "game:resume", function( req )
     }
     
     var end = new Date().getTime(); var time = end - start;  console.log( "took: " + time + "ms" );
-  })
-  ( helper.logError );
+  })( helper.logError );
 });
 
 app.io.route( "game:place-phrase", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write("placing phrase ");
-
-  var ret;
-  var i = 0;
-  
+{ 
   (function(_)
   {
+    var start = new Date().getTime(); process.stdout.write("placing phrase ");
+    
+    var ret;
+    var user;
+    var a, b;
+    var username;
     var gameUpdateData;
-    var responseData = { success: false };
+    var levelUp = false;
+    var responseData = {  };
     var game = retriever.getGameByID( req.data.gameID, false, _ );
+    
+    sockets[ req.data.username ] = req.io;
     
     if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] === req.data.username )
     {
       ret = actions.placePhrase( game, req.data.username, req.data.pathID, req.data.words, _ );
-      gameUpdateData = fillGameUpdateData( game, _ );
       
-      for( i = 0; i < game.data[props.GAME.PLAYER_COUNT]; i++ ){
-        responseData[ game.data[props.GAME.USERNAMES][i] ] = {};
-        responseData[ game.data[props.GAME.USERNAMES][i] ].gameOver = gameUpdateData.gameOver;
-        responseData[ game.data[props.GAME.USERNAMES][i] ].playerInfo = gameUpdateData.playerInfo;
+      gameUpdateData = tools.getGameUpdateData( game, _ );
+      
+      for( a = 0; a < game.data[props.GAME.USERNAMES].length; a++ ){
+        username = game.data[props.GAME.USERNAMES][a];
         
-        responseData[ game.data[props.GAME.USERNAMES][i] ].success = ret.madness === 0;
+        responseData[username] = {};
+        responseData[username].path = ret.path;
+        responseData[username].gameID = game.data[props.ID];
+        responseData[username].players = gameUpdateData.players;
+        responseData[username].over = game.data[props.GAME.OVER];
         
-        if( game.data[props.GAME.USERNAMES][i] === req.data.username )
+        if( game.data[props.GAME.OVER] )
         {
-          responseData[ game.data[props.GAME.USERNAMES][i] ].words = ret.words;
+          user = userRetriever.getUserByUsername( username, false, _ );
+          user.data[props.USER.GAMES_PLAYED]++;
+          user.save(_);
+          
+          levelUp = false;
+          
+          for( b = consts.LEVELS.length - 1; b > 0; b-- ){
+            if( user.data[props.USER.GAMES_PLAYED] >= consts.LEVELS[b].gamesReq )
+            {
+              if( user.data[props.USER.GAMES_PLAYED] === consts.LEVELS[b].gamesReq ) levelUp = true;
+              break;
+            }
+          }
+          
+          responseData[username].stats = {
+            xp: 0,
+            level: consts.LEVELS[b].title,
+            levelUp: levelUp
+          };
         }
-        else
+        
+        if( username === req.data.username )
         {
-          responseData[ game.data[props.GAME.USERNAMES][i] ].path = ret.path;
+          responseData[username].words = ret.words;
         }
+        responseData[username].success = ret.madness === 0;
       }
     }
     try
     {
-      broadcastDiff( game, "game:update", responseData );
+      broadcastDiff( game, consts.GAME_UPDATE, responseData );
     }
     catch( ex )
     {
       console.log( "error updating" );
       console.log( ex );
     }
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "game:move-word", function( req )
@@ -557,25 +732,22 @@ app.io.route( "game:move-word", function( req )
     var start = new Date().getTime(); process.stdout.write( "moving " );
     
     var game = retriever.getGameByID( req.data.gameID, false, _ );
-    
-    if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
-    {
-      operations.move( game.id, req.data.word.id, req.data.word.x, req.data.word.y, _ );
-    }
+    operations.move( game.id, req.data.word.id, req.data.word.x, req.data.word.y, _ );
     
     var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
-  })
-  ( helper.logError );
+  })( helper.logError );
 });
 
 app.io.route( "game:swap-words", function( req )
 {
-  var start = new Date().getTime(); process.stdout.write("swapping words ");
-
   (function(_)
   {
+    var start = new Date().getTime(); process.stdout.write("swapping words ");
+    
     var responseData = { success: false, words: [] };
     var game = retriever.getGameByID( req.data.gameID, false, _ );
+    
+    sockets[ req.data.username ] = req.io;
     
     if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
     {
@@ -583,16 +755,38 @@ app.io.route( "game:swap-words", function( req )
       responseData.success = true;
     }
     req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "game:get-versions", function( req )
+{
+  (function(_)
+  {
+    var start = new Date().getTime(); process.stdout.write("swapping words ");
+    
+    var responseData = { success: false, versions: [] };
+    var game = retriever.getGameByID( req.data.gameID, false, _ );
+    
+    sockets[ req.data.username ] = req.io;
+    
+    if( game.data[props.GAME.USERNAMES][game.data[props.GAME.TURN] % game.data[props.GAME.PLAYER_COUNT]] == req.data.username )
+    {
+      responseData.words = actions.swapWords( game, req.data.username, req.data.words, _ );
+      responseData.success = true;
+    }
+    req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+  })( helper.logError );
 });
 
 app.io.route( "end:turn", function( req )
 {
   (function(_)
   {
-    operations.endTurn( req.data.game, _ );
+    sup.endTurn( req.data.game, _ );
   })
   ( helper.logError );
 });
@@ -604,50 +798,58 @@ app.io.route( "game:resign", function( req )
     var start = new Date().getTime(); process.stdout.write("resigning ");
     
     var ret;
+    var game;
     var player;
-    var responseData = { success: false, playerInfo: [] };
-    
+    var responseData = { success: false };
+    console.log( "1" );
     if( req.data.hasOwnProperty( "gameID" ) && req.data.hasOwnProperty( "username" ) )
     {
+      game = retriever.getGameByID( req.data.gameID, false, _ );
       sockets[ req.data.username ] = req.io;
-      var game = retriever.getGameByID( req.data.gameID, false, _ );
-      
-      if( game && game.data[props.GAME.GAME_OVER] === false )
+      req.io.respond({});
+      console.log( "2" );
+      if( game && game.data[props.GAME.OVER] === false )
       {
+        console.log( "3" );
         player = retriever.getGamePlayerByID( game.id, req.data.username, _ );
-        
-        if( player )
+        console.log( "4" );
+        if( player && !player.data[props.PLAYER.RESIGNED] )
         {
+          console.log( "5" );
           player.data[props.PLAYER.RESIGNED] = true;
+          player.data[props.PLAYER.RESIGNATION_DATE] = Date.parse( new Date() );
           game.data[props.GAME.RESIGNED_COUNT]++;
-          
-          if( game.data[props.GAME.RESIGNED_COUNT] + 1 >= game.data[props.GAME.PLAYER_COUNT] ){
-            game.data[props.GAME.GAME_OVER] = true;
+          console.log( "6" );
+          if( game.data[props.GAME.RESIGNED_COUNT] + 1 >= game.data[props.GAME.PLAYER_COUNT] )
+          {
+            console.log( "7" );
+            game.data[props.GAME.OVER] = true;
+            game.data[props.GAME.OVER_DATE] = Date.parse( new Date() );
           }
-          
+          console.log( "8" );
           game.save(_);
           player.save(_);
           
-          responseData = fillGameUpdateData( game, _ );
+          responseData = tools.getGameUpdateData( game, _ );
           responseData.success = true;
         }
       }
       
-      broadcast( game, "game:update", responseData );
+      broadcast( game, consts.GAME_UPDATE, responseData );
     }
     
     var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
-  })
-  ( helper.logError ); 
+  })( helper.logError ); 
 });
 
 app.io.route( "manager:boards", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write( "boardManager:" + req.data.command + " " );
-  
+{ 
   (function(_)
   {
-    var responseData = { success:false }
+    var start = new Date().getTime(); process.stdout.write( "boardManager:" + req.data.command + " " );
+    console.log( req.data );
+    
+    var responseData = { success:false };
     
     if( req.data.command === "set" ){
       responseData.id = boardManager.setBoard( req.data.id, req.data.level, req.data.draft, req.data.tiles, req.data.paths, _ );
@@ -663,48 +865,65 @@ app.io.route( "manager:boards", function( req )
     }
     
     req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "manager:instructions", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write( "instructionManager:" + req.data.command + " " );
-  
+{ 
   (function(_)
   {
-    var responseData = { success:false }
+    var start = new Date().getTime(); process.stdout.write( "instructionManager:" + req.data.command + " " );
+    
+    var responseData = { success:false };
+    
+    console.log( req.data );
     
     if( req.data.command === "set" ){
-      instructionManager.setInstruction( req.data.condition, req.data.shortDescription, req.data.longDescription, req.data.collections, req.data.bonus, req.data.mult, req.data.level, _ );
-      responseData.success = true;
+      if( req.data.hasOwnProperty( props.ID ) )
+      {
+        responseData.id = instructionManager.setInstruction( req.data.instruction.id, req.data.instruction.conditions, req.data.instruction.shortDescription, req.data.instruction.longDescription, req.data.instruction.collections, req.data.instruction.bonus, req.data.instruction.mult, req.data.instruction.level, _ );
+        responseData.success = true;
+        
+        instructionLoader.loadInstructions( _ );
+      }
     }else if( req.data.command === "getAll" ){
       responseData.instructions = instructionManager.getAllInstructions( _ );
       responseData.success = true;
     }else if( req.data.command === "get" ){
-      responseData.instruction = instructionManager.getInstruction( req.data.id, _ );
-      responseData.success = true;
+      if( req.data.hasOwnProperty( props.ID ) )
+      {
+        responseData.instruction = instructionManager.getInstruction( req.data.id, _ );
+        responseData.success = true;
+      }
     }else if( req.data.command === "delete" ){
-      
+      if( req.data.hasOwnProperty( props.ID ) )
+      {
+        instructionManager.deleteInstruction( req.data.id, _ );
+        responseData.success = true;
+        
+        instructionLoader.loadInstructions( _ );
+      }
     }
     
     req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 app.io.route( "manager:images", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write( "imageManager:" + req.data.command + " " );
-  
+{ 
   (function(_)
   {
-    var responseData = { success:false }
+    var start = new Date().getTime(); process.stdout.write( "imageManager:" + req.data.command + " " );
+    
+    var responseData = { success:false };
+    console.log( req.data );
     
     if( req.data.command === "set" ){
-      imageManager.setImage( req.data.name, req.data.id, req.data.related, _ );
+      responseData.id = imageManager.setImage( req.data.name, req.data.id, req.data.related, _ );
       responseData.success = true;
     }else if( req.data.command === "getAll" ){
       responseData.images = imageManager.getAllImages( _ );
@@ -714,46 +933,116 @@ app.io.route( "manager:images", function( req )
       responseData.success = true;
     }else if( req.data.command === "delete" ){
       
+    }else if( req.data.command === "getRelated" ){
+      responseData.related = imageManager.getRelatedWords( req.data.name, _ );
+      responseData.success = true;
+    }else if( req.data.command === "setRelated" ){
+      imageManager.setRelatedWords( req.data.name, req.data.related, _ );
+      responseData.success = true;
     }
     
     req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+});
+
+app.io.route( "manager:categories", function( req )
+{
+  (function(_)
+  {
+    var start = new Date().getTime(); process.stdout.write( "categoryManager:" + req.data.command + " " );
+    
+    var responseData = { success:false };
+    
+    if( req.data.command === "getAll" ){
+      responseData.categories = categoryManager.getAllCategories( _ );
+      responseData.success = true;
+    }
+    
+    req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+  })( helper.logError );
+});
+
+app.io.route( "manager:collections", function( req )
+{ 
+  (function(_)
+  {
+    var start = new Date().getTime(); process.stdout.write( "collectionManager:" + req.data.command + " " );
+    
+    var responseData = { success:false };
+    
+    if( req.data.command === "getAll" ){
+      responseData.collections = collectionManager.getAllCollections( _ );
+      responseData.success = true;
+    }else if( req.data.command === "set" ){
+      collectionManager.setCollection( req.data.shortName, req.data.longName, _ );
+      responseData.success = true;
+    }
+    
+    req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+  })( helper.logError );
 });
 
 app.io.route( "manager:words", function( req )
-{
-  var start = new Date().getTime(); process.stdout.write( "wordManager:" + req.data.command + " " );
-  
+{ 
   (function(_)
   {
-    var responseData = { success:false }
+    var start = new Date().getTime(); process.stdout.write( "wordManager:" + req.data.command + " " );
+    console.log( req.data );
     
-    if( req.data.command === "set" ){
-      wordManager.setWord( req.data.lemma, req.data.classes, req.data.categories, req.data.collections, req.data.versionOf, _ );
+    var responseData = { success:false };
+    
+    if( req.data.command === "getAll" )
+    {
+      responseData.words = wordManager.getAllWords( "active", true, _ );
       responseData.success = true;
-    }else if( req.data.command === "getAll" ){
-      responseData.words = wordManager.getAllWords( _ );
+    }
+    else if( req.data.command === "set" )
+    {
+      wordManager.setWord( req.data.lemma, req.data.oldLemma, req.data.classes, req.data.categories, req.data.collections, _ );
       responseData.success = true;
-    }else if( req.data.command === "get" ){
+
+      wordLoader.loadWords( _ );
+      wordLoader.loadVersions( _ );
+    }
+    else if( req.data.command === "setVersions" )
+    {
+      responseData.success = wordManager.setVersions( req.data.lemma, req.data.versions, _ );
       
-    }else if( req.data.command === "delete" ){
-      
+      wordLoader.loadVersions( _ );
+    }
+    else if( req.data.command === "delete" )
+    {
+      if( req.data.lemma )
+      {
+        wordManager.deleteWord( req.data.lemma, _ );
+        responseData.success = true;
+        
+        wordLoader.loadWords( _ );
+        wordLoader.loadVersions( _ );
+      }
     }
     
+    console.log( responseData );
     req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
   
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
+  
 });
 
 app.io.route( "friends", function( req )
 {
-  var start = new Date().getTime(); process.stdout.write( "friends:" + req.data.command + " " );
-  
   (function(_)
   {
+    var start = new Date().getTime(); process.stdout.write( "friends:" + req.data.command + " " );
+    
     var responseData = { success:false };
     
     try
@@ -778,9 +1067,9 @@ app.io.route( "friends", function( req )
     }
     
     req.io.respond( responseData );
+    
+    var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
   })( helper.logError );
-  
-  var end = new Date().getTime(); var time = end - start; console.log( "took: " + time + "ms" );
 });
 
 console.log("server ready");

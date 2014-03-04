@@ -18,7 +18,7 @@ var print = false;
 module.exports =
 {
 
-  addMagnet: function( game, player, collectionName, className, x, y, _ )
+  addMagnet: function( game, player, collectionName, className, word, x, y, _ )
   {
     var start = new Date().getTime(); var now; var time;
     
@@ -27,12 +27,10 @@ module.exports =
     var j = 0;
     var isRelated = false;
     
-    var word = randomizer.getRandomWordByClass( collectionName, className, _);
-    
     now = new Date().getTime(); time = now - start;
     if( print ) console.log("am1: " + time ); start = new Date().getTime();
     
-    isRelated = retriever.getWordRelatedImages( game.id, word.id, _ ).length > 0;
+    isRelated = retriever.getWordRelatedTiles( game.id, word.id, _ ).length > 0;
     
     if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
     if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
@@ -44,7 +42,6 @@ module.exports =
     var magnet = tools.createNode({
       type: types.MAGNET_PLAYER,
       id: game.data[props.GAME.WORD_COUNT],
-      representedWord: word.data[props.WORD.LEMMA],
       owner: player.data[props.PLAYER.USERNAME],
       isRelated: isRelated,
       angle: randomAngle,
@@ -79,29 +76,21 @@ module.exports =
     return ret;
   },
   
-  addTile: function( game, collectionName, id, x, y, angle, _ )
+  addTile: function( game, collectionName, id, instruction, x, y, angle, _ )
   {
     var tile;
     var i = 0;
     
     var image = randomizer.getRandomImage( collectionName, _ );
     var images = retriever.getGameTileImages( game.id, _ );
-    var instruction = randomizer.getRandomInstruction(_);
     var instructions = retriever.getGameTileInstructions( game.id, _ );
     if( x == -1 ) x = randomizer.getRandomInRange( consts.MIN_X, consts.MAX_X );
     if( y == -1 ) y = randomizer.getRandomInRange( consts.MIN_Y, consts.MAX_Y );
+    
     for( i = 0; i < images.length; i++ ){  
       if( image.data.name == images[i].data.name )
       {
         image = randomizer.getRandomImage( collectionName, _ );
-        i = -1;
-      }
-    }
-    
-    for( i = 0; i < instructions.length; i++ ){
-      if( instruction.data.id == instructions[i].data.id )
-      {
-        instruction = randomizer.getRandomInstruction(_);
         i = -1;
       }
     }

@@ -1,5 +1,3 @@
-var loader = require("./loader._js");
-
 var types = require( "./constants/types.js" );
 var rels = require("./constants/relationships.js");
 var props = require( "./constants/properties.js" );
@@ -11,37 +9,10 @@ var instructionRetriever = require("./retrievers/instructionRetriever._js");
 
 module.exports =
 {
-  getRandomWord : function( _ )
-  {
-    var word;
-    var total = 0;
-    var randomC = Math.random();
-    for( var i = 0; i < consts.BALANCE.length; i ++ ){
-      total += consts.BALANCE[i];
-      if( randomC < total ){
-        var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[i] - 1 ) );
-//         word = retriever.getWordFromClassIndex( consts.CLASS_NAMES[i], randomN, _ );
-        word = loader.getWords()[className][randomN];
-        break;
-      }
-    }
-    return word;
-  },
 
-  getRandomWordByClass : function( collectionName, className, _ )
-  { 
-    var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[collectionName][className] - 1 ) );
-    var word = retriever.getWordFromClassIndex( collectionName, className, randomN, _ );
-    
-    return word;
-  },
-
-  getRandomWordByClassWithLoader : function( collectionName, className, _ )
+  getRandomWordID: function( collectionName, className )
   {
-    var randomN = Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[collectionName][className] - 1 ) );
-    var word = loader.getWords()[className][randomN];
-    
-    return word;
+    return Math.floor( this.getRandomIntegerInRange( 0, consts.CLASS_COUNTS[collectionName][className] - 1 ) );
   },
   
   getRandomImage : function( collectionName, _ )
@@ -50,14 +21,6 @@ module.exports =
     var image = imageRetriever.getImageByCollectionAndID( collectionName, randomN, false, _ );
     
     return image;
-  },
-  
-  getRandomInstruction : function( _ )
-  {
-    var randomN = Math.floor( Math.random() *  consts.INSTRUCTION_TOTAL );
-    var instruction = instructionRetriever.getInstructionByID( randomN, false, _ );
-    
-    return instruction;
   },
   
   getRandomInRange: function( min, max )

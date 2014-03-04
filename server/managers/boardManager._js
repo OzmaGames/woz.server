@@ -71,8 +71,9 @@ module.exports =
     var countNode = retriever.getCountNode( _ );
     
     var ret = [];
-    
-    if( countNode.data[props.COUNT_NODE.BOARD_COUNT] !== 0 ){
+
+    if( countNode.data[props.COUNT_NODE.BOARD_COUNT] !== 0 )
+    {
       boards = retriever.getPublishedBoardsByLevel( level, false, _ );
       
       for( i = 0; i < boards.length; i++ ){
@@ -155,7 +156,7 @@ module.exports =
         id: id,
         level: level,
         draft: draft,
-        lastMod: Date.parse( new Date() )
+        modDate: Date.parse( new Date() )
       }, _ );
     boardNode.index( indexes.BOARD_INDEX, props.ID, id, _ );
     
@@ -164,7 +165,7 @@ module.exports =
       
       boardNode.data.level = level;
       boardNode.data.draft = draft;
-      boardNode.data.lastMod = Date.parse( new Date() )
+      boardNode.data.modDate = Date.parse( new Date() );
       boardNode.save( _ );
       
       tempPaths = retriever.getBoardPaths( boardNode.id, false, _ );
@@ -218,9 +219,9 @@ module.exports =
     var fs = require("fs");
     var boards = this.getBoards( _ );
     
-    console.log( JSON.stringify( boards, null, 2 ) );
+//     console.log( JSON.stringify( boards, null, 2 ) );
     
     fs.writeFile("./boards.js", JSON.stringify( boards, null, 2 ), _);  
   }
   
-}
+};

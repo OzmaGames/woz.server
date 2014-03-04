@@ -7,44 +7,56 @@ var types = require( "./constants/types.js" ),
 
 module.exports =
 {
-  checkInstruction: function( rule, words, _ )
+  checkInstruction: function( conditions, words, _ )
   {
-    var ret = false;
+    var a = 0;
+    var tempRet;
+    var condition;
+    var ret = { satisfied: true, words: [] };
     
-    while( rule.indexOf("  ") != -1 ){
-      rule = rule.replace( "  ", " " );
-    }
-    
-    var matches = rule.split(" ");
-    var expType = matches[0];
-    var n = matches[1];
-    var where = matches[2];
-    
-    if( n == "all" ){
-      n = words.length;
-    }
-    
-    if( expType == "inspirational" ){
-      ret = true;
-    }else{
+    for( a = 0; a < conditions.length; a++ )
+    {
+      condition = conditions[a];
+      while( condition.indexOf("  ") != -1 ){
+        condition = condition.replace( "  ", " " );
+      }
+      console.log( condition );
+      var matches = condition.split(" ");
+      var expType = matches[0];
+      var n = matches[1];
+      var where = matches[2];
+      
+      if( n == "all" ){
+        n = words.length;
+      }
+      
       if( expType == "begin" ){
-        ret = checkLetters( n, where, words, true, _ );
+        tempRet = checkLetters( n, where, words, true, _ );
       }
       else if( expType == "end" ){
-        ret = checkLetters( n, where, words, false, _ );
+        tempRet = checkLetters( n, where, words, false, _ );
       }
       else if( expType == "count" ){
-        ret = checkCount( n, where, words, _ );
+        tempRet = checkCount( n, where, words, _ );
       }
       else if( expType == "class" ){
-        ret = checkClass( n, where, words, _ );
+        tempRet = checkClass( n, where, words, _ );
       }
       else if( expType == "category" ){
-        ret = checkCategory( n, where, words, _ );
+        tempRet = checkCategory( n, where, words, _ );
       }
       else if( expType == "syllables" ){
-        ret = checkSyllables( n, words, _ );
+        tempRet = checkSyllables( n, words, _ );
       }
+      else{
+        tempRet = { satisfied: false, words: [] };
+      }
+      console.log( "tempRet" );
+      console.log( tempRet );
+      ret.satisfied = ret.satisfied && tempRet.satisfied;
+      ret.words = ret.words.concat( tempRet.words );
+      console.log( "ret" );
+      console.log( ret );
     }
     
     return ret;
@@ -53,42 +65,48 @@ module.exports =
 
 function checkLetters( n, where, words, isBegin, _ ) //if not begin -> end
 {
-  var ret = false;
+  var i;
+  var ret = { satisfied: false, words:[] };
   var letters = [];
   var lettersCount = {};
   var isSame = where == "same" ? true : false;
   var isDiff = where == "diff" ? true : false;
 
-  for( var i = 0; i < words.length; i++ )
+  for( i = 0; i < words.length; i++ )
   {
     var currentWord = words[i];
 
     var currentLetter = currentWord.data[props.WORD.LEMMA].substr( isBegin ? 0 : currentWord.data[props.WORD.LEMMA].length - 1, 1);
     
-    if( lettersCount.hasOwnProperty( currentLetter ) ){
-      lettersCount[currentLetter]++;
-    }else{
+    if( !lettersCount.hasOwnProperty( currentLetter ) )
+    {
       letters.push(currentLetter);
-      lettersCount[currentLetter] = 1;
+      lettersCount[currentLetter] = { count: 0, words: [] };
     }
+    
+    lettersCount[currentLetter].count++;
+    lettersCount[currentLetter].words.push( i );
   }
   
-  if( isSame ){
+  if( isSame )  //2 words starting with the same letter, f. ex.
+  {
     for( var b = 0; b < letters.length; b++ ){
       if( lettersCount[ letters[b] ] == n )
       {
-        ret = true;
+        ret.words = lettersCount[ letters[b] ].words;
+        ret.satisfied = true;
         break;
       }
     }
   }
-  else if( isDiff && letters.length == n)
+  else if( isDiff && letters.length == n)  //2 words starting with different letters, f. ex.
   {
-    ret = true;
+    ret.satisfied = true;
   }
-  else if( lettersCount.hasOwnProperty( where ) && lettersCount[where] >= n )
+  else if( lettersCount.hasOwnProperty( where ) && lettersCount[where].count >= n )  //1 word starting with r. f. ex.
   {
-    ret = true;
+    ret.words = lettersCount[where].words;
+    ret.satisfied = true;
   }
   
   return ret;
@@ -96,51 +114,62 @@ function checkLetters( n, where, words, isBegin, _ ) //if not begin -> end
 
 function checkCount( n, where, words, _ )
 {
-  var matches = 0;
-
+  var ret = { satisfied: false, words: [] };
+  var currentWord;
+  var count = 0;
+  
   for( var i = 0; i < words.length; i++ ){
-    var currentWord = words[i];
+    currentWord = words[i];
     if( currentWord.data[props.WORD.LEMMA].length == where )
     {
-      matches++;
+      count++;
+      ret.words.push( i );
     }
   }
 
-  return matches >= n;
+  ret.satisfied = count >= n;
+  
+  return ret;
 }
 
-function checkSyllables( n, words, _ )
+function checkSyllables( n, words, _ )  //no syllables atm
 {
-  var matches = 0;
-
-  for( var i = 0; i < words.length; i++ )
-  {
-    var currentWord = words[i];
-    matches = matches + currentWord.syllables;
-  }
-
-  return matches >= n;
+  return { satisfied: false, words: [] };
 }
 
 function checkClass( n, where, words, _ )
 {
   var i, j;
   var classCount = {};
+  var ret = { satisfied: false, words: [] };
   
   for( i = 0; i < words.length; i++ ){
     var currentWord = words[i];
     var currentClasses = currentWord.data.classes;
     for( j = 0; j < currentClasses.length; j++ ){
-      classCount[ currentClasses[j] ] = classCount.hasOwnProperty( currentClasses[j] ) ? classCount[ currentClasses[j] ] + 1 : 1;
+      if( !classCount.hasOwnProperty( currentClasses[j] ) )
+      {
+        classCount[ currentClasses[j] ] = { count: 0, words: [] };
+      }
+      
+      classCount[ currentClasses[j] ].count++;
+      classCount[ currentClasses[j] ].words.push( i );
     }
   }
   
-  return classCount[ where ] >= n;
+  if( classCount.hasOwnProperty( where ) && classCount[where] >= n )
+  {
+    ret.satisfied = true;
+    ret.words = classCount[where].words;
+  }
+  
+  return ret;
 }
 
 function checkCategory( n, where, words, _ )
 {
   var categoryCount = {};
+  var ret = { satisfied: false, words: [] };
   
   for( var i = 0; i < words.length; i++ )
   {
@@ -148,10 +177,24 @@ function checkCategory( n, where, words, _ )
     if( currentWord.data.hasOwnProperty( "categories" ) ){
       var currentCategories = currentWord.data.categories;
       for( var j = 0; j < currentCategories.length; j++ ){
-        categoryCount[ currentCategories[j] ] = categoryCount.hasOwnProperty( currentCategories[j] ) ? categoryCount[ currentCategories[j] ] + 1 : 1;
+      
+      if( !categoryCount.hasOwnProperty( currentCategories[j] ) )
+      {
+        categoryCount[ currentCategories[j] ] = { count: 0, words: [] };
+      }
+      
+      categoryCount[ currentCategories[j] ].count++;
+      categoryCount[ currentCategories[j] ].words.push( i );
+      
       }
     }
   }
   
-  return categoryCount.hasOwnProperty( where ) ? categoryCount[ where ] >= n : false;
+  if( categoryCount.hasOwnProperty( where ) &&  categoryCount[ where ] >= n )
+  {
+    ret.satisfied = true;
+    ret.words = categoryCount[where].words;
+  }
+  
+  return ret;
 }

@@ -19,12 +19,5 @@ module.exports =
     magnet.data[props.MAGNET.Y] = y;
     
     magnet.save(_);
-  },
-  
-  endTurn: function( game, _ )
-  {
-    sup.setActionDone( game, false, _ );
-    game.data[props.GAME.TURN]++;
-    game.save(_);
   }
 };

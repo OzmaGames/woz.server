@@ -28,7 +28,7 @@ module.exports =
       password = salt + password;
       password = crypto.SHA3( password ).toString();
       
-      if( !userRetriever.getUserByUsername( username, _ ) && !userRetriever.getUserByEmail( email, _ ) )
+      if( !userRetriever.getUserByUsername( username, false, _ ) && !userRetriever.getUserByEmail( email, false, _ ) )
       {
         var user = tools.createNode({
           type: types.USER,
@@ -62,8 +62,17 @@ module.exports =
     
     try
     {
-      var user = userRetriever.getUserByUsername( username, _ );
+      var user = userRetriever.getUserByUsername( username, false, _ );
       
+      if( !user )
+      {
+        user = userRetriever.getUserByEmail( username, false, _ );
+      }
+      
+//       if( user )
+//       {
+//         ret = user;
+//       }
       if( user && user.data[props.USER.PASSWORD] == crypto.SHA3( user.data[props.USER.SALT] + password ) )
       {
         ret = user;
@@ -73,8 +82,34 @@ module.exports =
     {
       console.log(ex);
     }
-    ret = true;
     
     return ret;
+  },
+  
+  getUser: function( usernameOrEmail, password, _ )
+  {
+    var tempUser;
+    var user = false;
+    
+    try
+    {
+      tempUser = userRetriever.getUserByUsername( usernameOrEmail, false, _ );
+      
+      if( !tempUser )
+      {
+        tempUser = userRetriever.getUserByEmail( usernameOrEmail, false, _ );
+      }
+      
+      if( tempUser )
+      {
+        user = tempUser;
+      }
+    }
+    catch( ex )
+    {
+      console.log( ex );
+    }
+    
+    return user;
   }
 };

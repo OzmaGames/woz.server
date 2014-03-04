@@ -23,8 +23,8 @@ module.exports =
         
         if( !rel )
         {
-          var user = userRetriever.getUserByUsername( username, _ );
-          var friend = userRetriever.getUserByUsername( friendUsername, _ );
+          var user = userRetriever.getUserByUsername( username, false, _ );
+          var friend = userRetriever.getUserByUsername( friendUsername, false, _ );
           
           user.createRelationshipTo( friend, rels.IS_FRIEND_OF, {}, _ );
           ok = true;

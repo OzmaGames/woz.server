@@ -13,10 +13,9 @@ module.exports =
 {
   scoringTime: function( words, tiles, _ )
   {
-    var i, j;
+    var a, i, j;
     var mult = 0;
-    var score = consts.BASE_POINTS;
-    
+    var score = { total: consts.BASE_POINTS, words: [], startTile: { satisfied: false }, endTile: { satisfied: false } };
     var firstTileImage = retriever.getTileImage( tiles[0].id, _ );
     var secondTileImage = retriever.getTileImage( tiles[1].id, _ );
     var firstTileInstruction = retriever.getTileInstruction( tiles[0].id, _ );
@@ -27,55 +26,65 @@ module.exports =
     for( i = 0; i < words.length; i++ ){
       var currentWord = words[i];
       
-      score += currentWord.data[props.WORD.POINTS];
+      score.total += currentWord.data[props.WORD.POINTS];
+      score.words.push({ lemma: currentWord.data[props.WORD.LEMMA], points: currentWord.data[props.WORD.POINTS], related: false });
       
       for( j = 0; j < firstTileImage.data.related.length; j++ ){
-        if( firstTileImage.data.related[j] == currentWord.data[props.WORD.LEMMA] ){
-          score += consts.RELATED_WORD_BONUS;
+        if( firstTileImage.data.related[j] === currentWord.data[props.WORD.LEMMA] )
+        {  
+          for( a = 0; a < score.words.length; a++ ){
+            if( score.words[a].lemma === currentWord.data.lemma )
+            {
+              score.words[a].related = true;
+              score.words[a].points += consts.RELATED_WORD_BONUS;
+            }
+          }
+          
+          score.total+= consts.RELATED_WORD_BONUS;
         }
       }
       
       for( j = 0; j < secondTileImage.data.related.length; j++ ){
-        if( secondTileImage.data.related[j] == currentWord.data[props.WORD.LEMMA] ){
-          score += consts.RELATED_WORD_BONUS;
+        if( secondTileImage.data.related[j] == currentWord.data[props.WORD.LEMMA] )
+        {  
+          for( a = 0; a < score.words.length; a++ ){
+            if( score.words[a].lemma === currentWord.data.lemma )
+            {
+              score.words[a].related = true;
+              score.words[a].points += consts.RELATED_WORD_BONUS;
+            }
+          }
+          
+          score.total += consts.RELATED_WORD_BONUS;
         }
       }
     }
     
-    if( satisfiedFirstInstruction ){
-      score += firstTileInstruction.data[props.INSTRUCTION.BONUS];
-    }
-    
-    if( satisfiedSecondInstruction ){
-      score += secondTileInstruction.data[props.INSTRUCTION.BONUS];
-    }
-    
-    if( satisfiedFirstInstruction ){
+    if( satisfiedFirstInstruction.satisfied ){
+      console.log( "satisfied 1st" );
+      score.startTile.satisfied = true;
+      score.startTile.words = satisfiedFirstInstruction.words;
+      score.total += firstTileInstruction.data[props.INSTRUCTION.BONUS];
+      
       mult += firstTileInstruction.data[props.INSTRUCTION.MULT];
     }
     
-    if( satisfiedSecondInstruction ){
+    if( satisfiedSecondInstruction.satisfied ){
+      console.log( "satisfied 2nd" );
+      score.endTile.satisfied = true;
+      score.endTile.words = satisfiedSecondInstruction.words;
+      score.total += secondTileInstruction.data[props.INSTRUCTION.BONUS];
+      
       mult += secondTileInstruction.data[props.INSTRUCTION.MULT];
     }
     
     if( mult !== 0 ){
-      score = score * mult;
+      score.total = score.total * mult;
     }
     
     return score;
   },
-
-  isTheGameOver: function( game, _ )
-  {
-    var over = false;
-    
-    if( game.data[props.GAME.PHRASE_COUNT] == game.data[props.GAME.PATH_COUNT] ){
-      over = true;
-    }
-    
-    return over;
-  },
-
+  
   canIPlayWithMadness: function( words, wordCount, _ )
   {
     var madness = 0;
@@ -102,13 +111,5 @@ module.exports =
     this.setActionDone( game, false, _ );
     game.data[props.GAME.TURN]++;
     game.save(_);
-  },
-  
-  logError: function( err )
-  {
-    if(err)
-    {
-      console.error( err );
-    }
   }
 };

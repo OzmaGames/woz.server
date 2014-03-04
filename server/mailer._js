@@ -21,7 +21,7 @@ module.exports =
 {
   recoverPassword: function( username, _ )
   {
-    var player = userRetriever.getUserByUsername( username, _ );
+    var player = userRetriever.getUserByUsername( username, false, _ );
     var text = "Oh, you silly, here is your password: " + player.data[props.USER.PASSWORD] + ". Now don't go and lose it again.";
     var options = {
       from: "Princess Ozma <ozmatheprincess@gmail.com>",
